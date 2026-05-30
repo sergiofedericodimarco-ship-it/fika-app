@@ -242,6 +242,7 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
     <button class="mnav active" onclick="showMob('pedidos')" id="mn-pedidos">Pedidos</button>
     <button class="mnav" onclick="showMob('semana')" id="mn-semana">Semana</button>
     <button class="mnav" onclick="showMob('clientes')" id="mn-clientes">Clientes</button>
+    <button class="mnav" onclick="showMob('cadete-mob')" id="mn-cadete-mob">Cadete</button>
     <button class="mnav" onclick="showMob('cobros')" id="mn-cobros">Cobros <span id="cobros-badge" style="display:none;background:var(--danger);color:white;border-radius:50%;width:14px;height:14px;font-size:9px;display:inline-flex;align-items:center;justify-content:center;margin-left:2px"></span></button>
     <button class="mnav" onclick="showMob('stock')" id="mn-stock">Stock</button>
     <button class="mnav" onclick="showMob('compras')" id="mn-compras">Compras</button>
@@ -275,6 +276,13 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
       <div id="clientes-list"></div>
       <div id="clientes-empty" class="empty" style="display:none"><div class="empty-icon">&#128100;</div>Sin clientes aún.</div>
     </div>
+    <div class="mscreen" id="ms-cadete-mob">
+      <div class="sec-lbl">Orden de entrega</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:10px">Solo lectura. Editá el orden desde la PC en Cadete.</div>
+      <div id="cadete-mob-list"></div>
+      <div id="cadete-mob-empty" class="empty" style="display:none"><div class="empty-icon">&#128652;</div>Sin pedidos con horario asignado.</div>
+    </div>
+
     <div class="mscreen" id="ms-cobros">
       <div id="cobros-list"></div>
       <div id="cobros-empty" class="empty" style="display:none"><div class="empty-icon">&#36;</div>Sin cobros pendientes.</div>
@@ -629,7 +637,7 @@ function initLayout(){
 window.addEventListener('resize',function(){initLayout();});
 
 // ── NAVEGACION ────────────────────────────────────────────────
-function showMob(id){document.querySelectorAll('.mscreen').forEach(function(s){s.classList.remove('active');});document.querySelectorAll('.mnav').forEach(function(b){b.classList.remove('active');});document.getElementById('ms-'+id).classList.add('active');document.getElementById('mn-'+id).classList.add('active');if(id==='pedidos')renderPedidos();if(id==='semana')renderSemana();if(id==='clientes')renderClientesMob();if(id==='cobros')renderCobros();if(id==='stock')renderStock();if(id==='compras')renderCompras();}
+function showMob(id){document.querySelectorAll('.mscreen').forEach(function(s){s.classList.remove('active');});document.querySelectorAll('.mnav').forEach(function(b){b.classList.remove('active');});document.getElementById('ms-'+id).classList.add('active');document.getElementById('mn-'+id).classList.add('active');if(id==='pedidos')renderPedidos();if(id==='semana')renderSemana();if(id==='clientes')renderClientesMob();if(id==='cadete-mob')renderCadeteMob();if(id==='cobros')renderCobros();if(id==='stock')renderStock();if(id==='compras')renderCompras();}
 function showDesk(id){document.querySelectorAll('.dscreen').forEach(function(s){s.classList.remove('active');});document.querySelectorAll('.dtab').forEach(function(t){t.classList.remove('active');});document.getElementById(id).classList.add('active');document.getElementById('dt-'+id).classList.add('active');if(id==='d-pedidos')renderDeskPedidos();if(id==='d-produccion')renderProdItems();if(id==='d-reparto'){loadApiKey();renderRepClientes();}if(id==='d-cadete')renderCadete();if(id==='d-stock')renderDeskStock();if(id==='d-clientes')renderClientesDesk();if(id==='d-cobros')renderCobrosDesk();if(id==='d-precios')renderPrecios();if(id==='d-historial')renderHistorial();}
 function abrirFab(){var s=document.querySelector('.mscreen.active').id.replace('ms-','');if(['pedidos','semana','clientes'].includes(s))abrirModalPedido(null);if(s==='compras')abrirModal('modal-compra');}
 
@@ -660,6 +668,26 @@ function togglePagado(){
   var btn=document.getElementById('btn-pagado');
   if(btn){btn.textContent=p.pago?'Pagado':'Sin pago';btn.style.background=p.pago?'var(--ok)':'var(--bg3)';btn.style.color=p.pago?'var(--bg)':'var(--text2)';}
   sincronizarCobro(p);guardarPedidoSupa(p);renderPedidos();checkAlertaPago();
+}
+
+function renderCadeteMob(){
+  var list=document.getElementById('cadete-mob-list'),empty=document.getElementById('cadete-mob-empty');
+  if(!list)return;
+  var todos=pedidosImportados.length>0?pedidosImportados:pedidos;
+  var conHorario=todos.filter(function(p){return p.horarioEntrega;}).sort(function(a,b){return a.horarioEntrega.localeCompare(b.horarioEntrega);});
+  if(conHorario.length===0){list.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';list.innerHTML='';
+  conHorario.forEach(function(p,i){
+    var card=document.createElement('div');card.style.cssText='background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:11px 13px;margin-bottom:7px;display:flex;align-items:center;gap:10px;cursor:pointer';
+    card.onclick=function(){verPedido(p.id);};
+    var num=document.createElement('div');num.style.cssText='width:26px;height:26px;border-radius:50%;background:var(--accent2);color:var(--bg);font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:Jost,sans-serif';num.textContent=i+1;
+    var info=document.createElement('div');info.style.flex='1';
+    var nm=document.createElement('div');nm.style.cssText='font-size:14px;font-weight:500;color:var(--text);font-family:Jost,sans-serif';nm.textContent=p.nombre;
+    var dir=document.createElement('div');dir.style.cssText='font-size:11px;color:var(--text2);margin-top:2px;font-family:Jost,sans-serif';dir.textContent=(p.domicilio||'')+(p.ciudad?', '+p.ciudad:'');
+    info.appendChild(nm);info.appendChild(dir);
+    var hora=document.createElement('div');hora.style.cssText='font-size:14px;color:var(--accent);font-weight:600;font-family:Jost,sans-serif;flex-shrink:0';hora.textContent=p.horarioEntrega;
+    card.appendChild(num);card.appendChild(info);card.appendChild(hora);list.appendChild(card);
+  });
 }
 
 function actualizarBadgeCobros(){
@@ -1137,7 +1165,8 @@ function _renderDeskTabla(lista){
   var tbody=tbl.createTBody();
   ord.forEach(function(p){var r=tbody.insertRow();
     function cel(v,left){var td=r.insertCell();td.textContent=v||'--';if(!left&&(v===0||v==='0'))td.className='cero';}
-    cel(p.nombre,true);
+    var tdNom=r.insertCell();tdNom.style.cssText='font-weight:500;color:var(--text);cursor:pointer';tdNom.textContent=p.nombre;tdNom.onclick=(function(pid){return function(){verPedido(pid);};})(p.id);
+    tdNom.onmouseover=function(){this.style.color='var(--accent)';};tdNom.onmouseout=function(){this.style.color='var(--text)';};
     var tdF=r.insertCell();tdF.style.cssText='font-size:11px;color:var(--text3)';if(p.fecha){var d=new Date(p.fecha+'T12:00');tdF.textContent=DIAS_C2[d.getDay()]+' '+d.getDate()+'/'+(d.getMonth()+1);}else tdF.textContent='--';
     PRODUCTOS.forEach(function(k){cel((p.panes&&p.panes[k])||0);});
     var total=calcTotal(p.panes);var tdTot=r.insertCell();tdTot.textContent=total>0?fmtPeso(total):'--';tdTot.style.color='var(--accent)';
