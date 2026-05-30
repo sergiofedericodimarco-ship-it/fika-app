@@ -9,7 +9,7 @@
 <meta name="theme-color" content="#1a2744">
 <link rel="manifest" href="manifest.json">
 <title>FIKA</title>
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&family=Raleway:wght@300;400;500;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&family=Raleway:wght@300;400;500;700&family=Jost:wght@300;400;500&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root{
@@ -20,7 +20,9 @@
   --ok:#5ab88a;--danger:#e05555;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Raleway',sans-serif;overflow:hidden}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Jost',sans-serif;overflow:hidden}
+@media(max-width:767px){#app,#app .pedido-nombre,#app .pedido-det,#app .pedido-fecha,#app .mnav,#app .badge,#app .sec-lbl,#app .card,#app .btn-p,#app .btn-s,#app .btn-d,#app .btn-ok{font-family:'Jost',sans-serif!important}}
+@media(max-width:767px){#app,#app *:not(.login-logo,.login-sub,.modal-title){font-family:'Jost',sans-serif!important}}
 
 /* ── LOGIN ── */
 #login-screen{position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:20px}
@@ -50,7 +52,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Ralewa
 #mob-search .si{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:14px}
 #mob-nav{display:flex;gap:3px;padding:8px 18px 0;flex-shrink:0;overflow-x:auto;scrollbar-width:none}
 #mob-nav::-webkit-scrollbar{display:none}
-.mnav{flex-shrink:0;padding:7px 10px;background:none;border:0.5px solid var(--border);border-radius:8px;color:var(--text3);font-family:'Raleway',sans-serif;font-size:9px;letter-spacing:0.07em;cursor:pointer;text-transform:uppercase;min-width:58px;text-align:center;transition:all 0.15s}
+.mnav{flex-shrink:0;padding:6px 9px;background:none;border:0.5px solid var(--border);border-radius:8px;color:var(--text3);font-family:'Raleway',sans-serif;font-size:9px;letter-spacing:0.07em;cursor:pointer;text-transform:uppercase;min-width:52px;text-align:center;transition:all 0.15s}
 .mnav.active{background:var(--bg3);border-color:var(--accent2);color:var(--accent)}
 #mob-screens{flex:1;overflow:hidden;position:relative}
 .mscreen{position:absolute;inset:0;overflow-y:auto;padding:12px 18px 80px;display:none}
@@ -154,12 +156,37 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
 
 /* COBROS */
 .cobro-card{background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:7px}
+.pedido-nombre{font-size:14px;color:var(--text);font-weight:500}
+.pedido-fecha{font-size:11px;color:var(--text3)}
+.pedido-det{font-size:12px;color:var(--text2);margin-top:3px}
+.pedido-card .badge{font-size:10px}
+.pedido-nombre{font-size:14px;color:var(--text);font-weight:500}
+.pedido-fecha{font-size:11px;color:var(--text3)}
+.pedido-det{font-size:12px;color:var(--text2);margin-top:3px}
+.pedido-card .badge{font-size:10px}
 
 /* IMPRESION TICKETS */
 @media print{
   body,html{background:white!important;color:#000!important;overflow:visible!important;height:auto!important}
+  /* Por defecto: imprimir tickets */
   #login-screen,#loading,#app,#desk,#fab-btn{display:none!important}
   #ticket-print-page{display:block!important}
+  /* Imprimir pedidos PC */
+  body.print-pedidos #ticket-print-page{display:none!important}
+  body.print-pedidos #login-screen,body.print-pedidos #loading,body.print-pedidos #app,body.print-pedidos #fab-btn{display:none!important}
+  body.print-pedidos #desk{display:block!important}
+  body.print-pedidos #desk-header,body.print-pedidos #desk-tabs{display:none!important}
+  body.print-pedidos .dscreen{display:none!important}
+  body.print-pedidos #d-pedidos{display:block!important}
+  body.print-pedidos .btn-ol,body.print-pedidos .filtros,body.print-pedidos #btn-sync{display:none!important}
+  /* Imprimir Cadete */
+  body.print-cadete #ticket-print-page{display:none!important}
+  body.print-cadete #login-screen,body.print-cadete #loading,body.print-cadete #app,body.print-cadete #fab-btn{display:none!important}
+  body.print-cadete #desk{display:block!important}
+  body.print-cadete #desk-header,body.print-cadete #desk-tabs{display:none!important}
+  body.print-cadete .dscreen{display:none!important}
+  body.print-cadete #d-cadete{display:block!important}
+  body.print-cadete .btn-ol,body.print-cadete .filtros{display:none!important}
 }
 #ticket-print-page{display:none;padding:10mm}
 .ticket-grid{display:grid;grid-template-columns:repeat(5,38mm);gap:4mm}
@@ -174,7 +201,12 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
 .t-alias{font-size:6pt;color:#333;font-weight:700}
 .t-ig{font-size:5.5pt;color:#888}
 .no-print{display:block}
-</style>
+
+.pedido-card{background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:13px 15px;margin-bottom:7px;display:flex;align-items:flex-start;gap:10px}
+.pedido-main{flex:1;cursor:pointer}
+.pedido-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px}
+.badges{display:flex;gap:5px;margin-top:5px;flex-wrap:wrap}
+.btn-del-pedido{width:30px;height:30px;border-radius:50%;background:rgba(224,85,85,0.1);border:0.5px solid rgba(224,85,85,0.3);color:var(--danger);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}</style>
 </head>
 <body>
 
@@ -289,8 +321,8 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
         <div style="font-size:13px;color:var(--text2)" id="desk-ped-sub">Sincronizá para ver los pedidos</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn-ol" onclick="abrirModalPedido(null)" style="background:rgba(201,163,79,0.1)">&#43; Nuevo pedido</button>
-          <button class="btn-ol" onclick="sincronizarPedidos()" id="btn-sync">&#8635; Sincronizar</button>
-          <button class="btn-ol" onclick="imprimirPedidos()">&#128438; Imprimir</button>
+          <button class="btn-ol" onclick="sincronizarPedidos()" id="btn-sync">Sincronizar</button>
+          <button class="btn-ol" onclick="imprimirPedidos()">Imprimir</button>
         </div>
       </div>
       <div class="filtros" id="filtros-fecha"></div>
@@ -319,7 +351,7 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
         <div>
           <div id="prod-empty" style="text-align:center;padding:80px 20px;color:var(--text3);font-size:13px">Carga los pedidos y genera el plan.</div>
           <div id="prod-result" style="display:none">
-            <button class="btn-ol" onclick="window.print()">&#128438; Imprimir plan</button>
+            <button class="btn-ol" onclick="window.print()">Imprimir plan</button>
             <div class="desk-stats" id="prod-stats"></div>
             <div id="prod-status" style="border-radius:8px;padding:9px 13px;font-size:13px;margin-bottom:14px;display:none"></div>
             <div class="sec-lbl">Orden de producción</div>
@@ -351,7 +383,7 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
           <div id="rep-clientes"></div>
           <div id="rep-empty" style="text-align:center;padding:20px 0;color:var(--text3);font-size:12px;display:none">Sin pedidos con domicilio.</div>
           <button class="btn-p" style="margin-top:12px" onclick="calcularRuta()">Calcular ruta óptima</button>
-          <button class="btn-ol" style="width:100%;justify-content:center;margin-top:6px" onclick="calcularRutaDesdeCadete()">&#8635; Usar orden de Cadete</button>
+          <button class="btn-ol" style="width:100%;justify-content:center;margin-top:6px" onclick="calcularRutaDesdeCadete()">Usar orden de Cadete</button>
         </div>
         <div>
           <div id="rep-msg" style="border-radius:8px;padding:9px 13px;font-size:12px;margin-bottom:12px;display:none"></div>
@@ -367,10 +399,10 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
         <div class="filtros" style="margin-bottom:0" id="filtros-enc"></div>
         <div class="filtros" style="margin-bottom:0" id="filtros-ciudad-cad"></div>
         <div style="margin-left:auto;display:flex;gap:8px">
-          <button class="btn-ol" style="margin-bottom:0" onclick="recalcularHorariosCadete()">&#8635; Recalcular</button>
-          <button class="btn-ol" style="margin-bottom:0" onclick="exportarHorarios()">&#128336; Exportar horarios</button>
-          <button class="btn-ol" style="margin-bottom:0" onclick="imprimirTickets()">&#9999; Imprimir tickets</button>
-          <button class="btn-ol" style="margin-bottom:0" onclick="imprimirCadete()">&#128438; Imprimir lista</button>
+          <button class="btn-ol" style="margin-bottom:0" onclick="recalcularHorariosCadete()">Recalcular</button>
+          <button class="btn-ol" style="margin-bottom:0" onclick="exportarHorarios()">Exportar horarios</button>
+          <button class="btn-ol" style="margin-bottom:0" onclick="imprimirTickets()">Imprimir tickets</button>
+          <button class="btn-ol" style="margin-bottom:0" onclick="imprimirCadete()">Imprimir lista</button>
         </div>
       </div>
       <div style="font-size:11px;color:var(--text3);margin-bottom:10px">Arrastrá las filas para reordenar.</div>
@@ -387,7 +419,7 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
         </div>
         <div>
           <div class="sec-lbl">Exportar (para app móvil)</div>
-          <div class="card"><div style="font-size:12px;color:var(--text2);margin-bottom:8px">Copia y pegá en la app del celular.</div><textarea class="ta" id="stock-export-txt" readonly></textarea><button class="btn-ol" style="margin-top:8px" onclick="copiarStockPC()">&#128203; Copiar</button></div>
+          <div class="card"><div style="font-size:12px;color:var(--text2);margin-bottom:8px">Copia y pegá en la app del celular.</div><textarea class="ta" id="stock-export-txt" readonly></textarea><button class="btn-ol" style="margin-top:8px" onclick="copiarStockPC()">Copiar</button></div>
           <div class="sec-lbl">Importar (desde app móvil)</div>
           <div class="card"><div style="font-size:12px;color:var(--text2);margin-bottom:8px">Pegá el texto copiado desde el celular.</div><textarea class="ta" id="stock-import-txt" placeholder="Pegá el stock aquí..."></textarea><button class="btn-ol" style="margin-top:8px" onclick="importarStockPC()">&#8659; Importar</button></div>
         </div>
@@ -647,8 +679,8 @@ initLayout();
   ]);
   reconstruirCobros();
   hideLoad();
-  if(ES_MOVIL)renderPedidos();
-  else renderDeskPedidos();
+  renderPedidos();
+  renderDeskPedidos();
   checkAlertaPago();
   renderStock();
   actualizarDatalist();
@@ -806,7 +838,7 @@ function renderPedidosFiltrados(lista){
     var card=document.createElement('div');card.className='pedido-card';
     var main=document.createElement('div');main.className='pedido-main';main.onclick=function(){verPedido(p.id);};
     var hdr=document.createElement('div');hdr.className='pedido-header';
-    var nm=document.createElement('div');nm.className='pedido-nombre';nm.textContent=p.nombre;
+    var nm=document.createElement('div');nm.className='pedido-nombre';nm.style.fontSize='13px';nm.textContent=p.nombre;
     var fs=p.fecha?new Date(p.fecha+'T12:00').toLocaleDateString('es-AR',{weekday:'short',day:'numeric',month:'short'}):'Sin fecha';
     var fd=document.createElement('div');fd.className='pedido-fecha';fd.textContent=fs;
     hdr.appendChild(nm);hdr.appendChild(fd);main.appendChild(hdr);
@@ -1048,14 +1080,15 @@ function cerrarSemana(){
 
 // ── DESK PEDIDOS ──────────────────────────────────────────────
 async function sincronizarPedidos(){
-  document.getElementById('btn-sync').textContent='Sincronizando...';
+  var btn=document.getElementById('btn-sync');if(btn)btn.textContent='Sincronizando...';
   showLoad('Sincronizando pedidos...');
   await cargarDesdeSupabase();
   hideLoad();
   pedidosImportados=pedidos.slice();
   cadeteOrden=[];filtroPedidosFechas=[];
-  renderDeskPedidos();renderCadete();renderRepClientes();
-  document.getElementById('btn-sync').textContent='&#8635; Sincronizar';
+  renderPedidos();renderDeskPedidos();renderCadete();renderRepClientes();
+  checkAlertaPago();
+  if(btn)btn.textContent='Sincronizar';
 }
 
 function renderDeskPedidos(){
@@ -1163,7 +1196,11 @@ function abrirEditarPanesPc(id){
 }
 
 function imprimirPedidos(){
-  document.querySelectorAll('.dscreen').forEach(function(t){t.style.display=t.id==='d-pedidos'?'block':'none';});document.querySelector('#desk-tabs').style.display='none';window.print();document.querySelector('#desk-tabs').style.display='';document.querySelectorAll('.dscreen').forEach(function(t){t.style.display='';});document.getElementById('d-pedidos').classList.add('active');
+  var antes=document.getElementById('desk').style.cssText;
+  // Forzar visibilidad durante impresión mediante clase
+  document.body.classList.add('print-pedidos');
+  window.print();
+  document.body.classList.remove('print-pedidos');
 }
 
 // ── PRODUCCION ────────────────────────────────────────────────
@@ -1346,7 +1383,11 @@ function exportarHorarios(){
   var txt=JSON.stringify(datos);if(navigator.clipboard)navigator.clipboard.writeText(txt).then(function(){alert('Horarios copiados. Pegá en la app móvil: Importar horarios.');});else{var ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);alert('Horarios copiados.');}
 }
 
-function imprimirCadete(){document.querySelectorAll('.dscreen').forEach(function(t){t.style.display=t.id==='d-cadete'?'block':'none';});document.querySelector('#desk-tabs').style.display='none';window.print();document.querySelector('#desk-tabs').style.display='';document.querySelectorAll('.dscreen').forEach(function(t){t.style.display='';});document.getElementById('d-cadete').classList.add('active');}
+function imprimirCadete(){
+  document.body.classList.add('print-cadete');
+  window.print();
+  document.body.classList.remove('print-cadete');
+}
 
 function abrirEditarDomicilio(id){
   var todos=pedidosImportados.length>0?pedidosImportados:pedidos;
