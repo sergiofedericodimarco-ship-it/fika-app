@@ -1136,7 +1136,7 @@ function renderDeskPedidos(){
   ['Nombre','Fecha','Lactal','Integral','Campo','F.Cherry','F.Cebolla','F.Morrón','Prepizza','Total',''].forEach(function(h){var th=document.createElement('th');th.textContent=h;hr.appendChild(th);});
   var tbody=tbl.createTBody();
   ord.forEach(function(p){var r=tbody.insertRow();function cel(v,left){var td=r.insertCell();td.textContent=v||'--';if(!left&&(v===0||v==='0'))td.className='cero';}
-  cel(p.nombre,true);
+  var tdNomR=r.insertCell();tdNomR.style.cssText='font-weight:500;color:var(--text);cursor:pointer';tdNomR.textContent=p.nombre;tdNomR.onclick=(function(pid){return function(){verPedido(pid);};})(p.id);tdNomR.onmouseover=function(){this.style.color='var(--accent)';};tdNomR.onmouseout=function(){this.style.color='var(--text)';};
   var tdF=r.insertCell();tdF.style.cssText='font-size:11px;color:var(--text3)';if(p.fecha){var d=new Date(p.fecha+'T12:00');tdF.textContent=DIAS_C2[d.getDay()]+' '+d.getDate()+'/'+(d.getMonth()+1);}else tdF.textContent='--';
   PRODUCTOS.forEach(function(k){cel((p.panes&&p.panes[k])||0);});
   var total=calcTotal(p.panes);var tdTot=r.insertCell();tdTot.textContent=total>0?fmtPeso(total):'--';tdTot.style.color='var(--accent)';
