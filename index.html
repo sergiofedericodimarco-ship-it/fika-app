@@ -738,6 +738,8 @@ function togglePagado(){
   var btn=document.getElementById('btn-pagado');
   if(btn){btn.textContent=p.pago?'Pagado':'Sin pago';btn.style.background=p.pago?'var(--ok)':'var(--bg3)';btn.style.color=p.pago?'var(--bg)':'var(--text2)';}
   sincronizarCobro(p);guardarPedidoSupa(p);renderPedidos();checkAlertaPago();
+  // Actualizar fila Pago en el modal sin cerrarlo
+  document.querySelectorAll('#dp-content .det-row').forEach(function(row){var lbl=row.querySelector('.det-lbl');var val=row.querySelector('.det-val');if(lbl&&lbl.textContent==='Pago'){val.textContent=p.pago?'Realizado':'Pendiente';val.style.color=p.pago?'var(--ok)':'var(--danger)';}});
 }
 
 function renderCadeteMob(){
