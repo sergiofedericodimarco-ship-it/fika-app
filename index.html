@@ -733,37 +733,8 @@ async function doLogin(){
 async function iniciarApp(){
   showLoad('Cargando datos...');
   
-function togglePagado(){
-  if(!pedidoVerId){alert('Error: no hay pedido seleccionado.');return;}
-  var idx=pedidos.findIndex(function(x){return x.id===pedidoVerId;});
-  if(idx<0){alert('No se encontró el pedido.');return;}
-  pedidos[idx].pago=!pedidos[idx].pago;
-  var p=pedidos[idx];
-  // Actualizar botón
-  var btn=document.getElementById('btn-pagado');
-  if(btn){
-    btn.textContent=p.pago?'Pagado':'Sin pago';
-    btn.style.background=p.pago?'var(--ok)':'var(--bg3)';
-    btn.style.border=p.pago?'none':'0.5px solid var(--border2)';
-    btn.style.color=p.pago?'var(--bg)':'var(--text2)';
-  }
-  // Actualizar campo PAGO en el detalle
-  document.querySelectorAll('#dp-content .det-row').forEach(function(row){
-    var lbl=row.querySelector('.det-lbl');
-    var val=row.querySelector('.det-val');
-    if(lbl&&val&&lbl.textContent==='Pago'){
-      val.textContent=p.pago?'Realizado':'Pendiente';
-      val.style.color=p.pago?'var(--ok)':'var(--danger)';
-    }
-  });
-  // Guardar
-  guardar();
-  sbUpsert('pedidos',pedidoToRow(p));
-  sincronizarCobro(p);
-  guardarCobros();
-  renderPedidos();
-  checkAlertaPago();
-}
+
+
 
 function renderCadeteMob(){
   var list=document.getElementById('cadete-mob-list'),empty=document.getElementById('cadete-mob-empty');
@@ -785,11 +756,8 @@ function renderCadeteMob(){
   });
 }
 
-function actualizarBadgeCobros(){
-  var n=cobros.filter(function(c){return !c.pagado;}).length;
-  var b=document.getElementById('cobros-badge');
-  if(b){b.textContent=n>0?n:'';b.style.display=n>0?'inline-flex':'none';}
-}
+
+
 
 initLayout();
   buildPanesForm();
@@ -1786,6 +1754,44 @@ function exportarExcel(){
     var blob=new Blob([lines2.join('\n')],{type:'text/csv;charset=utf-8'});
     var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='FIKA_pedidos_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
   }
+}
+
+function togglePagado(){
+  if(!pedidoVerId){alert('Error: no hay pedido seleccionado.');return;}
+  var idx=pedidos.findIndex(function(x){return x.id===pedidoVerId;});
+  if(idx<0){alert('No se encontró el pedido.');return;}
+  pedidos[idx].pago=!pedidos[idx].pago;
+  var p=pedidos[idx];
+  // Actualizar botón
+  var btn=document.getElementById('btn-pagado');
+  if(btn){
+    btn.textContent=p.pago?'Pagado':'Sin pago';
+    btn.style.background=p.pago?'var(--ok)':'var(--bg3)';
+    btn.style.border=p.pago?'none':'0.5px solid var(--border2)';
+    btn.style.color=p.pago?'var(--bg)':'var(--text2)';
+  }
+  // Actualizar campo PAGO en el detalle
+  document.querySelectorAll('#dp-content .det-row').forEach(function(row){
+    var lbl=row.querySelector('.det-lbl');
+    var val=row.querySelector('.det-val');
+    if(lbl&&val&&lbl.textContent==='Pago'){
+      val.textContent=p.pago?'Realizado':'Pendiente';
+      val.style.color=p.pago?'var(--ok)':'var(--danger)';
+    }
+  });
+  // Guardar
+  guardar();
+  sbUpsert('pedidos',pedidoToRow(p));
+  sincronizarCobro(p);
+  guardarCobros();
+  renderPedidos();
+  checkAlertaPago();
+}
+
+function actualizarBadgeCobros(){
+  var n=cobros.filter(function(c){return !c.pagado;}).length;
+  var b=document.getElementById('cobros-badge');
+  if(b){b.textContent=n>0?n:'';b.style.display=n>0?'inline-flex':'none';}
 }
 
 initLayout();
