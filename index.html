@@ -560,9 +560,9 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
     <div class="modal-hdr"><div class="modal-title" id="dp-nombre">--</div><button class="modal-close" onclick="cerrarModal('modal-det-pedido')">&#215;</button></div>
     <div id="dp-content"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:10px">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:10px">
       <button id="btn-pagado" onclick="togglePagado()" style="padding:11px 8px;border-radius:8px;border:0.5px solid var(--border2);font-family:Jost,sans-serif;font-size:12px;font-weight:700;cursor:pointer;background:var(--bg3);color:var(--text2)">Sin pago</button>
       <button id="btn-entregado" onclick="toggleEntregado()" style="padding:11px 8px;border-radius:8px;border:0.5px solid var(--border2);font-family:Jost,sans-serif;font-size:12px;font-weight:700;cursor:pointer;background:var(--bg3);color:var(--text2)">Sin entregar</button>
+    </div>
     <button class="btn-s" style="margin-top:0;margin-bottom:6px" onclick="enviarHorarioVisita()">Enviar horario de visita</button>
     <button class="btn-s" style="margin-top:0;margin-bottom:6px" onclick="enviarAlias()">Enviar alias de pago</button>
     <div style="display:flex;gap:7px;margin-top:6px">
@@ -570,6 +570,7 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
       <button class="btn-s" style="margin-top:0;color:var(--text3);border-color:var(--border)" onclick="cerrarModal('modal-det-pedido')">Cerrar</button>
     </div>
   </div>
+</div>
 </div>
 
 <div class="modal-ov" id="modal-compra">
