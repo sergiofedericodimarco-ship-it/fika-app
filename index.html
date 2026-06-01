@@ -1738,8 +1738,7 @@ function renderHistGraficosPC(lista){
   // Leyendas
   var legEl=document.getElementById('hist-legend-pc');
   if(legEl){legEl.innerHTML='';PRODUCTOS.forEach(function(k){if(lista.some(function(h){return (h[k]||0)>0;})){
-    legEl.innerHTML+='<span style="display:flex;align-items:center;gap:4px;color:var(--text2);font-size:11px;cursor:pointer" onclick="toggleHistDataset('hist-chart-lineas',''+k+'')">'
-    +'<span style="width:10px;height:10px;border-radius:2px;background:'+PROD_COLORES_H[k]+'"></span>'+PROD_LABELS_H[k]+'</span>';}});}
+    (function(k2){var spLeg=document.createElement('span');spLeg.style.cssText='display:flex;align-items:center;gap:4px;color:var(--text2);font-size:11px;cursor:pointer';spLeg.innerHTML='<span style="width:10px;height:10px;border-radius:2px;background:'+PROD_COLORES_H[k2]+'"></span>'+PROD_LABELS_H[k2];spLeg.onclick=function(){toggleHistDataset('hist-chart-lineas',k2);};legEl.appendChild(spLeg);})(k);}});}
   var legTorta=document.getElementById('hist-legend-torta');
   if(legTorta){legTorta.innerHTML='';PRODUCTOS.forEach(function(k){if(s.totProd[k]>0){
     var pct=Math.round(s.totProd[k]/s.tot*100);
@@ -1788,10 +1787,8 @@ function renderHistGraficosPC(lista){
         onClick:function(e){
           var pts=chartBarrasInst.getElementsAtEventForMode(e,'nearest',{intersect:true},true);
           if(pts.length>0){var idx=pts[0].index;var sem=lista[idx];
-            var det='Semana '+fmtSem(sem)+' — Total: '+sem.total+' panes
-';
-            PRODUCTOS.forEach(function(k){if(sem[k]>0)det+='  '+PROD_LABELS_H[k]+': '+sem[k]+'
-';});alert(det);}
+            var det='Semana '+fmtSem(sem)+' - Total: '+sem.total+' panes\n';
+            PRODUCTOS.forEach(function(k){if(sem[k]>0)det+='  '+PROD_LABELS_H[k]+': '+sem[k]+'\n';});alert(det);}
         },
         plugins:{legend:{display:false},
           tooltip:{backgroundColor:'rgba(26,39,68,0.95)',titleColor:'#c9a34f',bodyColor:'#e8dfc8',borderColor:'rgba(201,163,79,0.3)',borderWidth:1,padding:10}},
