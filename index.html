@@ -11,6 +11,7 @@
 <title>FIKA</title>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&family=Raleway:wght@300;400;500;700&family=Jost:wght@300;400;500&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
 :root{
   --bg:#1a2744;--bg2:#1f2f50;--bg3:#243659;
@@ -1705,10 +1706,11 @@ function calcHistStats(lista){
 
 function renderHistorial(){
   var lista=getHistorialFiltrado();
+  console.log('FIKA Historial: lista=',lista.length,'HIST_PRELOAD=',HIST_PRELOAD.length);
   var empty=document.getElementById('hist-empty');
   if(lista.length===0){if(empty)empty.style.display='block';return;}
   if(empty)empty.style.display='none';
-  if(typeof Chart==='undefined'){loadChartJS(renderHistorial);return;}
+  
   renderHistFiltrosPC(lista);
   renderHistStatsPC(lista);
   renderHistGraficosPC(lista);
@@ -1772,7 +1774,7 @@ function renderHistorialMob(){
   var empty=document.getElementById('hist-mob-empty');
   if(lista.length===0){if(empty)empty.style.display='block';return;}
   if(empty)empty.style.display='none';
-  if(typeof Chart==='undefined'){loadChartJS(renderHistorialMob);return;}
+  
   renderHistFiltrosMob(lista);
   renderHistStatsMob(lista);
   renderHistGraficoMob(lista);
