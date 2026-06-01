@@ -246,6 +246,7 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
     <button class="mnav" onclick="showMob('cobros')" id="mn-cobros">Cobros <span id="cobros-badge" style="display:none;background:var(--danger);color:white;border-radius:50%;width:14px;height:14px;font-size:9px;display:inline-flex;align-items:center;justify-content:center;margin-left:2px"></span></button>
     <button class="mnav" onclick="showMob('stock')" id="mn-stock">Stock</button>
     <button class="mnav" onclick="showMob('compras')" id="mn-compras">Compras</button>
+    <button class="mnav" onclick="showMob('historial-mob')" id="mn-historial-mob">Historial</button>
   </div>
   <div id="mob-screens">
     <div class="mscreen active" id="ms-pedidos">
@@ -301,6 +302,15 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
       <button class="btn-s" onclick="enviarComprasWA()">Enviar por WhatsApp</button>
     </div>
   </div>
+    <div class="mscreen" id="ms-historial-mob">
+      <div id="hist-mob-filtros" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px"></div>
+      <div id="hist-mob-stats" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px"></div>
+      <div id="hist-mob-chart-wrap" style="position:relative;width:100%;height:200px;margin-bottom:12px"><canvas id="hist-mob-chart" role="img" aria-label="Gráfico historial ventas móvil">Historial de ventas por semana.</canvas></div>
+      <div class="sec-lbl">Tabla</div>
+      <div id="hist-mob-tabla" style="overflow-x:auto;font-size:11px"></div>
+      <button class="btn-ok" style="margin-top:10px" onclick="exportarHistorialExcel()">Exportar Excel</button>
+      <div id="hist-mob-empty" class="empty" style="display:none"><div class="empty-icon">&#128202;</div>Sin datos históricos aún.</div>
+    </div>
   <button class="fab" id="fab-btn" onclick="abrirFab()">+</button>
 </div>
 
@@ -506,19 +516,34 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
 
     <!-- HISTORIAL PC -->
     <div class="dscreen" id="d-historial">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px">
+        <div style="display:flex;gap:6px;flex-wrap:wrap" id="hist-filtros-pc"></div>
+        <button class="btn-ol" style="margin:0" onclick="exportarHistorialExcel()">Exportar Excel</button>
+      </div>
+      <div id="hist-stats-pc" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
         <div>
-          <div class="sec-lbl">Producciones registradas</div>
-          <div id="hist-lista"></div>
-          <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+          <div class="sec-lbl">Evolución semanal por producto</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;font-size:11px" id="hist-legend-pc"></div>
+          <div style="position:relative;width:100%;height:240px"><canvas id="hist-chart-lineas" role="img" aria-label="Gráfico líneas historial">Evolución semanal.</canvas></div>
         </div>
         <div>
-          <div class="sec-lbl">Total acumulado</div>
-          <div class="card" id="hist-chart-tot"><div style="text-align:center;padding:30px;color:var(--text3);font-size:13px">Sin datos.</div></div>
-          <div class="sec-lbl" style="margin-top:14px">Promedio por producción</div>
-          <div class="card" id="hist-chart-avg"><div style="text-align:center;padding:30px;color:var(--text3);font-size:13px">Sin datos.</div></div>
+          <div class="sec-lbl">Total por semana</div>
+          <div style="position:relative;width:100%;height:260px"><canvas id="hist-chart-barras" role="img" aria-label="Barras total semanal">Totales semanales.</canvas></div>
         </div>
       </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+        <div>
+          <div class="sec-lbl">Participación por producto</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;font-size:11px" id="hist-legend-torta"></div>
+          <div style="position:relative;width:100%;height:220px"><canvas id="hist-chart-torta" role="img" aria-label="Torta por producto">Participación.</canvas></div>
+        </div>
+        <div>
+          <div class="sec-lbl">Tabla completa</div>
+          <div id="hist-tabla-pc" style="overflow-x:auto;font-size:12px"></div>
+        </div>
+      </div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún. Los datos se cargan al cerrar semana.</div>
     </div>
   </div>
 </div>
@@ -708,7 +733,7 @@ function initLayout(){
 window.addEventListener('resize',function(){initLayout();});
 
 // ── NAVEGACION ────────────────────────────────────────────────
-function showMob(id){document.querySelectorAll('.mscreen').forEach(function(s){s.classList.remove('active');});document.querySelectorAll('.mnav').forEach(function(b){b.classList.remove('active');});document.getElementById('ms-'+id).classList.add('active');document.getElementById('mn-'+id).classList.add('active');if(id==='pedidos')renderPedidos();if(id==='semana')renderSemana();if(id==='clientes')renderClientesMob();if(id==='cadete-mob')renderCadeteMob();if(id==='cobros')renderCobros();if(id==='stock')renderStock();if(id==='compras')renderCompras();}
+function showMob(id){document.querySelectorAll('.mscreen').forEach(function(s){s.classList.remove('active');});document.querySelectorAll('.mnav').forEach(function(b){b.classList.remove('active');});document.getElementById('ms-'+id).classList.add('active');document.getElementById('mn-'+id).classList.add('active');if(id==='pedidos')renderPedidos();if(id==='semana')renderSemana();if(id==='clientes')renderClientesMob();if(id==='cadete-mob')renderCadeteMob();if(id==='historial-mob')renderHistorialMob();if(id==='cobros')renderCobros();if(id==='stock')renderStock();if(id==='compras')renderCompras();}
 function showDesk(id){document.querySelectorAll('.dscreen').forEach(function(s){s.classList.remove('active');});document.querySelectorAll('.dtab').forEach(function(t){t.classList.remove('active');});document.getElementById(id).classList.add('active');document.getElementById('dt-'+id).classList.add('active');if(id==='d-pedidos')renderDeskPedidos();if(id==='d-produccion')renderProdItems();if(id==='d-reparto'){loadApiKey();renderRepClientes();}if(id==='d-cadete')renderCadete();if(id==='d-stock')renderDeskStock();if(id==='d-clientes')renderClientesDesk();if(id==='d-cobros')renderCobrosDesk();if(id==='d-precios')renderPrecios();if(id==='d-historial')renderHistorial();}
 function abrirFab(){var s=document.querySelector('.mscreen.active').id.replace('ms-','');if(['pedidos','semana','clientes'].includes(s))abrirModalPedido(null);if(s==='compras')abrirModal('modal-compra');}
 
@@ -1636,30 +1661,60 @@ function eliminarPrecioEspecial(id){
 }
 
 // ── HISTORIAL ─────────────────────────────────────────────────
-function renderHistorial(){
-  var list=document.getElementById('hist-lista'),empty=document.getElementById('hist-empty');if(!list)return;
-  if(historial.length===0){list.innerHTML='';empty.style.display='block';renderCharts();return;}empty.style.display='none';list.innerHTML='';
-  historial.forEach(function(h,i){
-    var f=new Date(h.fecha);var fs=DIAS[f.getDay()]+' '+f.getDate()+' '+MESES[f.getMonth()]+' '+f.getFullYear();
-    var card=document.createElement('div');card.style.cssText='background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:13px 15px;margin-bottom:7px';
-    var hdr=document.createElement('div');hdr.style.cssText='display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:7px';
-    var left=document.createElement('div');var fecha=document.createElement('div');fecha.style.cssText='font-size:14px;font-weight:500;color:var(--text)';fecha.textContent=fs;var sub=document.createElement('div');sub.style.cssText='font-size:11px;color:var(--text3);margin-top:2px';sub.textContent=h.inicio+' a '+h.fin+' · '+h.total+' panes';left.appendChild(fecha);left.appendChild(sub);
-    var del=document.createElement('button');del.style.cssText='background:none;border:none;color:var(--text3);font-size:17px;cursor:pointer';del.innerHTML='&#215;';del.onclick=(function(idx){return function(){historial.splice(idx,1);localStorage.setItem('fika-historial',JSON.stringify(historial));renderHistorial();};})(i);
-    hdr.appendChild(left);hdr.appendChild(del);card.appendChild(hdr);
-    var badges=document.createElement('div');badges.style.cssText='display:flex;gap:5px;flex-wrap:wrap';
-    PRODUCTOS.forEach(function(k){if(h[k]){var b=document.createElement('span');b.className='badge';b.style.cssText='background:var(--bg3);color:'+PROD_COLORES[k];b.textContent=h[k]+' '+PROD_NOMBRES[k].toLowerCase().split(' ')[0];badges.appendChild(b);}});
-    card.appendChild(badges);list.appendChild(card);
-  });renderCharts();
+
+// ── HISTORIAL ─────────────────────────────────────────────────
+var HIST_PRELOAD=[
+  {id:'2026-04-25',fecha:'2026-04-25T00:00:00.000Z',lactal:5,integral:33,campo:0,focaccia_cherry:0,focaccia_cebolla:0,focaccia_morron:0,prepizza:0,total:38,inicio:'07:15',fin:'14:00'},
+  {id:'2026-05-02',fecha:'2026-05-02T00:00:00.000Z',lactal:10,integral:25,campo:10,focaccia_cherry:0,focaccia_cebolla:0,focaccia_morron:0,prepizza:0,total:45,inicio:'07:15',fin:'15:00'},
+  {id:'2026-05-09',fecha:'2026-05-09T00:00:00.000Z',lactal:9,integral:28,campo:13,focaccia_cherry:7,focaccia_cebolla:7,focaccia_morron:0,prepizza:0,total:64,inicio:'07:15',fin:'16:00'},
+  {id:'2026-05-16',fecha:'2026-05-16T00:00:00.000Z',lactal:2,integral:20,campo:9,focaccia_cherry:8,focaccia_cebolla:8,focaccia_morron:0,prepizza:0,total:47,inicio:'07:15',fin:'15:00'},
+  {id:'2026-05-23',fecha:'2026-05-23T00:00:00.000Z',lactal:3,integral:27,campo:21,focaccia_cherry:17,focaccia_cebolla:9,focaccia_morron:0,prepizza:0,total:77,inicio:'07:15',fin:'17:00'},
+  {id:'2026-05-30',fecha:'2026-05-30T00:00:00.000Z',lactal:5,integral:28,campo:12,focaccia_cherry:4,focaccia_cebolla:4,focaccia_morron:4,prepizza:0,total:57,inicio:'07:15',fin:'15:30'}
+];
+
+var histFiltroMes=null;
+var chartLineasInst=null,chartBarrasInst=null,chartTortaInst=null,chartMobInst=null;
+var PROD_COLORES_H={lactal:'#6a9fd8',integral:'#5ab88a',campo:'#c9a34f',focaccia_cherry:'#d4607a',focaccia_cebolla:'#c0507a',focaccia_morron:'#e07040',prepizza:'#8b6fbe'};
+var PROD_LABELS_H={lactal:'Lactal',integral:'Integral',campo:'Campo',focaccia_cherry:'Cherry',focaccia_cebolla:'Cebolla',focaccia_morron:'Morrón',prepizza:'Prepizza'};
+
+function getHistorialCompleto(){
+  var ids=new Set(historial.map(function(h){return h.id;}));
+  var base=HIST_PRELOAD.filter(function(h){return !ids.has(h.id);});
+  return base.concat(historial).sort(function(a,b){return (a.fecha||a.id).localeCompare(b.fecha||b.id);});
 }
 
-function renderCharts(){
-  var tot={};PRODUCTOS.forEach(function(k){tot[k]=0;});historial.forEach(function(h){PRODUCTOS.forEach(function(k){tot[k]+=(h[k]||0);});});
-  var n=historial.length||1;var avg={};PRODUCTOS.forEach(function(k){avg[k]=(tot[k]/n).toFixed(1);});
-  function mkBars(data,mx,el){el.innerHTML='';PRODUCTOS.forEach(function(k){var row=document.createElement('div');row.style.cssText='display:flex;align-items:center;gap:10px;margin-bottom:7px';var lbl=document.createElement('div');lbl.style.cssText='font-size:12px;color:var(--text2);min-width:120px;text-align:right;color:'+PROD_COLORES[k];lbl.textContent=PROD_NOMBRES[k];var track=document.createElement('div');track.style.cssText='flex:1;height:6px;background:rgba(232,223,200,0.08);border-radius:3px';var fill=document.createElement('div');fill.style.cssText='height:100%;border-radius:3px;background:'+PROD_COLORES[k]+';width:'+(mx>0?(Number(data[k])/mx*100).toFixed(0):0)+'%';track.appendChild(fill);var val=document.createElement('div');val.style.cssText='font-size:12px;color:var(--text3);min-width:28px';val.textContent=data[k];row.appendChild(lbl);row.appendChild(track);row.appendChild(val);el.appendChild(row);});}
-  var mxT=Math.max.apply(null,PRODUCTOS.map(function(k){return tot[k];}));var mxA=Math.max.apply(null,PRODUCTOS.map(function(k){return Number(avg[k]);}));
-  if(document.getElementById('hist-chart-tot'))mkBars(tot,mxT,document.getElementById('hist-chart-tot'));
-  if(document.getElementById('hist-chart-avg'))mkBars(avg,mxA,document.getElementById('hist-chart-avg'));
+function getHistorialFiltrado(){
+  var todos=getHistorialCompleto();
+  if(!histFiltroMes)return todos;
+  return todos.filter(function(h){return (h.fecha||h.id).slice(0,7)===histFiltroMes;});
 }
+
+function fmtSem(h){
+  var f=new Date((h.fecha||h.id)+'T12:00');
+  return f.getDate()+'/'+(f.getMonth()+1);
+}
+
+function calcHistStats(lista){
+  var tot=lista.reduce(function(a,h){return a+h.total;},0);
+  var prom=lista.length>0?Math.round(tot/lista.length):0;
+  var mejor=lista.reduce(function(a,h){return h.total>a.total?h:a;},{total:0});
+  var totProd={};PRODUCTOS.forEach(function(k){totProd[k]=lista.reduce(function(a,h){return a+(h[k]||0);},0);});
+  var estrella=PRODUCTOS.reduce(function(a,k){return (totProd[k]||0)>(totProd[a]||0)?k:a;},'integral');
+  return {tot:tot,prom:prom,mejor:mejor,estrella:estrella,totProd:totProd};
+}
+
+function renderHistorial(){
+  var lista=getHistorialFiltrado();
+  var empty=document.getElementById('hist-empty');
+  if(lista.length===0){if(empty)empty.style.display='block';return;}
+  if(empty)empty.style.display='none';
+  if(typeof Chart==='undefined'){loadChartJS(renderHistorial);return;}
+  renderHistFiltrosPC(lista);
+  renderHistStatsPC(lista);
+  renderHistGraficosPC(lista);
+  renderHistTablaPC(lista);
+}
+
 
 // ── CERRAR SEMANA ─────────────────────────────────────────────
 // ya definido arriba
@@ -1711,6 +1766,41 @@ function elegirCliente(item){
 
 function cerrarSugerencias(){var drop=document.getElementById('sugerencias-drop');if(drop)drop.style.display='none';}
 
+
+function renderHistorialMob(){
+  var lista=getHistorialFiltrado();
+  var empty=document.getElementById('hist-mob-empty');
+  if(lista.length===0){if(empty)empty.style.display='block';return;}
+  if(empty)empty.style.display='none';
+  if(typeof Chart==='undefined'){loadChartJS(renderHistorialMob);return;}
+  renderHistFiltrosMob(lista);
+  renderHistStatsMob(lista);
+  renderHistGraficoMob(lista);
+  renderHistTablaMob(lista);
+}
+
+function exportarHistorialExcel(){
+  var lista=getHistorialFiltrado();
+  if(lista.length===0){alert('Sin datos para exportar.');return;}
+  var filas=[['Semana','Lactal','Integral','Campo','Foc.Cherry','Foc.Cebolla','Foc.Morron','Prepizza','Total']];
+  lista.forEach(function(h){
+    var f=new Date((h.fecha||h.id)+'T12:00');
+    filas.push([f.getDate()+'/'+(f.getMonth()+1)+'/'+f.getFullYear(),h.lactal||0,h.integral||0,h.campo||0,h.focaccia_cherry||0,h.focaccia_cebolla||0,h.focaccia_morron||0,h.prepizza||0,h.total||0]);
+  });
+  try{
+    var wb=XLSX.utils.book_new();
+    var ws=XLSX.utils.aoa_to_sheet(filas);
+    XLSX.utils.book_append_sheet(wb,ws,'Historial');
+    XLSX.writeFile(wb,'FIKA_historial_'+new Date().toISOString().slice(0,10)+'.xlsx');
+  }catch(e){
+    var ln=filas.map(function(r){return r.join(',');});
+    var blob=new Blob([ln.join('\n')],{type:'text/csv'});
+    var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='FIKA_historial.csv';a.click();
+  }
+}
+
+function loadChartJS(cb){if(typeof Chart!=='undefined'){cb();return;}var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js';s.onload=cb;document.head.appendChild(s);}
+
 function exportarExcel(){
   if(pedidos.length===0){alert('No hay pedidos para exportar.');return;}
   var filas=[['Nombre','Fecha entrega','Ciudad','Domicilio','Piso','Encargado','Tipo precio','Lactal','Lactal integral','Pan de campo','Focaccia cherry','Focaccia cebolla','Focaccia morron','Prepizza','Total','Pagado','Entregado','Notas','Cargado el']];
@@ -1741,6 +1831,7 @@ function exportarExcel(){
     var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='FIKA_pedidos_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
   }
 }
+
 
 function exportarExcel(){
   if(pedidos.length===0){alert('No hay pedidos para exportar.');return;}
