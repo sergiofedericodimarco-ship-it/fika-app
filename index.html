@@ -1704,6 +1704,107 @@ function calcHistStats(lista){
   return {tot:tot,prom:prom,mejor:mejor,estrella:estrella,totProd:totProd};
 }
 
+
+function renderHistFiltrosPC(lista){
+  var el=document.getElementById('hist-filtros-pc');if(!el)return;
+  var all=getHistorialCompleto();var seen={};var meses=[];all.forEach(function(h){var m=(h.fecha||h.id).slice(0,7);if(!seen[m]){seen[m]=1;meses.push(m);}});meses.sort();
+  el.innerHTML='';
+  var bT=document.createElement('button');bT.className='fb'+(histFiltroMes===null?' active':'');bT.textContent='Todo el historial';bT.onclick=function(){histFiltroMes=null;renderHistorial();};el.appendChild(bT);
+  meses.forEach(function(m){var b=document.createElement('button');b.className='fb'+(histFiltroMes===m?' active':'');var d=new Date(m+'-01');b.textContent=d.toLocaleDateString('es-AR',{month:'short',year:'numeric'});b.onclick=function(){histFiltroMes=m;renderHistorial();};el.appendChild(b);});
+}
+
+function renderHistFiltrosMob(lista){
+  var el=document.getElementById('hist-mob-filtros');if(!el)return;
+  var all=getHistorialCompleto();var seen={};var meses=[];all.forEach(function(h){var m=(h.fecha||h.id).slice(0,7);if(!seen[m]){seen[m]=1;meses.push(m);}});meses.sort();
+  el.innerHTML='';
+  var bT=document.createElement('button');bT.className='fb'+(histFiltroMes===null?' active':'');bT.style.fontSize='10px';bT.textContent='Todo';bT.onclick=function(){histFiltroMes=null;renderHistorialMob();};el.appendChild(bT);
+  meses.forEach(function(m){var b=document.createElement('button');b.className='fb'+(histFiltroMes===m?' active':'');b.style.fontSize='10px';var d=new Date(m+'-01');b.textContent=d.toLocaleDateString('es-AR',{month:'short',year:'2-digit'});b.onclick=function(){histFiltroMes=m;renderHistorialMob();};el.appendChild(b);});
+}
+
+function renderHistStatsPC(lista){
+  var el=document.getElementById('hist-stats-pc');if(!el)return;
+  var s=calcHistStats(lista);
+  el.innerHTML='';
+  [[s.tot,'Total panes'],[s.prom,'Promedio/semana'],[s.mejor.total+' panes ('+fmtSem(s.mejor)+')','Mejor semana'],[PROD_LABELS_H[s.estrella],'Producto estrella']].forEach(function(r){
+    var d=document.createElement('div');d.style.cssText='background:var(--bg2);border:0.5px solid var(--border);border-radius:8px;padding:12px 10px;text-align:center';
+    var v=document.createElement('div');v.style.cssText='font-family:Oswald,sans-serif;font-size:22px;color:var(--accent)';v.textContent=r[0];
+    var l=document.createElement('div');l.style.cssText='font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-top:3px';l.textContent=r[1];
+    d.appendChild(v);d.appendChild(l);el.appendChild(d);
+  });
+}
+
+function renderHistStatsMob(lista){
+  var el=document.getElementById('hist-mob-stats');if(!el)return;
+  var s=calcHistStats(lista);
+  el.innerHTML='';
+  [[s.tot,'Total'],[s.prom,'Prom/sem'],[s.mejor.total+' ('+fmtSem(s.mejor)+')','Mejor sem'],[PROD_LABELS_H[s.estrella],'Estrella']].forEach(function(r){
+    var d=document.createElement('div');d.style.cssText='background:var(--bg2);border:0.5px solid var(--border);border-radius:8px;padding:9px 7px;text-align:center';
+    var v=document.createElement('div');v.style.cssText='font-size:16px;color:var(--accent);font-weight:500';v.textContent=r[0];
+    var l=document.createElement('div');l.style.cssText='font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;margin-top:2px';l.textContent=r[1];
+    d.appendChild(v);d.appendChild(l);el.appendChild(d);
+  });
+}
+
+function renderHistGraficosPC(lista){
+  var isDark=window.matchMedia('(prefers-color-scheme: dark)').matches;
+  var gc=isDark?'rgba(255,255,255,0.08)':'rgba(0,0,0,0.06)';var tc=isDark?'#b4b2a9':'#73726c';
+  var labels=lista.map(fmtSem);
+  var legEl=document.getElementById('hist-legend-pc');
+  if(legEl){legEl.innerHTML='';PRODUCTOS.forEach(function(k){if(lista.some(function(h){return (h[k]||0)>0;})){var sp=document.createElement('span');sp.style.cssText='display:flex;align-items:center;gap:4px;color:var(--text2);font-size:11px';sp.innerHTML='<span style="width:10px;height:10px;border-radius:2px;background:'+PROD_COLORES_H[k]+'"></span>'+PROD_LABELS_H[k];legEl.appendChild(sp);}});}
+  var legTorta=document.getElementById('hist-legend-torta');
+  if(legTorta){var st=calcHistStats(lista);legTorta.innerHTML='';PRODUCTOS.forEach(function(k){if(st.totProd[k]>0){var pct=Math.round(st.totProd[k]/st.tot*100);var sp=document.createElement('span');sp.style.cssText='display:flex;align-items:center;gap:4px;color:var(--text2);font-size:11px';sp.innerHTML='<span style="width:10px;height:10px;border-radius:2px;background:'+PROD_COLORES_H[k]+'"></span>'+PROD_LABELS_H[k]+' '+pct+'%';legTorta.appendChild(sp);}});}
+  if(chartLineasInst){chartLineasInst.destroy();chartLineasInst=null;}
+  var c1=document.getElementById('hist-chart-lineas');
+  if(c1){chartLineasInst=new Chart(c1,{type:'line',data:{labels:labels,datasets:PRODUCTOS.filter(function(k){return lista.some(function(h){return (h[k]||0)>0;});}).map(function(k,i){return{label:PROD_LABELS_H[k],data:lista.map(function(h){return h[k]||0;}),borderColor:PROD_COLORES_H[k],backgroundColor:'transparent',tension:0.3,pointRadius:3,borderDash:i%2===1?[4,2]:[]};})},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:tc,font:{size:11}},grid:{color:gc}},y:{ticks:{color:tc,font:{size:11}},grid:{color:gc},beginAtZero:true}}}});}
+  if(chartBarrasInst){chartBarrasInst.destroy();chartBarrasInst=null;}
+  var c2=document.getElementById('hist-chart-barras');
+  if(c2){var tots=lista.map(function(h){return h.total;});var maxT=Math.max.apply(null,tots);chartBarrasInst=new Chart(c2,{type:'bar',data:{labels:labels,datasets:[{label:'Total',data:tots,backgroundColor:tots.map(function(v){return v===maxT?'#c9a34f':'rgba(201,163,79,0.35)';}),borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:tc,font:{size:11}},grid:{display:false}},y:{ticks:{color:tc,font:{size:11}},grid:{color:gc},beginAtZero:true}}}});}
+  if(chartTortaInst){chartTortaInst.destroy();chartTortaInst=null;}
+  var c3=document.getElementById('hist-chart-torta');
+  if(c3){var st2=calcHistStats(lista);var prodActivos=PRODUCTOS.filter(function(k){return st2.totProd[k]>0;});chartTortaInst=new Chart(c3,{type:'doughnut',data:{labels:prodActivos.map(function(k){return PROD_LABELS_H[k];}),datasets:[{data:prodActivos.map(function(k){return st2.totProd[k];}),backgroundColor:prodActivos.map(function(k){return PROD_COLORES_H[k];}),borderWidth:2,borderColor:isDark?'#1a2744':'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:'65%'}});}
+}
+
+function renderHistGraficoMob(lista){
+  var isDark=window.matchMedia('(prefers-color-scheme: dark)').matches;
+  var gc=isDark?'rgba(255,255,255,0.08)':'rgba(0,0,0,0.06)';var tc=isDark?'#b4b2a9':'#73726c';
+  if(chartMobInst){chartMobInst.destroy();chartMobInst=null;}
+  var c=document.getElementById('hist-mob-chart');if(!c)return;
+  var tots=lista.map(function(h){return h.total;});var maxT=Math.max.apply(null,tots);
+  chartMobInst=new Chart(c,{type:'bar',data:{labels:lista.map(fmtSem),datasets:[{label:'Total',data:tots,backgroundColor:tots.map(function(v){return v===maxT?'#c9a34f':'rgba(201,163,79,0.35)';}),borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:tc,font:{size:10}},grid:{display:false}},y:{ticks:{color:tc,font:{size:10}},grid:{color:gc},beginAtZero:true}}}});
+}
+
+function renderHistTablaPC(lista){
+  var el=document.getElementById('hist-tabla-pc');if(!el)return;
+  var cols=['Semana','Lac','Int','Campo','Cherry','Cebolla','Morron','Total'];
+  var html='<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="border-bottom:0.5px solid var(--border2)">';
+  cols.forEach(function(c){html+='<th style="padding:6px;text-align:'+(c==='Semana'?'left':'right')+';color:var(--text3);font-weight:400;font-size:10px;text-transform:uppercase;letter-spacing:0.08em">'+c+'</th>';});
+  html+='</tr></thead><tbody>';
+  var tots=lista.map(function(h){return h.total;});var maxT=Math.max.apply(null,tots);
+  lista.forEach(function(h){
+    var best=h.total===maxT;
+    html+='<tr style="border-bottom:0.5px solid var(--border)'+(best?';background:rgba(201,163,79,0.06)':'')+'">';
+    html+='<td style="padding:6px;color:var(--text)">'+(best?'* ':'')+fmtSem(h)+'</td>';
+    [h.lactal,h.integral,h.campo,h.focaccia_cherry,h.focaccia_cebolla,h.focaccia_morron,h.total].forEach(function(v,i){html+='<td style="padding:6px;text-align:right;color:'+(v===0&&i<6?'var(--text3)':i===6?'var(--accent)':'var(--text)')+';font-weight:'+(i===6?500:400)+'">'+(v===0&&i<6?'-':v)+'</td>';});
+    html+='</tr>';
+  });
+  html+='</tbody></table>';
+  el.innerHTML=html;
+}
+
+function renderHistTablaMob(lista){
+  var el=document.getElementById('hist-mob-tabla');if(!el)return;
+  var tots=lista.map(function(h){return h.total;});var maxT=Math.max.apply(null,tots);
+  var html='<table style="width:100%;border-collapse:collapse;font-size:11px"><thead><tr style="border-bottom:0.5px solid var(--border2)"><th style="text-align:left;padding:4px;color:var(--text3);font-size:9px;font-weight:400">Sem</th><th style="text-align:right;padding:4px;color:var(--text3);font-size:9px;font-weight:400">Int</th><th style="text-align:right;padding:4px;color:var(--text3);font-size:9px;font-weight:400">Campo</th><th style="text-align:right;padding:4px;color:var(--text3);font-size:9px;font-weight:400">Foc</th><th style="text-align:right;padding:4px;color:var(--text3);font-size:9px;font-weight:400">Total</th></tr></thead><tbody>';
+  lista.forEach(function(h){
+    var best=h.total===maxT;
+    var foc=(h.focaccia_cherry||0)+(h.focaccia_cebolla||0)+(h.focaccia_morron||0);
+    html+='<tr style="border-bottom:0.5px solid var(--border)'+(best?';background:rgba(201,163,79,0.06)':'')+'"><td style="padding:4px;color:var(--text)">'+(best?'* ':'')+fmtSem(h)+'</td><td style="text-align:right;padding:4px;color:var(--text)">'+h.integral+'</td><td style="text-align:right;padding:4px;color:var(--text)">'+h.campo+'</td><td style="text-align:right;padding:4px;color:var(--text)">'+foc+'</td><td style="text-align:right;padding:4px;color:var(--accent);font-weight:500">'+h.total+'</td></tr>';
+  });
+  html+='</tbody></table>';
+  el.innerHTML=html;
+}
+
+
 function renderHistorial(){
   var lista=getHistorialFiltrado();
   console.log('FIKA Historial: lista=',lista.length,'HIST_PRELOAD=',HIST_PRELOAD.length);
