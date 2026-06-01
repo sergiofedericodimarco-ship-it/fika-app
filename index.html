@@ -1691,8 +1691,11 @@ function getHistorialFiltrado(){
 }
 
 function fmtSem(h){
-  var f=new Date((h.fecha||h.id)+'T12:00');
-  return f.getDate()+'/'+(f.getMonth()+1);
+  try{
+    var s=h.fecha||h.id||'';
+    if(s.length>=10){var d=new Date(s.slice(0,10)+'T12:00');if(!isNaN(d.getTime()))return d.getDate()+'/'+(d.getMonth()+1);}
+    return s.slice(5,10).replace('-','/');
+  }catch(e){return '??';}
 }
 
 function calcHistStats(lista){
