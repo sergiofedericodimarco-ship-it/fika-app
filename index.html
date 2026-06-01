@@ -12,6 +12,10 @@
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&family=Raleway:wght@300;400;500;700&family=Jost:wght@300;400;500&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
 <style>
 :root{
   --bg:#1a2744;--bg2:#1f2f50;--bg3:#243659;
@@ -3500,15 +3504,138 @@ function renderHistorial(){
     var id=window.matchMedia("(prefers-color-scheme: dark)").matches;
     var gc=id?"rgba(255,255,255,0.08)":"rgba(0,0,0,0.06)";var tc2=id?"#b4b2a9":"#73726c";
     var lb=lista.map(fmtSem);
+
+    // Gráfico líneas con leyenda clickeable y zoom
     if(chartLineasInst){chartLineasInst.destroy();chartLineasInst=null;}
     var cl=document.getElementById("hcl");
-    if(cl){chartLineasInst=new Chart(cl,{type:"line",data:{labels:lb,datasets:pg.map(function(k,i){return{label:PROD_LABELS_H[k],data:lista.map(function(h){return h[k]||0;}),borderColor:PROD_COLORES_H[k],backgroundColor:PROD_COLORES_H[k]+"22",fill:pg.length===1,tension:0.3,pointRadius:4,borderDash:i%2===1?[4,2]:[]};})},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:tc2,font:{size:11}},grid:{color:gc}},y:{ticks:{color:tc2,font:{size:11}},grid:{color:gc},beginAtZero:true}}}});}
+    if(cl){
+      chartLineasInst=new Chart(cl,{
+        type:"line",
+        data:{labels:lb,datasets:pg.map(function(k,i){return{label:PROD_LABELS_H[k],data:lista.map(function(h){return h[k]||0;}),borderColor:PROD_COLORES_H[k],backgroundColor:PROD_COLORES_H[k]+"33",fill:pg.length===1,tension:0.3,pointRadius:5,pointHoverRadius:8,borderDash:i%2===1?[4,2]:[],borderWidth:2};})},
+        options:{
+          responsive:true,maintainAspectRatio:false,
+          interaction:{mode:"index",intersect:false},
+          plugins:{
+            legend:{
+              display:true,
+              position:"top",
+              labels:{color:tc2,font:{size:11},boxWidth:12,padding:12,usePointStyle:true},
+              onClick:function(e,legendItem,legend){
+                var idx=legendItem.datasetIndex;
+                var meta=chartLineasInst.getDatasetMeta(idx);
+                meta.hidden=!meta.hidden;chartLineasInst.update();
+              }
+            },
+            tooltip:{
+              backgroundColor:"rgba(26,39,68,0.95)",
+              titleColor:"#c9a34f",
+              bodyColor:"#e8dfc8",
+              borderColor:"rgba(201,163,79,0.3)",
+              borderWidth:1,
+              padding:10,
+              callbacks:{
+                label:function(ctx){return " "+ctx.dataset.label+": "+ctx.parsed.y+" un.";}
+              }
+            },
+            zoom:{
+              zoom:{wheel:{enabled:true},pinch:{enabled:true},mode:"x"},
+              pan:{enabled:true,mode:"x"}
+            }
+          },
+          scales:{
+            x:{ticks:{color:tc2,font:{size:11}},grid:{color:gc}},
+            y:{ticks:{color:tc2,font:{size:11}},grid:{color:gc},beginAtZero:true}
+          }
+        }
+      });
+      // Botón reset zoom
+      var btnZ=document.createElement("button");
+      btnZ.className="btn-ol";btnZ.style.cssText="margin:6px 0 0;padding:3px 10px;font-size:11px";
+      btnZ.textContent="Reset zoom";
+      btnZ.onclick=function(){chartLineasInst.resetZoom();};
+      cl.parentNode.appendChild(btnZ);
+    }
+
+    // Barras con click para detalle
     if(chartBarrasInst){chartBarrasInst.destroy();chartBarrasInst=null;}
     var cb=document.getElementById("hcb");
-    if(cb){var ts=lista.map(function(h){return filtroProd==="todos"?h.total:(h[filtroProd]||0);});var mT=Math.max.apply(null,ts);var td=ts.map(function(_,i){var sl=ts.slice(Math.max(0,i-1),i+2);return Math.round(sl.reduce(function(a,b){return a+b;},0)/sl.length);});chartBarrasInst=new Chart(cb,{type:"bar",data:{labels:lb,datasets:[{type:"bar",label:"Total",data:ts,backgroundColor:ts.map(function(v){return v===mT?"#c9a34f":"rgba(201,163,79,0.35)";}),borderRadius:4,order:2},{type:"line",label:"Tendencia",data:td,borderColor:"rgba(90,184,138,0.8)",borderWidth:2,pointRadius:0,tension:0.4,borderDash:[5,3],fill:false,order:1}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:tc2,font:{size:11}},grid:{display:false}},y:{ticks:{color:tc2,font:{size:11}},grid:{color:gc},beginAtZero:true}}}});}
+    if(cb){
+      var ts=lista.map(function(h){return filtroProd==="todos"?h.total:(h[filtroProd]||0);});
+      var mT=Math.max.apply(null,ts);
+      var td=ts.map(function(_,i){var sl=ts.slice(Math.max(0,i-1),i+2);return Math.round(sl.reduce(function(a,b){return a+b;},0)/sl.length);});
+      chartBarrasInst=new Chart(cb,{
+        type:"bar",
+        data:{labels:lb,datasets:[
+          {type:"bar",label:"Total",data:ts,backgroundColor:ts.map(function(v){return v===mT?"#c9a34f":"rgba(201,163,79,0.35)";}),borderRadius:4,order:2,hoverBackgroundColor:"#e8b84b"},
+          {type:"line",label:"Tendencia",data:td,borderColor:"rgba(90,184,138,0.9)",borderWidth:2,pointRadius:0,tension:0.4,borderDash:[5,3],fill:false,order:1}
+        ]},
+        options:{
+          responsive:true,maintainAspectRatio:false,
+          onClick:function(e){
+            var pts=chartBarrasInst.getElementsAtEventForMode(e,"nearest",{intersect:true},true);
+            if(pts.length>0){
+              var idx=pts[0].index;
+              var sem=lista[idx];
+              var det="Semana "+fmtSem(sem)+" — Total: "+sem.total+" panes\n";
+              PRODUCTOS.forEach(function(k){if(sem[k]>0)det+="  "+PROD_LABELS_H[k]+": "+sem[k]+"\n";});
+              alert(det);
+            }
+          },
+          plugins:{
+            legend:{display:false},
+            tooltip:{
+              backgroundColor:"rgba(26,39,68,0.95)",
+              titleColor:"#c9a34f",
+              bodyColor:"#e8dfc8",
+              borderColor:"rgba(201,163,79,0.3)",
+              borderWidth:1,
+              padding:10
+            }
+          },
+          scales:{
+            x:{ticks:{color:tc2,font:{size:11}},grid:{display:false}},
+            y:{ticks:{color:tc2,font:{size:11}},grid:{color:gc},beginAtZero:true}
+          }
+        }
+      });
+    }
+
+    // Torta con leyenda clickeable
     if(chartTortaInst){chartTortaInst.destroy();chartTortaInst=null;}
     var ct=document.getElementById("hct");
-    if(ct){var pa=PRODUCTOS.filter(function(k){return s.totProd[k]>0;});chartTortaInst=new Chart(ct,{type:"doughnut",data:{labels:pa.map(function(k){return PROD_LABELS_H[k];}),datasets:[{data:pa.map(function(k){return s.totProd[k];}),backgroundColor:pa.map(function(k){return PROD_COLORES_H[k];}),borderWidth:2,borderColor:id?"#1a2744":"#fff"}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:"60%"}});}
+    if(ct){
+      var pa=PRODUCTOS.filter(function(k){return s.totProd[k]>0;});
+      chartTortaInst=new Chart(ct,{
+        type:"doughnut",
+        data:{labels:pa.map(function(k){return PROD_LABELS_H[k];}),datasets:[{data:pa.map(function(k){return s.totProd[k];}),backgroundColor:pa.map(function(k){return PROD_COLORES_H[k];}),borderWidth:2,borderColor:id?"#1a2744":"#fff",hoverOffset:8}]},
+        options:{
+          responsive:true,maintainAspectRatio:false,
+          plugins:{
+            legend:{
+              display:true,
+              position:"bottom",
+              labels:{color:tc2,font:{size:10},boxWidth:10,padding:8,usePointStyle:true},
+              onClick:function(e,legendItem,legend){
+                var idx=legendItem.index;
+                var meta=chartTortaInst.getDatasetMeta(0);
+                meta.data[idx].hidden=!meta.data[idx].hidden;chartTortaInst.update();
+              }
+            },
+            tooltip:{
+              backgroundColor:"rgba(26,39,68,0.95)",
+              titleColor:"#c9a34f",
+              bodyColor:"#e8dfc8",
+              borderColor:"rgba(201,163,79,0.3)",
+              borderWidth:1,
+              callbacks:{
+                label:function(ctx){var total=ctx.dataset.data.reduce(function(a,b){return a+b;},0);return " "+ctx.label+": "+ctx.parsed+" ("+Math.round(ctx.parsed/total*100)+"%)"}
+              }
+            }
+          },
+          cutout:"60%"
+        }
+      });
+    }
   });
 }
 
