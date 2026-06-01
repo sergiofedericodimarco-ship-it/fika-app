@@ -304,12 +304,17 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
     </div>
   </div>
     <div class="mscreen" id="ms-historial-mob">
-      <div id="hist-mob-filtros" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px"></div>
-      <div id="hist-mob-stats" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px"></div>
-      <div id="hist-mob-chart-wrap" style="position:relative;width:100%;height:200px;margin-bottom:12px"><canvas id="hist-mob-chart" role="img" aria-label="Gráfico historial ventas móvil">Historial de ventas por semana.</canvas></div>
+      <div id="hist-mob-filtros" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px"></div>
+      <div id="hist-mob-stats" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px"></div>
+      <div class="sec-lbl">Total por semana</div>
+      <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:12px;margin-bottom:14px">
+        <div id="hist-mob-chart-wrap" style="position:relative;width:100%;height:220px"><canvas id="hist-mob-chart" role="img" aria-label="Gráfico historial ventas móvil">Historial de ventas por semana.</canvas></div>
+      </div>
       <div class="sec-lbl">Tabla</div>
-      <div id="hist-mob-tabla" style="overflow-x:auto;font-size:11px"></div>
-      <button class="btn-ok" style="margin-top:10px" onclick="exportarHistorialExcel()">Exportar Excel</button>
+      <div class="card" style="padding:10px;overflow-x:auto">
+        <div id="hist-mob-tabla"></div>
+      </div>
+      <button class="btn-ok" style="margin-top:12px" onclick="exportarHistorialExcel()">Exportar Excel</button>
       <div id="hist-mob-empty" class="empty" style="display:none"><div class="empty-icon">&#128202;</div>Sin datos históricos aún.</div>
     </div>
   <button class="fab" id="fab-btn" onclick="abrirFab()">+</button>
@@ -517,34 +522,63 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
 
     <!-- HISTORIAL PC -->
     <div class="dscreen" id="d-historial">
+      <!-- Barra de controles -->
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px">
-        <div style="display:flex;gap:6px;flex-wrap:wrap" id="hist-filtros-pc"></div>
-        <button class="btn-ol" style="margin:0" onclick="exportarHistorialExcel()">Exportar Excel</button>
-      </div>
-      <div id="hist-stats-pc" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px"></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
-        <div>
-          <div class="sec-lbl">Evolución semanal por producto</div>
-          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;font-size:11px" id="hist-legend-pc"></div>
-          <div style="position:relative;width:100%;height:240px"><canvas id="hist-chart-lineas" role="img" aria-label="Gráfico líneas historial">Evolución semanal.</canvas></div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+          <span style="font-size:11px;color:var(--text3)">Período:</span>
+          <div id="hist-filtros-pc"></div>
         </div>
-        <div>
-          <div class="sec-lbl">Total por semana</div>
-          <div style="position:relative;width:100%;height:260px"><canvas id="hist-chart-barras" role="img" aria-label="Barras total semanal">Totales semanales.</canvas></div>
-        </div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
-        <div>
-          <div class="sec-lbl">Participación por producto</div>
-          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;font-size:11px" id="hist-legend-torta"></div>
-          <div style="position:relative;width:100%;height:220px"><canvas id="hist-chart-torta" role="img" aria-label="Torta por producto">Participación.</canvas></div>
-        </div>
-        <div>
-          <div class="sec-lbl">Tabla completa</div>
-          <div id="hist-tabla-pc" style="overflow-x:auto;font-size:12px"></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span style="font-size:11px;color:var(--text3)">Producto:</span>
+          <select id="hist-filtro-prod" class="f-in" style="padding:5px 10px;font-size:12px;width:auto" onchange="renderHistorial()">
+            <option value="todos">Todos</option>
+            <option value="lactal">Lactal</option>
+            <option value="integral">Integral</option>
+            <option value="campo">Campo</option>
+            <option value="focaccia_cherry">Foc. Cherry</option>
+            <option value="focaccia_cebolla">Foc. Cebolla</option>
+            <option value="focaccia_morron">Foc. Morrón</option>
+            <option value="prepizza">Prepizza</option>
+          </select>
+          <button class="btn-ol" style="margin:0" onclick="exportarHistorialExcel()">Exportar Excel</button>
         </div>
       </div>
-      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún. Los datos se cargan al cerrar semana.</div>
+      <!-- Stats -->
+      <div id="hist-stats-pc" style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px"></div>
+      <!-- Fila 1: Evolución + Barras -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+        <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:14px">
+          <div class="sec-lbl" style="margin-top:0">Evolución por producto</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;font-size:11px" id="hist-legend-pc"></div>
+          <div style="position:relative;height:220px"><canvas id="hist-chart-lineas" role="img" aria-label="Líneas">.</canvas></div>
+        </div>
+        <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:14px">
+          <div class="sec-lbl" style="margin-top:0">Total por semana + tendencia</div>
+          <div style="position:relative;height:238px"><canvas id="hist-chart-barras" role="img" aria-label="Barras">.</canvas></div>
+        </div>
+      </div>
+      <!-- Fila 2: Torta + Ranking + Comparación -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px">
+        <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:14px">
+          <div class="sec-lbl" style="margin-top:0">Participación</div>
+          <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px;font-size:10px" id="hist-legend-torta"></div>
+          <div style="position:relative;height:180px"><canvas id="hist-chart-torta" role="img" aria-label="Torta">.</canvas></div>
+        </div>
+        <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:14px">
+          <div class="sec-lbl" style="margin-top:0">Ranking productos</div>
+          <div id="hist-ranking" style="margin-top:4px"></div>
+        </div>
+        <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:14px">
+          <div class="sec-lbl" style="margin-top:0">Última vs anteúltima semana</div>
+          <div id="hist-comparacion" style="margin-top:4px"></div>
+        </div>
+      </div>
+      <!-- Tabla -->
+      <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:14px">
+        <div class="sec-lbl" style="margin-top:0">Tabla completa</div>
+        <div id="hist-tabla-pc" style="overflow-x:auto;font-size:12px"></div>
+      </div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
     </div>
   </div>
 </div>
@@ -1727,10 +1761,15 @@ function renderHistFiltrosMob(lista){
 function renderHistStatsPC(lista){
   var el=document.getElementById('hist-stats-pc');if(!el)return;
   var s=calcHistStats(lista);
+  // Calcular tendencia (última vs promedio)
+  var ult=lista.length>0?lista[lista.length-1].total:0;
+  var tend=s.prom>0?Math.round((ult-s.prom)/s.prom*100):0;
+  var tendStr=(tend>=0?'+':'')+tend+'%';
+  var tendColor=tend>=0?'var(--ok)':'var(--danger)';
   el.innerHTML='';
-  [[s.tot,'Total panes'],[s.prom,'Promedio/semana'],[s.mejor.total+' panes ('+fmtSem(s.mejor)+')','Mejor semana'],[PROD_LABELS_H[s.estrella],'Producto estrella']].forEach(function(r){
+  [[s.tot,'Total panes',''],[s.prom,'Promedio/sem',''],[s.mejor.total+' ('+fmtSem(s.mejor)+')','Mejor semana',''],[PROD_LABELS_H[s.estrella],'Producto estrella',''],[tendStr,'Última vs promedio',tendColor]].forEach(function(r){
     var d=document.createElement('div');d.style.cssText='background:var(--bg2);border:0.5px solid var(--border);border-radius:8px;padding:12px 10px;text-align:center';
-    var v=document.createElement('div');v.style.cssText='font-family:Oswald,sans-serif;font-size:22px;color:var(--accent)';v.textContent=r[0];
+    var v=document.createElement('div');v.style.cssText='font-family:Oswald,sans-serif;font-size:20px;color:'+(r[2]||'var(--accent)');v.textContent=r[0];
     var l=document.createElement('div');l.style.cssText='font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-top:3px';l.textContent=r[1];
     d.appendChild(v);d.appendChild(l);el.appendChild(d);
   });
@@ -1752,19 +1791,83 @@ function renderHistGraficosPC(lista){
   var isDark=window.matchMedia('(prefers-color-scheme: dark)').matches;
   var gc=isDark?'rgba(255,255,255,0.08)':'rgba(0,0,0,0.06)';var tc=isDark?'#b4b2a9':'#73726c';
   var labels=lista.map(fmtSem);
+  var filtroProd=document.getElementById('hist-filtro-prod')?document.getElementById('hist-filtro-prod').value:'todos';
+
+  // Leyenda líneas
   var legEl=document.getElementById('hist-legend-pc');
-  if(legEl){legEl.innerHTML='';PRODUCTOS.forEach(function(k){if(lista.some(function(h){return (h[k]||0)>0;})){var sp=document.createElement('span');sp.style.cssText='display:flex;align-items:center;gap:4px;color:var(--text2);font-size:11px';sp.innerHTML='<span style="width:10px;height:10px;border-radius:2px;background:'+PROD_COLORES_H[k]+'"></span>'+PROD_LABELS_H[k];legEl.appendChild(sp);}});}
-  var legTorta=document.getElementById('hist-legend-torta');
-  if(legTorta){var st=calcHistStats(lista);legTorta.innerHTML='';PRODUCTOS.forEach(function(k){if(st.totProd[k]>0){var pct=Math.round(st.totProd[k]/st.tot*100);var sp=document.createElement('span');sp.style.cssText='display:flex;align-items:center;gap:4px;color:var(--text2);font-size:11px';sp.innerHTML='<span style="width:10px;height:10px;border-radius:2px;background:'+PROD_COLORES_H[k]+'"></span>'+PROD_LABELS_H[k]+' '+pct+'%';legTorta.appendChild(sp);}});}
+  if(legEl){legEl.innerHTML='';var prodsActivos=filtroProd==='todos'?PRODUCTOS.filter(function(k){return lista.some(function(h){return (h[k]||0)>0;});}): [filtroProd];prodsActivos.forEach(function(k){var sp=document.createElement('span');sp.style.cssText='display:flex;align-items:center;gap:4px;color:var(--text2);font-size:11px';sp.innerHTML='<span style="width:10px;height:10px;border-radius:2px;background:'+PROD_COLORES_H[k]+'"></span>'+PROD_LABELS_H[k];legEl.appendChild(sp);});}
+
+  // Gráfico líneas (filtrado por producto)
   if(chartLineasInst){chartLineasInst.destroy();chartLineasInst=null;}
   var c1=document.getElementById('hist-chart-lineas');
-  if(c1){chartLineasInst=new Chart(c1,{type:'line',data:{labels:labels,datasets:PRODUCTOS.filter(function(k){return lista.some(function(h){return (h[k]||0)>0;});}).map(function(k,i){return{label:PROD_LABELS_H[k],data:lista.map(function(h){return h[k]||0;}),borderColor:PROD_COLORES_H[k],backgroundColor:'transparent',tension:0.3,pointRadius:3,borderDash:i%2===1?[4,2]:[]};})},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:tc,font:{size:11}},grid:{color:gc}},y:{ticks:{color:tc,font:{size:11}},grid:{color:gc},beginAtZero:true}}}});}
+  if(c1){
+    var prodsGraf=filtroProd==='todos'?PRODUCTOS.filter(function(k){return lista.some(function(h){return (h[k]||0)>0;});}): [filtroProd];
+    chartLineasInst=new Chart(c1,{type:'line',data:{labels:labels,datasets:prodsGraf.map(function(k,i){return{label:PROD_LABELS_H[k],data:lista.map(function(h){return h[k]||0;}),borderColor:PROD_COLORES_H[k],backgroundColor:PROD_COLORES_H[k]+'22',fill:prodsGraf.length===1,tension:0.3,pointRadius:4,pointHoverRadius:6,borderDash:i%2===1?[4,2]:[]}; })},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return ctx.dataset.label+': '+ctx.parsed.y+' un.';}}}},scales:{x:{ticks:{color:tc,font:{size:11}},grid:{color:gc}},y:{ticks:{color:tc,font:{size:11}},grid:{color:gc},beginAtZero:true}}}});
+  }
+
+  // Barras + línea de tendencia
   if(chartBarrasInst){chartBarrasInst.destroy();chartBarrasInst=null;}
   var c2=document.getElementById('hist-chart-barras');
-  if(c2){var tots=lista.map(function(h){return h.total;});var maxT=Math.max.apply(null,tots);chartBarrasInst=new Chart(c2,{type:'bar',data:{labels:labels,datasets:[{label:'Total',data:tots,backgroundColor:tots.map(function(v){return v===maxT?'#c9a34f':'rgba(201,163,79,0.35)';}),borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:tc,font:{size:11}},grid:{display:false}},y:{ticks:{color:tc,font:{size:11}},grid:{color:gc},beginAtZero:true}}}});}
+  if(c2){
+    var tots=lista.map(function(h){return filtroProd==='todos'?h.total:(h[filtroProd]||0);});
+    var maxT=Math.max.apply(null,tots);
+    // Línea de tendencia (promedio móvil)
+    var tendencia=tots.map(function(_,i){var slice=tots.slice(Math.max(0,i-1),i+2);return Math.round(slice.reduce(function(a,b){return a+b;},0)/slice.length);});
+    chartBarrasInst=new Chart(c2,{type:'bar',data:{labels:labels,datasets:[
+      {type:'bar',label:'Total',data:tots,backgroundColor:tots.map(function(v){return v===maxT?'#c9a34f':'rgba(201,163,79,0.35)';}),borderRadius:4,order:2},
+      {type:'line',label:'Tendencia',data:tendencia,borderColor:'rgba(90,184,138,0.8)',borderWidth:2,pointRadius:0,tension:0.4,borderDash:[5,3],fill:false,order:1}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return ctx.dataset.label+': '+ctx.parsed.y+(ctx.dataset.label==='Total'?' un.':'');}}}},scales:{x:{ticks:{color:tc,font:{size:11}},grid:{display:false}},y:{ticks:{color:tc,font:{size:11}},grid:{color:gc},beginAtZero:true}}}});
+  }
+
+  // Torta
   if(chartTortaInst){chartTortaInst.destroy();chartTortaInst=null;}
   var c3=document.getElementById('hist-chart-torta');
-  if(c3){var st2=calcHistStats(lista);var prodActivos=PRODUCTOS.filter(function(k){return st2.totProd[k]>0;});chartTortaInst=new Chart(c3,{type:'doughnut',data:{labels:prodActivos.map(function(k){return PROD_LABELS_H[k];}),datasets:[{data:prodActivos.map(function(k){return st2.totProd[k];}),backgroundColor:prodActivos.map(function(k){return PROD_COLORES_H[k];}),borderWidth:2,borderColor:isDark?'#1a2744':'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:'65%'}});}
+  if(c3){
+    var st2=calcHistStats(lista);
+    var prodActivos=PRODUCTOS.filter(function(k){return st2.totProd[k]>0;});
+    var legTorta=document.getElementById('hist-legend-torta');
+    if(legTorta){legTorta.innerHTML='';prodActivos.forEach(function(k){var pct=Math.round(st2.totProd[k]/st2.tot*100);var sp=document.createElement('span');sp.style.cssText='display:flex;align-items:center;gap:3px;color:var(--text2);font-size:10px';sp.innerHTML='<span style="width:8px;height:8px;border-radius:2px;background:'+PROD_COLORES_H[k]+'"></span>'+PROD_LABELS_H[k]+' '+pct+'%';legTorta.appendChild(sp);});}
+    chartTortaInst=new Chart(c3,{type:'doughnut',data:{labels:prodActivos.map(function(k){return PROD_LABELS_H[k];}),datasets:[{data:prodActivos.map(function(k){return st2.totProd[k];}),backgroundColor:prodActivos.map(function(k){return PROD_COLORES_H[k];}),borderWidth:2,borderColor:isDark?'#1a2744':'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:'60%'}});
+  }
+
+  // Ranking productos
+  var rankEl=document.getElementById('hist-ranking');
+  if(rankEl){
+    var st3=calcHistStats(lista);
+    var ranked=PRODUCTOS.filter(function(k){return st3.totProd[k]>0;}).sort(function(a,b){return st3.totProd[b]-st3.totProd[a];});
+    var maxR=st3.totProd[ranked[0]]||1;
+    rankEl.innerHTML='';
+    ranked.forEach(function(k,i){
+      var row=document.createElement('div');row.style.cssText='margin-bottom:8px';
+      var hdr=document.createElement('div');hdr.style.cssText='display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px';
+      hdr.innerHTML='<span style="color:var(--text2)">'+(i+1)+'. '+PROD_LABELS_H[k]+'</span><span style="color:var(--accent)">'+st3.totProd[k]+' un.</span>';
+      var track=document.createElement('div');track.style.cssText='height:5px;background:rgba(232,223,200,0.08);border-radius:3px';
+      var fill=document.createElement('div');fill.style.cssText='height:100%;border-radius:3px;background:'+PROD_COLORES_H[k]+';width:'+Math.round(st3.totProd[k]/maxR*100)+'%';
+      track.appendChild(fill);row.appendChild(hdr);row.appendChild(track);rankEl.appendChild(row);
+    });
+  }
+
+  // Comparación última vs anteúltima semana
+  var compEl=document.getElementById('hist-comparacion');
+  if(compEl&&lista.length>=2){
+    var ult=lista[lista.length-1],ant=lista[lista.length-2];
+    compEl.innerHTML='';
+    var hdr=document.createElement('div');hdr.style.cssText='display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-bottom:8px;padding-bottom:5px;border-bottom:0.5px solid var(--border)';
+    hdr.innerHTML='<span>Producto</span><span>'+fmtSem(ant)+'</span><span>'+fmtSem(ult)+'</span><span>Var</span>';
+    compEl.appendChild(hdr);
+    PRODUCTOS.forEach(function(k){
+      var va=ant[k]||0,vu=ult[k]||0;
+      if(va===0&&vu===0)return;
+      var dif=vu-va;var color=dif>0?'var(--ok)':dif<0?'var(--danger)':'var(--text3)';
+      var row=document.createElement('div');row.style.cssText='display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:0.5px solid var(--border)';
+      row.innerHTML='<span style="color:var(--text2)">'+PROD_LABELS_H[k]+'</span><span style="color:var(--text)">'+va+'</span><span style="color:var(--text)">'+vu+'</span><span style="color:'+color+'">'+(dif>0?'+':'')+dif+'</span>';
+      compEl.appendChild(row);
+    });
+    var totRow=document.createElement('div');totRow.style.cssText='display:flex;justify-content:space-between;font-size:12px;padding:5px 0;font-weight:500';
+    var difTot=ult.total-ant.total;var cTot=difTot>0?'var(--ok)':difTot<0?'var(--danger)':'var(--text3)';
+    totRow.innerHTML='<span style="color:var(--accent)">TOTAL</span><span style="color:var(--accent)">'+ant.total+'</span><span style="color:var(--accent)">'+ult.total+'</span><span style="color:'+cTot+'">'+(difTot>0?'+':'')+difTot+'</span>';
+    compEl.appendChild(totRow);
+  } else if(compEl){compEl.innerHTML='<div style="font-size:12px;color:var(--text3);padding:20px 0;text-align:center">Necesitás al menos 2 semanas.</div>';}
 }
 
 function renderHistGraficoMob(lista){
@@ -1797,7 +1900,7 @@ function renderHistTablaPC(lista){
 function renderHistTablaMob(lista){
   var el=document.getElementById('hist-mob-tabla');if(!el)return;
   var tots=lista.map(function(h){return h.total;});var maxT=Math.max.apply(null,tots);
-  var html='<table style="width:100%;border-collapse:collapse;font-size:11px"><thead><tr style="border-bottom:0.5px solid var(--border2)"><th style="text-align:left;padding:4px;color:var(--text3);font-size:9px;font-weight:400">Sem</th><th style="text-align:right;padding:4px;color:var(--text3);font-size:9px;font-weight:400">Int</th><th style="text-align:right;padding:4px;color:var(--text3);font-size:9px;font-weight:400">Campo</th><th style="text-align:right;padding:4px;color:var(--text3);font-size:9px;font-weight:400">Foc</th><th style="text-align:right;padding:4px;color:var(--text3);font-size:9px;font-weight:400">Total</th></tr></thead><tbody>';
+  var html='<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="border-bottom:0.5px solid var(--border2)"><th style="text-align:left;padding:7px 5px;color:var(--text3);font-size:10px;font-weight:400">Semana</th><th style="text-align:right;padding:7px 5px;color:var(--text3);font-size:10px;font-weight:400">Integral</th><th style="text-align:right;padding:7px 5px;color:var(--text3);font-size:10px;font-weight:400">Campo</th><th style="text-align:right;padding:7px 5px;color:var(--text3);font-size:10px;font-weight:400">Foc</th><th style="text-align:right;padding:7px 5px;color:var(--text3);font-size:10px;font-weight:400">Total</th></tr></thead><tbody>';
   lista.forEach(function(h){
     var best=h.total===maxT;
     var foc=(h.focaccia_cherry||0)+(h.focaccia_cebolla||0)+(h.focaccia_morron||0);
@@ -1890,8 +1993,9 @@ function exportarHistorialExcel(){
   if(lista.length===0){alert('Sin datos para exportar.');return;}
   var filas=[['Semana','Lactal','Integral','Campo','Foc.Cherry','Foc.Cebolla','Foc.Morron','Prepizza','Total']];
   lista.forEach(function(h){
-    var f=new Date((h.fecha||h.id)+'T12:00');
-    filas.push([f.getDate()+'/'+(f.getMonth()+1)+'/'+f.getFullYear(),h.lactal||0,h.integral||0,h.campo||0,h.focaccia_cherry||0,h.focaccia_cebolla||0,h.focaccia_morron||0,h.prepizza||0,h.total||0]);
+    var s=h.fecha||h.id||'';var f=new Date(s.slice(0,10)+'T12:00');
+    var fStr=!isNaN(f.getTime())?(f.getDate()+'/'+(f.getMonth()+1)+'/'+f.getFullYear()):s.slice(0,10);
+    filas.push([fStr,h.lactal||0,h.integral||0,h.campo||0,h.focaccia_cherry||0,h.focaccia_cebolla||0,h.focaccia_morron||0,h.prepizza||0,h.total||0]);
   });
   try{
     var wb=XLSX.utils.book_new();
