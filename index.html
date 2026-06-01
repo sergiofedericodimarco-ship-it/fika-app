@@ -217,10 +217,26 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
   <div class="login-sub">Artesanal</div>
   <div class="login-line"></div>
   <div class="login-box">
-    <div class="login-lbl">Contraseña</div>
-    <input class="login-inp" type="password" id="lpwd" placeholder="••••••" onkeydown="if(event.key==='Enter')doLogin()">
-    <button class="login-btn" onclick="doLogin()">Ingresar</button>
-    <div class="login-err" id="lerr">Contraseña incorrecta</div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="login-lbl">Contraseña</div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>input class="login-inp" type="password" id="lpwd" placeholder="••••••" onkeydown="if(event.key==='Enter')doLogin()">
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="login-btn" onclick="doLogin()">Ingresar</button>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="login-err" id="lerr">Contraseña incorrecta</div>
   </div>
 </div>
 
@@ -235,452 +251,1968 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
 <!-- MOBILE APP -->
 <div id="app">
   <div id="mob-header">
-    <div><div class="mob-logo">FIK<span>A</span></div></div>
-    <div id="alert-pago" style="font-size:11px;color:var(--danger);display:none"></div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div><div class="mob-logo">FIK<span>A</span></div></div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div id="alert-pago" style="font-size:11px;color:var(--danger);display:none"></div>
   </div>
   <div id="mob-search"><span class="si">&#128269;</span><input type="search" placeholder="Buscar cliente..." oninput="buscarCliente(this.value)" id="mob-search-inp"></div>
   <div id="mob-nav">
-    <button class="mnav active" onclick="showMob('pedidos')" id="mn-pedidos">Pedidos</button>
-    <button class="mnav" onclick="showMob('semana')" id="mn-semana">Semana</button>
-    <button class="mnav" onclick="showMob('clientes')" id="mn-clientes">Clientes</button>
-    <button class="mnav" onclick="showMob('cadete-mob')" id="mn-cadete-mob">Cadete</button>
-    <button class="mnav" onclick="showMob('cobros')" id="mn-cobros">Cobros <span id="cobros-badge" style="display:none;background:var(--danger);color:white;border-radius:50%;width:14px;height:14px;font-size:9px;display:inline-flex;align-items:center;justify-content:center;margin-left:2px"></span></button>
-    <button class="mnav" onclick="showMob('stock')" id="mn-stock">Stock</button>
-    <button class="mnav" onclick="showMob('compras')" id="mn-compras">Compras</button>
-    <button class="mnav" onclick="showMob('historial-mob')" id="mn-historial-mob">Historial</button>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="mnav active" onclick="showMob('pedidos')" id="mn-pedidos">Pedidos</button>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="mnav" onclick="showMob('semana')" id="mn-semana">Semana</button>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="mnav" onclick="showMob('clientes')" id="mn-clientes">Clientes</button>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="mnav" onclick="showMob('cadete-mob')" id="mn-cadete-mob">Cadete</button>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="mnav" onclick="showMob('cobros')" id="mn-cobros">Cobros <span id="cobros-badge" style="display:none;background:var(--danger);color:white;border-radius:50%;width:14px;height:14px;font-size:9px;display:inline-flex;align-items:center;justify-content:center;margin-left:2px"></span></button>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="mnav" onclick="showMob('stock')" id="mn-stock">Stock</button>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="mnav" onclick="showMob('compras')" id="mn-compras">Compras</button>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="mnav" onclick="showMob('historial-mob')" id="mn-historial-mob">Historial</button>
   </div>
   <div id="mob-screens">
-    <div class="mscreen active" id="ms-pedidos">
-      <div id="pedidos-list"></div>
-      <div id="pedidos-empty" class="empty" style="display:none"><div class="empty-icon">&#127838;</div>Sin pedidos. Toca + para agregar.</div>
-      <button class="btn-p" onclick="exportarPedidosSabado()">Exportar pedidos del sábado</button>
-      <button class="btn-ok" onclick="exportarExcel()">Exportar todo a Excel</button>
-      <button class="btn-ok" onclick="exportarExcel()">Exportar todo a Excel</button>
-      <button class="btn-s" onclick="exportarTodosPedidos()">Exportar todos los pedidos</button>
-      <button class="btn-s" onclick="abrirModal('modal-import-horarios')">Importar horarios de entrega</button>
-      <button class="btn-ok" onclick="backupPedidos()">Backup de pedidos</button>
-      <button class="btn-s" onclick="abrirModal('modal-restaurar')">Restaurar backup</button>
-      <button class="btn-d" onclick="cerrarSemana()">Cerrar semana</button>
-    </div>
-    <div class="mscreen" id="ms-semana">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-        <button style="width:30px;height:30px;border-radius:50%;background:var(--bg3);border:0.5px solid var(--border2);color:var(--text2);font-size:18px;cursor:pointer" onclick="cambiarSemana(-1)">&#8249;</button>
-        <div style="font-size:13px;color:var(--text2)" id="sem-titulo">--</div>
-        <button style="width:30px;height:30px;border-radius:50%;background:var(--bg3);border:0.5px solid var(--border2);color:var(--text2);font-size:18px;cursor:pointer" onclick="cambiarSemana(1)">&#8250;</button>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:12px">
-        <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:8px;padding:10px 7px;text-align:center"><div style="font-family:'Oswald',sans-serif;font-size:22px;color:var(--accent)" id="sw-p">0</div><div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em">pedidos</div></div>
-        <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:8px;padding:10px 7px;text-align:center"><div style="font-family:'Oswald',sans-serif;font-size:22px;color:var(--accent)" id="sw-n">0</div><div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em">panes</div></div>
-        <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:8px;padding:10px 7px;text-align:center"><div style="font-family:'Oswald',sans-serif;font-size:22px;color:var(--accent)" id="sw-c">0</div><div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em">sin cobrar</div></div>
-      </div>
-      <div class="card" id="sem-prod" style="display:none;margin-bottom:10px;font-size:12px;color:var(--text2);line-height:1.9"></div>
-      <div class="card" id="sem-dias"></div>
-    </div>
-    <div class="mscreen" id="ms-clientes">
-      <div id="clientes-list"></div>
-      <div id="clientes-empty" class="empty" style="display:none"><div class="empty-icon">&#128100;</div>Sin clientes aún.</div>
-    </div>
-    <div class="mscreen" id="ms-cadete-mob">
-      <div class="sec-lbl">Orden de entrega</div>
-      <div style="font-size:11px;color:var(--text3);margin-bottom:10px">Solo lectura. Editá el orden desde la PC en Cadete.</div>
-      <div id="cadete-mob-list"></div>
-      <div id="cadete-mob-empty" class="empty" style="display:none"><div class="empty-icon">&#128652;</div>Sin pedidos con horario asignado.</div>
-    </div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="mscreen active" id="ms-pedidos">
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div id="pedidos-list"></div>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div id="pedidos-empty" class="empty" style="display:none"><div class="empty-icon">&#127838;</div>Sin pedidos. Toca + para agregar.</div>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="btn-p" onclick="exportarPedidosSabado()">Exportar pedidos del sábado</button>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="btn-ok" onclick="exportarExcel()">Exportar todo a Excel</button>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="btn-ok" onclick="exportarExcel()">Exportar todo a Excel</button>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="btn-s" onclick="exportarTodosPedidos()">Exportar todos los pedidos</button>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="btn-s" onclick="abrirModal('modal-import-horarios')">Importar horarios de entrega</button>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="btn-ok" onclick="backupPedidos()">Backup de pedidos</button>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="btn-s" onclick="abrirModal('modal-restaurar')">Restaurar backup</button>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="btn-d" onclick="cerrarSemana()">Cerrar semana</button>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="mscreen" id="ms-semana">
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button style="width:30px;height:30px;border-radius:50%;background:var(--bg3);border:0.5px solid var(--border2);color:var(--text2);font-size:18px;cursor:pointer" onclick="cambiarSemana(-1)">&#8249;</button>
+        <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div style="font-size:13px;color:var(--text2)" id="sem-titulo">--</div>
+        <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button style="width:30px;height:30px;border-radius:50%;background:var(--bg3);border:0.5px solid var(--border2);color:var(--text2);font-size:18px;cursor:pointer" onclick="cambiarSemana(1)">&#8250;</button>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:12px">
+        <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:8px;padding:10px 7px;text-align:center"><div style="font-family:'Oswald',sans-serif;font-size:22px;color:var(--accent)" id="sw-p">0</div><div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em">pedidos</div></div>
+        <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:8px;padding:10px 7px;text-align:center"><div style="font-family:'Oswald',sans-serif;font-size:22px;color:var(--accent)" id="sw-n">0</div><div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em">panes</div></div>
+        <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:8px;padding:10px 7px;text-align:center"><div style="font-family:'Oswald',sans-serif;font-size:22px;color:var(--accent)" id="sw-c">0</div><div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em">sin cobrar</div></div>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="card" id="sem-prod" style="display:none;margin-bottom:10px;font-size:12px;color:var(--text2);line-height:1.9"></div>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="card" id="sem-dias"></div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="mscreen" id="ms-clientes">
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div id="clientes-list"></div>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div id="clientes-empty" class="empty" style="display:none"><div class="empty-icon">&#128100;</div>Sin clientes aún.</div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="mscreen" id="ms-cadete-mob">
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="sec-lbl">Orden de entrega</div>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div style="font-size:11px;color:var(--text3);margin-bottom:10px">Solo lectura. Editá el orden desde la PC en Cadete.</div>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div id="cadete-mob-list"></div>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div id="cadete-mob-empty" class="empty" style="display:none"><div class="empty-icon">&#128652;</div>Sin pedidos con horario asignado.</div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
 
-    <div class="mscreen" id="ms-cobros">
-      <div id="cobros-list"></div>
-      <div id="cobros-empty" class="empty" style="display:none"><div class="empty-icon">&#36;</div>Sin cobros pendientes.</div>
-    </div>
-    <div class="mscreen" id="ms-stock">
-      <div class="sec-lbl">Stock en freezer</div>
-      <div class="card" id="stock-list"></div>
-      <button class="btn-s" onclick="exportarStock()">Exportar stock (para PC)</button>
-      <button class="btn-s" onclick="abrirModal('modal-import-stock')">Importar stock (desde PC)</button>
-    </div>
-    <div class="mscreen" id="ms-compras">
-      <div class="sec-lbl">Lista de compras</div>
-      <div class="card"><div id="compras-list"></div><div id="compras-empty" class="empty" style="display:none;padding:24px 0"><div class="empty-icon">&#128722;</div>Lista vacía.</div></div>
-      <button class="btn-s" onclick="enviarComprasWA()">Enviar por WhatsApp</button>
-    </div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="mscreen" id="ms-cobros">
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div id="cobros-list"></div>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div id="cobros-empty" class="empty" style="display:none"><div class="empty-icon">&#36;</div>Sin cobros pendientes.</div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="mscreen" id="ms-stock">
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="sec-lbl">Stock en freezer</div>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="card" id="stock-list"></div>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="btn-s" onclick="exportarStock()">Exportar stock (para PC)</button>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="btn-s" onclick="abrirModal('modal-import-stock')">Importar stock (desde PC)</button>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="mscreen" id="ms-compras">
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="sec-lbl">Lista de compras</div>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="card"><div id="compras-list"></div><div id="compras-empty" class="empty" style="display:none;padding:24px 0"><div class="empty-icon">&#128722;</div>Lista vacía.</div></div>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="btn-s" onclick="enviarComprasWA()">Enviar por WhatsApp</button>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
   </div>
-    <div class="mscreen" id="ms-historial-mob">
-      <div id="hist-mob-filtros" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px"></div>
-      <div id="hist-mob-stats" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px"></div>
-      <div class="sec-lbl">Total por semana</div>
-      <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:12px;margin-bottom:14px">
-        <div id="hist-mob-chart-wrap" style="position:relative;width:100%;height:220px"><canvas id="hist-mob-chart" role="img" aria-label="Gráfico historial ventas móvil">Historial de ventas por semana.</canvas></div>
-      </div>
-      <div class="sec-lbl">Tabla</div>
-      <div class="card" style="padding:10px;overflow-x:auto">
-        <div id="hist-mob-tabla"></div>
-      </div>
-      <button class="btn-ok" style="margin-top:12px" onclick="exportarHistorialExcel()">Exportar Excel</button>
-      <div id="hist-mob-empty" class="empty" style="display:none"><div class="empty-icon">&#128202;</div>Sin datos históricos aún.</div>
-    </div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="mscreen" id="ms-historial-mob">
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div id="hist-mob-filtros" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px"></div>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div id="hist-mob-stats" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px"></div>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="sec-lbl">Total por semana</div>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:12px;margin-bottom:14px">
+        <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div id="hist-mob-chart-wrap" style="position:relative;width:100%;height:220px"><canvas id="hist-mob-chart" role="img" aria-label="Gráfico historial ventas móvil">Historial de ventas por semana.</canvas></div>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="sec-lbl">Tabla</div>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="card" style="padding:10px;overflow-x:auto">
+        <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div id="hist-mob-tabla"></div>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="btn-ok" style="margin-top:12px" onclick="exportarHistorialExcel()">Exportar Excel</button>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div id="hist-mob-empty" class="empty" style="display:none"><div class="empty-icon">&#128202;</div>Sin datos históricos aún.</div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
   <button class="fab" id="fab-btn" onclick="abrirFab()">+</button>
 </div>
 
 <!-- DESKTOP APP -->
 <div id="desk">
   <div id="desk-header">
-    <div><div class="desk-logo">FIK<span>A</span></div><div class="desk-sub">Sistema de gestión pan artesanal</div></div>
-    <div style="display:flex;align-items:center;gap:12px">
-      <div id="desk-search"><span style="color:var(--text3);font-size:14px">&#128269;</span><input type="search" placeholder="Buscar cliente..." oninput="buscarCliente(this.value)" id="desk-search-inp"></div>
-      <div id="desk-fecha" style="font-size:11px;color:var(--text3)"></div>
-    </div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div><div class="desk-logo">FIK<span>A</span></div><div class="desk-sub">Sistema de gestión pan artesanal</div></div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div style="display:flex;align-items:center;gap:12px">
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div id="desk-search"><span style="color:var(--text3);font-size:14px">&#128269;</span><input type="search" placeholder="Buscar cliente..." oninput="buscarCliente(this.value)" id="desk-search-inp"></div>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div id="desk-fecha" style="font-size:11px;color:var(--text3)"></div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
   </div>
   <div id="desk-tabs">
-    <button class="dtab active" onclick="showDesk('d-pedidos')" id="dt-d-pedidos">Pedidos</button>
-    <button class="dtab" onclick="showDesk('d-produccion')" id="dt-d-produccion">Producción</button>
-    <button class="dtab" onclick="showDesk('d-reparto')" id="dt-d-reparto">Reparto</button>
-    <button class="dtab" onclick="showDesk('d-cadete')" id="dt-d-cadete">Cadete</button>
-    <button class="dtab" onclick="showDesk('d-stock')" id="dt-d-stock">Stock</button>
-    <button class="dtab" onclick="showDesk('d-clientes')" id="dt-d-clientes">Clientes</button>
-    <button class="dtab" onclick="showDesk('d-cobros')" id="dt-d-cobros">Cobros</button>
-    <button class="dtab" onclick="showDesk('d-precios')" id="dt-d-precios">Precios</button>
-    <button class="dtab" onclick="showDesk('d-historial')" id="dt-d-historial">Historial</button>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="dtab active" onclick="showDesk('d-pedidos')" id="dt-d-pedidos">Pedidos</button>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="dtab" onclick="showDesk('d-produccion')" id="dt-d-produccion">Producción</button>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="dtab" onclick="showDesk('d-reparto')" id="dt-d-reparto">Reparto</button>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="dtab" onclick="showDesk('d-cadete')" id="dt-d-cadete">Cadete</button>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="dtab" onclick="showDesk('d-stock')" id="dt-d-stock">Stock</button>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="dtab" onclick="showDesk('d-clientes')" id="dt-d-clientes">Clientes</button>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="dtab" onclick="showDesk('d-cobros')" id="dt-d-cobros">Cobros</button>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="dtab" onclick="showDesk('d-precios')" id="dt-d-precios">Precios</button>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="dtab" onclick="showDesk('d-historial')" id="dt-d-historial">Historial</button>
   </div>
   <div id="desk-body">
-    <!-- PEDIDOS PC -->
-    <div class="dscreen active" id="d-pedidos">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-        <div style="font-size:13px;color:var(--text2)" id="desk-ped-sub">Sincronizá para ver los pedidos</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn-ol" onclick="abrirModalPedido(null)" style="background:rgba(201,163,79,0.1)">&#43; Nuevo pedido</button>
-          <button class="btn-ol" onclick="sincronizarPedidos()" id="btn-sync">Sincronizar</button>
-          <button class="btn-ol" onclick="imprimirPedidos()">Imprimir</button>
-          <button class="btn-ol" onclick="exportarExcel()">Exportar Excel</button>
-          <button class="btn-ol" onclick="exportarExcel()">Exportar Excel</button>
-        </div>
-      </div>
-      <div class="filtros" id="filtros-fecha"></div>
-      <div id="cnt-produccion" style="display:none;margin-bottom:14px"></div>
-      <div id="desk-ped-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px">Sincronizá para ver los pedidos del día.</div>
-      <div id="desk-ped-tabla"></div>
-    </div>
-
-    <!-- PRODUCCION PC -->
-    <div class="dscreen" id="d-produccion">
-      <div class="desk-grid2">
-        <div>
-          <div class="sec-lbl">Horario</div>
-          <div class="card">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><span style="font-size:13px;color:var(--text2)">Inicio</span><input type="time" id="h-inicio" value="07:15" style="background:var(--bg3);border:0.5px solid var(--border2);border-radius:6px;color:var(--text);font-family:'Raleway',sans-serif;font-size:14px;padding:5px 10px;width:95px;text-align:center;color-scheme:dark"></div>
-            <div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:13px;color:var(--text2)">Límite</span><input type="time" id="h-limite" value="18:00" style="background:var(--bg3);border:0.5px solid var(--border2);border-radius:6px;color:var(--text);font-family:'Raleway',sans-serif;font-size:14px;padding:5px 10px;width:95px;text-align:center;color-scheme:dark"></div>
-          </div>
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-            <div class="sec-lbl" style="margin:0">Pedidos del día</div>
-            <button style="font-size:9px;padding:3px 10px;background:var(--bg3);border:0.5px solid var(--border2);border-radius:20px;color:var(--accent);cursor:pointer;font-family:'Raleway',sans-serif" onclick="cargarDesdeAProducir()">Cargar desde Pedidos</button>
-          </div>
-          <div id="prod-warn" style="background:rgba(201,163,79,0.08);border:0.5px solid rgba(201,163,79,0.3);border-radius:8px;padding:8px 12px;font-size:11px;color:var(--accent);margin-bottom:10px;display:none"></div>
-          <div class="card" id="prod-items"></div>
-          <button class="btn-p" onclick="planificar()">Generar plan de producción</button>
-        </div>
-        <div>
-          <div id="prod-empty" style="text-align:center;padding:80px 20px;color:var(--text3);font-size:13px">Carga los pedidos y genera el plan.</div>
-          <div id="prod-result" style="display:none">
-            <button class="btn-ol" onclick="window.print()">Imprimir plan</button>
-            <div class="desk-stats" id="prod-stats"></div>
-            <div id="prod-status" style="border-radius:8px;padding:9px 13px;font-size:13px;margin-bottom:14px;display:none"></div>
-            <div class="sec-lbl">Orden de producción</div>
-            <div style="position:relative;padding-left:28px"><div style="position:absolute;left:6px;top:8px;bottom:0;width:1px;background:var(--border)"></div><div id="prod-timeline"></div></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- REPARTO PC -->
-    <div class="dscreen" id="d-reparto">
-      <div class="desk-grid2">
-        <div>
-          <div class="sec-lbl">API Key Google Maps</div>
-          <div style="display:flex;gap:8px;margin-bottom:12px"><input type="password" id="gmaps-key" placeholder="Pega tu API key" style="flex:1;background:var(--bg3);border:0.5px solid var(--border2);border-radius:6px;color:var(--text);font-family:'Raleway',sans-serif;font-size:13px;padding:7px 12px;color-scheme:dark"><button style="padding:7px 14px;background:var(--accent2);border:none;border-radius:6px;color:var(--bg);font-family:'Raleway',sans-serif;font-size:12px;cursor:pointer" onclick="guardarApiKey()">Guardar</button></div>
-          <div style="font-size:10px;color:var(--text3);margin-bottom:14px">Salida: 09:00 hs · Pedro de Villalba 400, Yerba Buena</div>
-          <div class="sec-lbl">Empezar por</div>
-          <div class="filtros" id="filtros-inicio-rep">
-            <button class="fb active" onclick="setInicioRuta('YB')" id="ir-YB">Yerba Buena primero</button>
-            <button class="fb" onclick="setInicioRuta('SMT')" id="ir-SMT">San Miguel primero</button>
-          </div>
-          <div class="sec-lbl">Filtrar ciudad</div>
-          <div class="filtros">
-            <button class="fb active" onclick="setFiltroRep('todos')" id="fr-todos">Todos</button>
-            <button class="fb" onclick="setFiltroRep('YB')" id="fr-YB">Yerba Buena</button>
-            <button class="fb" onclick="setFiltroRep('SMT')" id="fr-SMT">San Miguel</button>
-          </div>
-          <div class="sec-lbl">Clientes</div>
-          <div id="rep-clientes"></div>
-          <div id="rep-empty" style="text-align:center;padding:20px 0;color:var(--text3);font-size:12px;display:none">Sin pedidos con domicilio.</div>
-          <button class="btn-p" style="margin-top:12px" onclick="calcularRuta()">Calcular ruta óptima</button>
-          <button class="btn-ol" style="width:100%;justify-content:center;margin-top:6px" onclick="calcularRutaDesdeCadete()">Usar orden de Cadete</button>
-        </div>
-        <div>
-          <div id="rep-msg" style="border-radius:8px;padding:9px 13px;font-size:12px;margin-bottom:12px;display:none"></div>
-          <div id="rep-resumen" style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px;display:none"><div class="sec-lbl" style="margin-bottom:8px">Resumen</div><div id="rep-resumen-rows"></div></div>
-          <div id="rep-map" style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;overflow:hidden;height:500px;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:13px;padding:20px">El mapa aparece aquí una vez calculada la ruta.</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- CADETE PC -->
-    <div class="dscreen" id="d-cadete">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">
-        <div class="filtros" style="margin-bottom:0" id="filtros-enc"></div>
-        <div class="filtros" style="margin-bottom:0" id="filtros-ciudad-cad"></div>
-        <div style="margin-left:auto;display:flex;gap:8px">
-          <button class="btn-ol" style="margin-bottom:0" onclick="recalcularHorariosCadete()">Recalcular</button>
-          <button class="btn-ol" style="margin-bottom:0" onclick="exportarHorarios()">Exportar horarios</button>
-          <button class="btn-ol" style="margin-bottom:0" onclick="imprimirTickets()">Imprimir tickets</button>
-          <button class="btn-ol" style="margin-bottom:0" onclick="imprimirCadete()">Imprimir lista</button>
-        </div>
-      </div>
-      <div style="font-size:11px;color:var(--text3);margin-bottom:10px">Arrastrá las filas para reordenar.</div>
-      <div id="cadete-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin pedidos para este filtro.</div>
-      <div id="cadete-tabla"></div>
-    </div>
-
-    <!-- STOCK PC -->
-    <div class="dscreen" id="d-stock">
-      <div class="desk-grid2">
-        <div>
-          <div class="sec-lbl">Stock en freezer</div>
-          <div class="card" id="desk-stock-list"></div>
-        </div>
-        <div>
-          <div class="sec-lbl">Exportar (para app móvil)</div>
-          <div class="card"><div style="font-size:12px;color:var(--text2);margin-bottom:8px">Copia y pegá en la app del celular.</div><textarea class="ta" id="stock-export-txt" readonly></textarea><button class="btn-ol" style="margin-top:8px" onclick="copiarStockPC()">Copiar</button></div>
-          <div class="sec-lbl">Importar (desde app móvil)</div>
-          <div class="card"><div style="font-size:12px;color:var(--text2);margin-bottom:8px">Pegá el texto copiado desde el celular.</div><textarea class="ta" id="stock-import-txt" placeholder="Pegá el stock aquí..."></textarea><button class="btn-ol" style="margin-top:8px" onclick="importarStockPC()">&#8659; Importar</button></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- CLIENTES PC -->
-    <div class="dscreen" id="d-clientes">
-      <div id="desk-clientes-lista"></div>
-      <div id="desk-clientes-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin clientes registrados.</div>
-    </div>
-
-    <!-- COBROS PC -->
-    <div class="dscreen" id="d-cobros">
-      <div id="desk-cobros-lista"></div>
-      <div id="desk-cobros-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin cobros pendientes.</div>
-    </div>
-
-    <!-- PRECIOS PC -->
-    <div class="dscreen" id="d-precios">
-      <div style="max-width:700px">
-        <div class="sec-lbl">Precios base</div>
-        <div class="card" id="precios-lista" style="margin-bottom:20px"></div>
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-          <div class="sec-lbl" style="margin:0">Precios especiales</div>
-          <button class="btn-ol" style="margin:0" onclick="abrirFormPrecioEspecial()">+ Agregar</button>
-        </div>
-        <div id="precios-especiales-lista"></div>
-        <div id="precios-esp-empty" style="text-align:center;padding:20px;color:var(--text3);font-size:13px;display:none">Sin precios especiales aún.</div>
-        <!-- Formulario agregar precio especial -->
-        <div id="form-precio-esp" style="display:none;background:var(--bg2);border:0.5px solid var(--border2);border-radius:10px;padding:18px;margin-top:14px">
-          <div style="font-size:13px;font-weight:500;color:var(--accent);margin-bottom:14px">Nuevo precio especial</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-            <div>
-              <div class="f-lbl">Cliente</div>
-              <input class="f-in" id="pe-cliente" placeholder="Nombre del cliente" list="pe-clientes-dl">
-              <datalist id="pe-clientes-dl"></datalist>
-            </div>
-            <div>
-              <div class="f-lbl">Producto</div>
-              <select class="f-in" id="pe-producto">
-                <option value="todos">Todos los productos</option>
-              </select>
-            </div>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px">
-            <div>
-              <div class="f-lbl">Tipo</div>
-              <select class="f-in" id="pe-tipo">
-                <option value="Minorista">Minorista</option>
-                <option value="Mayorista">Mayorista</option>
-                <option value="Combo">Combo / Promo</option>
-                <option value="Manual">Manual</option>
-              </select>
-            </div>
-            <div>
-              <div class="f-lbl">Precio ($)</div>
-              <input class="f-in" type="number" id="pe-precio" placeholder="Ej: 980">
-            </div>
-            <div>
-              <div class="f-lbl">Descripción (opcional)</div>
-              <input class="f-in" id="pe-desc" placeholder="Ej: Mayorista x volumen">
-            </div>
-          </div>
-          <div style="display:flex;gap:8px">
-            <button class="btn-p" style="margin:0;flex:1" onclick="guardarPrecioEspecial()">Guardar</button>
-            <button class="btn-s" style="margin:0;padding:0 18px" onclick="cerrarFormPrecioEspecial()">Cancelar</button>
-          </div>
-        </div>
-      </div>
-    </div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>!-- PEDIDOS PC -->
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="dscreen active" id="d-pedidos">
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+        <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div style="font-size:13px;color:var(--text2)" id="desk-ped-sub">Sincronizá para ver los pedidos</div>
+        <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div style="display:flex;gap:8px;flex-wrap:wrap">
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="btn-ol" onclick="abrirModalPedido(null)" style="background:rgba(201,163,79,0.1)">&#43; Nuevo pedido</button>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="btn-ol" onclick="sincronizarPedidos()" id="btn-sync">Sincronizar</button>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="btn-ol" onclick="imprimirPedidos()">Imprimir</button>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="btn-ol" onclick="exportarExcel()">Exportar Excel</button>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="btn-ol" onclick="exportarExcel()">Exportar Excel</button>
+        <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="filtros" id="filtros-fecha"></div>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div id="cnt-produccion" style="display:none;margin-bottom:14px"></div>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div id="desk-ped-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px">Sincronizá para ver los pedidos del día.</div>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div id="desk-ped-tabla"></div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
 
     <!-- HISTORIAL PC -->
     <div class="dscreen" id="d-historial">
-      <!-- Barra de controles -->
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px">
-        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
-          <span style="font-size:11px;color:var(--text3)">Período:</span>
-          <div id="hist-filtros-pc"></div>
-        </div>
-        <div style="display:flex;gap:8px;align-items:center">
-          <span style="font-size:11px;color:var(--text3)">Producto:</span>
-          <select id="hist-filtro-prod" class="f-in" style="padding:5px 10px;font-size:12px;width:auto" onchange="renderHistorial()">
-            <option value="todos">Todos</option>
-            <option value="lactal">Lactal</option>
-            <option value="integral">Integral</option>
-            <option value="campo">Campo</option>
-            <option value="focaccia_cherry">Foc. Cherry</option>
-            <option value="focaccia_cebolla">Foc. Cebolla</option>
-            <option value="focaccia_morron">Foc. Morrón</option>
-            <option value="prepizza">Prepizza</option>
-          </select>
-          <button class="btn-ol" style="margin:0" onclick="exportarHistorialExcel()">Exportar Excel</button>
-        </div>
-      </div>
-      <!-- Stats -->
-      <div id="hist-stats-pc" style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px"></div>
-      <!-- Fila 1: Evolución + Barras -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
-        <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:14px">
-          <div class="sec-lbl" style="margin-top:0">Evolución por producto</div>
-          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;font-size:11px" id="hist-legend-pc"></div>
-          <div style="position:relative;height:220px"><canvas id="hist-chart-lineas" role="img" aria-label="Líneas">.</canvas></div>
-        </div>
-        <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:14px">
-          <div class="sec-lbl" style="margin-top:0">Total por semana + tendencia</div>
-          <div style="position:relative;height:238px"><canvas id="hist-chart-barras" role="img" aria-label="Barras">.</canvas></div>
-        </div>
-      </div>
-      <!-- Fila 2: Torta + Ranking + Comparación -->
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px">
-        <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:14px">
-          <div class="sec-lbl" style="margin-top:0">Participación</div>
-          <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px;font-size:10px" id="hist-legend-torta"></div>
-          <div style="position:relative;height:180px"><canvas id="hist-chart-torta" role="img" aria-label="Torta">.</canvas></div>
-        </div>
-        <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:14px">
-          <div class="sec-lbl" style="margin-top:0">Ranking productos</div>
-          <div id="hist-ranking" style="margin-top:4px"></div>
-        </div>
-        <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:14px">
-          <div class="sec-lbl" style="margin-top:0">Última vs anteúltima semana</div>
-          <div id="hist-comparacion" style="margin-top:4px"></div>
-        </div>
-      </div>
-      <!-- Tabla -->
-      <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:14px">
-        <div class="sec-lbl" style="margin-top:0">Tabla completa</div>
-        <div id="hist-tabla-pc" style="overflow-x:auto;font-size:12px"></div>
-      </div>
+      <div id="hist-container"></div>
       <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
-    </div>
+    </div>!-- PRODUCCION PC -->
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="dscreen" id="d-produccion">
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="desk-grid2">
+        <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="sec-lbl">Horario</div>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="card">
+            <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><span style="font-size:13px;color:var(--text2)">Inicio</span><input type="time" id="h-inicio" value="07:15" style="background:var(--bg3);border:0.5px solid var(--border2);border-radius:6px;color:var(--text);font-family:'Raleway',sans-serif;font-size:14px;padding:5px 10px;width:95px;text-align:center;color-scheme:dark"></div>
+            <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:13px;color:var(--text2)">Límite</span><input type="time" id="h-limite" value="18:00" style="background:var(--bg3);border:0.5px solid var(--border2);border-radius:6px;color:var(--text);font-family:'Raleway',sans-serif;font-size:14px;padding:5px 10px;width:95px;text-align:center;color-scheme:dark"></div>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="sec-lbl" style="margin:0">Pedidos del día</div>
+            <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button style="font-size:9px;padding:3px 10px;background:var(--bg3);border:0.5px solid var(--border2);border-radius:20px;color:var(--accent);cursor:pointer;font-family:'Raleway',sans-serif" onclick="cargarDesdeAProducir()">Cargar desde Pedidos</button>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div id="prod-warn" style="background:rgba(201,163,79,0.08);border:0.5px solid rgba(201,163,79,0.3);border-radius:8px;padding:8px 12px;font-size:11px;color:var(--accent);margin-bottom:10px;display:none"></div>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="card" id="prod-items"></div>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="btn-p" onclick="planificar()">Generar plan de producción</button>
+        <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+        <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div id="prod-empty" style="text-align:center;padding:80px 20px;color:var(--text3);font-size:13px">Carga los pedidos y genera el plan.</div>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div id="prod-result" style="display:none">
+            <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="btn-ol" onclick="window.print()">Imprimir plan</button>
+            <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="desk-stats" id="prod-stats"></div>
+            <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div id="prod-status" style="border-radius:8px;padding:9px 13px;font-size:13px;margin-bottom:14px;display:none"></div>
+            <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="sec-lbl">Orden de producción</div>
+            <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div style="position:relative;padding-left:28px"><div style="position:absolute;left:6px;top:8px;bottom:0;width:1px;background:var(--border)"></div><div id="prod-timeline"></div></div>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+        <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>!-- REPARTO PC -->
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="dscreen" id="d-reparto">
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="desk-grid2">
+        <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="sec-lbl">API Key Google Maps</div>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div style="display:flex;gap:8px;margin-bottom:12px"><input type="password" id="gmaps-key" placeholder="Pega tu API key" style="flex:1;background:var(--bg3);border:0.5px solid var(--border2);border-radius:6px;color:var(--text);font-family:'Raleway',sans-serif;font-size:13px;padding:7px 12px;color-scheme:dark"><button style="padding:7px 14px;background:var(--accent2);border:none;border-radius:6px;color:var(--bg);font-family:'Raleway',sans-serif;font-size:12px;cursor:pointer" onclick="guardarApiKey()">Guardar</button></div>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div style="font-size:10px;color:var(--text3);margin-bottom:14px">Salida: 09:00 hs · Pedro de Villalba 400, Yerba Buena</div>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="sec-lbl">Empezar por</div>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="filtros" id="filtros-inicio-rep">
+            <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="fb active" onclick="setInicioRuta('YB')" id="ir-YB">Yerba Buena primero</button>
+            <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="fb" onclick="setInicioRuta('SMT')" id="ir-SMT">San Miguel primero</button>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="sec-lbl">Filtrar ciudad</div>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="filtros">
+            <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="fb active" onclick="setFiltroRep('todos')" id="fr-todos">Todos</button>
+            <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="fb" onclick="setFiltroRep('YB')" id="fr-YB">Yerba Buena</button>
+            <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="fb" onclick="setFiltroRep('SMT')" id="fr-SMT">San Miguel</button>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="sec-lbl">Clientes</div>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div id="rep-clientes"></div>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div id="rep-empty" style="text-align:center;padding:20px 0;color:var(--text3);font-size:12px;display:none">Sin pedidos con domicilio.</div>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="btn-p" style="margin-top:12px" onclick="calcularRuta()">Calcular ruta óptima</button>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="btn-ol" style="width:100%;justify-content:center;margin-top:6px" onclick="calcularRutaDesdeCadete()">Usar orden de Cadete</button>
+        <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+        <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div id="rep-msg" style="border-radius:8px;padding:9px 13px;font-size:12px;margin-bottom:12px;display:none"></div>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div id="rep-resumen" style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px;display:none"><div class="sec-lbl" style="margin-bottom:8px">Resumen</div><div id="rep-resumen-rows"></div></div>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div id="rep-map" style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;overflow:hidden;height:500px;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:13px;padding:20px">El mapa aparece aquí una vez calculada la ruta.</div>
+        <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>!-- CADETE PC -->
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="dscreen" id="d-cadete">
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">
+        <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="filtros" style="margin-bottom:0" id="filtros-enc"></div>
+        <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="filtros" style="margin-bottom:0" id="filtros-ciudad-cad"></div>
+        <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div style="margin-left:auto;display:flex;gap:8px">
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="btn-ol" style="margin-bottom:0" onclick="recalcularHorariosCadete()">Recalcular</button>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="btn-ol" style="margin-bottom:0" onclick="exportarHorarios()">Exportar horarios</button>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="btn-ol" style="margin-bottom:0" onclick="imprimirTickets()">Imprimir tickets</button>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="btn-ol" style="margin-bottom:0" onclick="imprimirCadete()">Imprimir lista</button>
+        <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div style="font-size:11px;color:var(--text3);margin-bottom:10px">Arrastrá las filas para reordenar.</div>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div id="cadete-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin pedidos para este filtro.</div>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div id="cadete-tabla"></div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>!-- STOCK PC -->
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="dscreen" id="d-stock">
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="desk-grid2">
+        <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="sec-lbl">Stock en freezer</div>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="card" id="desk-stock-list"></div>
+        <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+        <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="sec-lbl">Exportar (para app móvil)</div>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="card"><div style="font-size:12px;color:var(--text2);margin-bottom:8px">Copia y pegá en la app del celular.</div><textarea class="ta" id="stock-export-txt" readonly></textarea><button class="btn-ol" style="margin-top:8px" onclick="copiarStockPC()">Copiar</button></div>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="sec-lbl">Importar (desde app móvil)</div>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="card"><div style="font-size:12px;color:var(--text2);margin-bottom:8px">Pegá el texto copiado desde el celular.</div><textarea class="ta" id="stock-import-txt" placeholder="Pegá el stock aquí..."></textarea><button class="btn-ol" style="margin-top:8px" onclick="importarStockPC()">&#8659; Importar</button></div>
+        <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>!-- CLIENTES PC -->
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="dscreen" id="d-clientes">
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div id="desk-clientes-lista"></div>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div id="desk-clientes-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin clientes registrados.</div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>!-- COBROS PC -->
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="dscreen" id="d-cobros">
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div id="desk-cobros-lista"></div>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div id="desk-cobros-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin cobros pendientes.</div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>!-- PRECIOS PC -->
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="dscreen" id="d-precios">
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div style="max-width:700px">
+        <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="sec-lbl">Precios base</div>
+        <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="card" id="precios-lista" style="margin-bottom:20px"></div>
+        <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="sec-lbl" style="margin:0">Precios especiales</div>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="btn-ol" style="margin:0" onclick="abrirFormPrecioEspecial()">+ Agregar</button>
+        <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+        <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div id="precios-especiales-lista"></div>
+        <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div id="precios-esp-empty" style="text-align:center;padding:20px;color:var(--text3);font-size:13px;display:none">Sin precios especiales aún.</div>
+        <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>!-- Formulario agregar precio especial -->
+        <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div id="form-precio-esp" style="display:none;background:var(--bg2);border:0.5px solid var(--border2);border-radius:10px;padding:18px;margin-top:14px">
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div style="font-size:13px;font-weight:500;color:var(--accent);margin-bottom:14px">Nuevo precio especial</div>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+            <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div>
+              <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="f-lbl">Cliente</div>
+              <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>input class="f-in" id="pe-cliente" placeholder="Nombre del cliente" list="pe-clientes-dl">
+              <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>datalist id="pe-clientes-dl"></datalist>
+            <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+            <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div>
+              <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="f-lbl">Producto</div>
+              <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>select class="f-in" id="pe-producto">
+                <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>option value="todos">Todos los productos</option>
+              <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/select>
+            <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px">
+            <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div>
+              <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="f-lbl">Tipo</div>
+              <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>select class="f-in" id="pe-tipo">
+                <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>option value="Minorista">Minorista</option>
+                <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>option value="Mayorista">Mayorista</option>
+                <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>option value="Combo">Combo / Promo</option>
+                <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>option value="Manual">Manual</option>
+              <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/select>
+            <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+            <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div>
+              <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="f-lbl">Precio ($)</div>
+              <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>input class="f-in" type="number" id="pe-precio" placeholder="Ej: 980">
+            <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+            <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div>
+              <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="f-lbl">Descripción (opcional)</div>
+              <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>input class="f-in" id="pe-desc" placeholder="Ej: Mayorista x volumen">
+            <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div style="display:flex;gap:8px">
+            <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="btn-p" style="margin:0;flex:1" onclick="guardarPrecioEspecial()">Guardar</button>
+            <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="btn-s" style="margin:0;padding:0 18px" onclick="cerrarFormPrecioEspecial()">Cancelar</button>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+        <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>!-- HISTORIAL PC -->
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="dscreen" id="d-historial">
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>!-- Barra de controles -->
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px">
+        <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>span style="font-size:11px;color:var(--text3)">Período:</span>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div id="hist-filtros-pc"></div>
+        <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+        <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div style="display:flex;gap:8px;align-items:center">
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>span style="font-size:11px;color:var(--text3)">Producto:</span>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>select id="hist-filtro-prod" class="f-in" style="padding:5px 10px;font-size:12px;width:auto" onchange="renderHistorial()">
+            <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>option value="todos">Todos</option>
+            <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>option value="lactal">Lactal</option>
+            <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>option value="integral">Integral</option>
+            <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>option value="campo">Campo</option>
+            <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>option value="focaccia_cherry">Foc. Cherry</option>
+            <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>option value="focaccia_cebolla">Foc. Cebolla</option>
+            <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>option value="focaccia_morron">Foc. Morrón</option>
+            <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>option value="prepizza">Prepizza</option>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/select>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="btn-ol" style="margin:0" onclick="exportarHistorialExcel()">Exportar Excel</button>
+        <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>!-- Stats -->
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div id="hist-stats-pc" style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px"></div>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>!-- Fila 1: Evolución + Barras -->
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+        <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:14px">
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="sec-lbl" style="margin-top:0">Evolución por producto</div>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;font-size:11px" id="hist-legend-pc"></div>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div style="position:relative;height:220px"><canvas id="hist-chart-lineas" role="img" aria-label="Líneas">.</canvas></div>
+        <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+        <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:14px">
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="sec-lbl" style="margin-top:0">Total por semana + tendencia</div>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div style="position:relative;height:238px"><canvas id="hist-chart-barras" role="img" aria-label="Barras">.</canvas></div>
+        <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>!-- Fila 2: Torta + Ranking + Comparación -->
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px">
+        <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:14px">
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="sec-lbl" style="margin-top:0">Participación</div>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px;font-size:10px" id="hist-legend-torta"></div>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div style="position:relative;height:180px"><canvas id="hist-chart-torta" role="img" aria-label="Torta">.</canvas></div>
+        <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+        <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:14px">
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="sec-lbl" style="margin-top:0">Ranking productos</div>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div id="hist-ranking" style="margin-top:4px"></div>
+        <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+        <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:14px">
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="sec-lbl" style="margin-top:0">Última vs anteúltima semana</div>
+          <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div id="hist-comparacion" style="margin-top:4px"></div>
+        <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>!-- Tabla -->
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:14px">
+        <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="sec-lbl" style="margin-top:0">Tabla completa</div>
+        <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div id="hist-tabla-pc" style="overflow-x:auto;font-size:12px"></div>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
   </div>
 </div>
 
 <!-- MODALES -->
 <div class="modal-ov" id="modal-pedido">
   <div class="modal">
-    <div class="modal-hdr"><div class="modal-title" id="mp-title">Nuevo pedido</div><button class="modal-close" onclick="cerrarModal('modal-pedido')">&#215;</button></div>
-    <div class="f-row"><div class="f-lbl">Nombre y apellido</div>
-      <div style="position:relative">
-        <input class="f-in" id="p-nombre" placeholder="Ej: María González" autocomplete="off" oninput="buscarSugerencias(this.value)" onblur="setTimeout(function(){cerrarSugerencias()},200)">
-        <div id="sugerencias-drop" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--bg3);border:0.5px solid var(--border2);border-radius:0 0 8px 8px;z-index:200;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.4)"></div>
-      </div>
-    </div>
-    <div class="f-row2">
-      <div><div class="f-lbl">Fecha de entrega</div><input class="f-in" type="date" id="p-fecha"></div>
-      <div><div class="f-lbl">Teléfono</div><input class="f-in" type="tel" id="p-tel" placeholder="381 123 4567"></div>
-    </div>
-    <div class="f-row">
-      <div class="f-lbl" style="display:flex;align-items:center;justify-content:space-between">Calle y número<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><span style="font-size:10px;color:var(--text3)">Coordinar</span><label class="toggle" style="margin:0"><input type="checkbox" id="p-coord" onchange="toggleCoord()"><span class="slider"></span></label></label></div>
-      <input class="f-in" id="p-dom" placeholder="Ej: Av. Belgrano 1234" style="margin-top:5px">
-    </div>
-    <div class="f-row"><div class="f-lbl">Piso / Dpto (opcional)</div><input class="f-in" id="p-piso" placeholder="Ej: 3° B"></div>
-    <div class="f-row2">
-      <div><div class="f-lbl">Ciudad</div><select class="f-in" id="p-ciudad"><option value="">-- Ciudad --</option><option value="Yerba Buena">Yerba Buena</option><option value="SMT">San Miguel de Tucumán</option></select></div>
-      <div><div class="f-lbl">Encargado</div><select class="f-in" id="p-enc"><option value="Cadete">Cadete</option><option value="Fede">Fede</option><option value="Gi">Gi</option><option value="Vilma">Vilma</option><option value="Otro">Otro</option></select></div>
-    </div>
-    <div class="f-lbl" style="margin-bottom:8px">Pedido</div>
-    <div class="panes-grid" id="panes-form"></div>
-    <div class="f-row"><div class="f-lbl">Notas</div><input class="f-in" id="p-notas" placeholder="Opcional"></div>
-    <div class="card" style="margin-bottom:10px"><div class="f-row" style="margin-bottom:8px"><div class="f-lbl">Tipo de precio</div><select class="f-in" id="p-tipo-precio"><option value="Minorista">Minorista</option><option value="Mayorista">Mayorista</option><option value="Combo">Combo / Promo</option></select></div><div class="toggle-row"><span style="font-size:13px;color:var(--text2)">¿Ya realizó el pago?</span><label class="toggle"><input type="checkbox" id="p-pago"><span class="slider"></span></label></div></div>
-    <div id="p-total-preview" style="text-align:right;font-size:13px;color:var(--accent);margin-bottom:10px;display:none"></div>
-    <button class="btn-p" onclick="guardarPedido()">Guardar pedido</button>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="modal-hdr"><div class="modal-title" id="mp-title">Nuevo pedido</div><button class="modal-close" onclick="cerrarModal('modal-pedido')">&#215;</button></div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="f-row"><div class="f-lbl">Nombre y apellido</div>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div style="position:relative">
+        <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>input class="f-in" id="p-nombre" placeholder="Ej: María González" autocomplete="off" oninput="buscarSugerencias(this.value)" onblur="setTimeout(function(){cerrarSugerencias()},200)">
+        <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div id="sugerencias-drop" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--bg3);border:0.5px solid var(--border2);border-radius:0 0 8px 8px;z-index:200;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.4)"></div>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="f-row2">
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div><div class="f-lbl">Fecha de entrega</div><input class="f-in" type="date" id="p-fecha"></div>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div><div class="f-lbl">Teléfono</div><input class="f-in" type="tel" id="p-tel" placeholder="381 123 4567"></div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="f-row">
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="f-lbl" style="display:flex;align-items:center;justify-content:space-between">Calle y número<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><span style="font-size:10px;color:var(--text3)">Coordinar</span><label class="toggle" style="margin:0"><input type="checkbox" id="p-coord" onchange="toggleCoord()"><span class="slider"></span></label></label></div>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>input class="f-in" id="p-dom" placeholder="Ej: Av. Belgrano 1234" style="margin-top:5px">
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="f-row"><div class="f-lbl">Piso / Dpto (opcional)</div><input class="f-in" id="p-piso" placeholder="Ej: 3° B"></div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="f-row2">
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div><div class="f-lbl">Ciudad</div><select class="f-in" id="p-ciudad"><option value="">-- Ciudad --</option><option value="Yerba Buena">Yerba Buena</option><option value="SMT">San Miguel de Tucumán</option></select></div>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div><div class="f-lbl">Encargado</div><select class="f-in" id="p-enc"><option value="Cadete">Cadete</option><option value="Fede">Fede</option><option value="Gi">Gi</option><option value="Vilma">Vilma</option><option value="Otro">Otro</option></select></div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="f-lbl" style="margin-bottom:8px">Pedido</div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="panes-grid" id="panes-form"></div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="f-row"><div class="f-lbl">Notas</div><input class="f-in" id="p-notas" placeholder="Opcional"></div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="card" style="margin-bottom:10px"><div class="f-row" style="margin-bottom:8px"><div class="f-lbl">Tipo de precio</div><select class="f-in" id="p-tipo-precio"><option value="Minorista">Minorista</option><option value="Mayorista">Mayorista</option><option value="Combo">Combo / Promo</option></select></div><div class="toggle-row"><span style="font-size:13px;color:var(--text2)">¿Ya realizó el pago?</span><label class="toggle"><input type="checkbox" id="p-pago"><span class="slider"></span></label></div></div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div id="p-total-preview" style="text-align:right;font-size:13px;color:var(--accent);margin-bottom:10px;display:none"></div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="btn-p" onclick="guardarPedido()">Guardar pedido</button>
   </div>
 </div>
 
 <div class="modal-ov" id="modal-det-pedido">
   <div class="modal">
-    <div class="modal-hdr"><div class="modal-title" id="dp-nombre">--</div><button class="modal-close" onclick="cerrarModal('modal-det-pedido')">&#215;</button></div>
-    <div id="dp-content"></div>
-    <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:10px">
-      <button id="btn-pagado" onclick="togglePagado()" style="width:100%;padding:13px;border-radius:8px;border:0.5px solid var(--border2);font-family:Jost,sans-serif;font-size:14px;font-weight:700;cursor:pointer;background:var(--bg3);color:var(--text2)">Sin pago</button>
-      <button id="btn-entregado" onclick="toggleEntregado()" style="width:100%;padding:13px;border-radius:8px;border:0.5px solid var(--border2);font-family:Jost,sans-serif;font-size:14px;font-weight:700;cursor:pointer;background:var(--bg3);color:var(--text2)">Sin entregar</button>
-    </div>
-    <button class="btn-s" style="margin-top:0;margin-bottom:6px" onclick="enviarHorarioVisita()">Enviar horario de visita</button>
-    <button class="btn-s" style="margin-top:0;margin-bottom:6px" onclick="enviarAlias()">Enviar alias de pago</button>
-    <div style="display:flex;gap:7px;margin-top:6px">
-      <button class="btn-s" style="margin-top:0" onclick="editarPedido()">Editar</button>
-      <button class="btn-s" style="margin-top:0;color:var(--text3);border-color:var(--border)" onclick="cerrarModal('modal-det-pedido')">Cerrar</button>
-    </div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="modal-hdr"><div class="modal-title" id="dp-nombre">--</div><button class="modal-close" onclick="cerrarModal('modal-det-pedido')">&#215;</button></div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div id="dp-content"></div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div style="display:flex;flex-direction:column;gap:7px;margin-bottom:10px">
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button id="btn-pagado" onclick="togglePagado()" style="width:100%;padding:13px;border-radius:8px;border:0.5px solid var(--border2);font-family:Jost,sans-serif;font-size:14px;font-weight:700;cursor:pointer;background:var(--bg3);color:var(--text2)">Sin pago</button>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button id="btn-entregado" onclick="toggleEntregado()" style="width:100%;padding:13px;border-radius:8px;border:0.5px solid var(--border2);font-family:Jost,sans-serif;font-size:14px;font-weight:700;cursor:pointer;background:var(--bg3);color:var(--text2)">Sin entregar</button>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="btn-s" style="margin-top:0;margin-bottom:6px" onclick="enviarHorarioVisita()">Enviar horario de visita</button>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="btn-s" style="margin-top:0;margin-bottom:6px" onclick="enviarAlias()">Enviar alias de pago</button>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div style="display:flex;gap:7px;margin-top:6px">
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="btn-s" style="margin-top:0" onclick="editarPedido()">Editar</button>
+      <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="btn-s" style="margin-top:0;color:var(--text3);border-color:var(--border)" onclick="cerrarModal('modal-det-pedido')">Cerrar</button>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>/div>
   </div>
 </div>
 </div>
 
 <div class="modal-ov" id="modal-compra">
   <div class="modal">
-    <div class="modal-hdr"><div class="modal-title">Agregar ítem</div><button class="modal-close" onclick="cerrarModal('modal-compra')">&#215;</button></div>
-    <div class="f-row"><div class="f-lbl">¿Qué necesitás?</div><input class="f-in" id="c-nombre" placeholder="Ej: Harina 000"></div>
-    <div class="f-row"><div class="f-lbl">Cantidad / detalle</div><input class="f-in" id="c-cant" placeholder="Opcional"></div>
-    <button class="btn-p" onclick="guardarCompra()">Agregar</button>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="modal-hdr"><div class="modal-title">Agregar ítem</div><button class="modal-close" onclick="cerrarModal('modal-compra')">&#215;</button></div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="f-row"><div class="f-lbl">¿Qué necesitás?</div><input class="f-in" id="c-nombre" placeholder="Ej: Harina 000"></div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="f-row"><div class="f-lbl">Cantidad / detalle</div><input class="f-in" id="c-cant" placeholder="Opcional"></div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="btn-p" onclick="guardarCompra()">Agregar</button>
   </div>
 </div>
 
 <div class="modal-ov" id="modal-cliente-det">
   <div class="modal">
-    <div class="modal-hdr"><div class="modal-title" id="mc-nombre">--</div><button class="modal-close" onclick="cerrarModal('modal-cliente-det')">&#215;</button></div>
-    <div id="mc-content"></div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="modal-hdr"><div class="modal-title" id="mc-nombre">--</div><button class="modal-close" onclick="cerrarModal('modal-cliente-det')">&#215;</button></div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div id="mc-content"></div>
   </div>
 </div>
 
 <div class="modal-ov" id="modal-export-stock">
   <div class="modal">
-    <div class="modal-hdr"><div class="modal-title">Exportar stock</div><button class="modal-close" onclick="cerrarModal('modal-export-stock')">&#215;</button></div>
-    <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Copia y pegá en el planificador PC.</div>
-    <textarea class="ta" id="stock-exp-txt" readonly></textarea>
-    <button class="btn-p" style="margin-top:10px" onclick="copiarStock()">Copiar</button>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="modal-hdr"><div class="modal-title">Exportar stock</div><button class="modal-close" onclick="cerrarModal('modal-export-stock')">&#215;</button></div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div style="font-size:12px;color:var(--text2);margin-bottom:8px">Copia y pegá en el planificador PC.</div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>textarea class="ta" id="stock-exp-txt" readonly></textarea>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="btn-p" style="margin-top:10px" onclick="copiarStock()">Copiar</button>
   </div>
 </div>
 
 <div class="modal-ov" id="modal-import-stock">
   <div class="modal">
-    <div class="modal-hdr"><div class="modal-title">Importar stock</div><button class="modal-close" onclick="cerrarModal('modal-import-stock')">&#215;</button></div>
-    <textarea class="ta" id="stock-imp-txt" placeholder="Pegá el stock aquí..."></textarea>
-    <button class="btn-p" style="margin-top:10px" onclick="importarStock()">Importar</button>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="modal-hdr"><div class="modal-title">Importar stock</div><button class="modal-close" onclick="cerrarModal('modal-import-stock')">&#215;</button></div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>textarea class="ta" id="stock-imp-txt" placeholder="Pegá el stock aquí..."></textarea>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="btn-p" style="margin-top:10px" onclick="importarStock()">Importar</button>
   </div>
 </div>
 
 <div class="modal-ov" id="modal-import-horarios">
   <div class="modal">
-    <div class="modal-hdr"><div class="modal-title">Importar horarios</div><button class="modal-close" onclick="cerrarModal('modal-import-horarios')">&#215;</button></div>
-    <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Pegá el texto copiado desde el planificador.</div>
-    <textarea class="ta" id="hor-imp-txt" placeholder="Pegá los horarios aquí..."></textarea>
-    <button class="btn-p" style="margin-top:10px" onclick="importarHorarios()">Importar</button>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="modal-hdr"><div class="modal-title">Importar horarios</div><button class="modal-close" onclick="cerrarModal('modal-import-horarios')">&#215;</button></div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div style="font-size:12px;color:var(--text2);margin-bottom:8px">Pegá el texto copiado desde el planificador.</div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>textarea class="ta" id="hor-imp-txt" placeholder="Pegá los horarios aquí..."></textarea>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="btn-p" style="margin-top:10px" onclick="importarHorarios()">Importar</button>
   </div>
 </div>
 
 <div class="modal-ov" id="modal-restaurar">
   <div class="modal">
-    <div class="modal-hdr"><div class="modal-title">Restaurar pedidos</div><button class="modal-close" onclick="cerrarModal('modal-restaurar')">&#215;</button></div>
-    <div style="font-size:12px;color:var(--text2);margin-bottom:8px;line-height:1.6">Pegá el contenido del archivo de backup. Los pedidos actuales serán reemplazados.</div>
-    <textarea class="ta" id="rest-txt" placeholder="Pegá el backup aquí..."></textarea>
-    <button class="btn-p" style="margin-top:10px;background:var(--ok)" onclick="restaurarPedidos()">Restaurar</button>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div class="modal-hdr"><div class="modal-title">Restaurar pedidos</div><button class="modal-close" onclick="cerrarModal('modal-restaurar')">&#215;</button></div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>div style="font-size:12px;color:var(--text2);margin-bottom:8px;line-height:1.6">Pegá el contenido del archivo de backup. Los pedidos actuales serán reemplazados.</div>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>textarea class="ta" id="rest-txt" placeholder="Pegá el backup aquí..."></textarea>
+    <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-historial">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
+    </div>button class="btn-p" style="margin-top:10px;background:var(--ok)" onclick="restaurarPedidos()">Restaurar</button>
   </div>
 </div>
 
@@ -1913,15 +3445,73 @@ function renderHistTablaMob(lista){
 
 function renderHistorial(){
   var lista=getHistorialFiltrado();
+  var cont=document.getElementById('hist-container');
   var empty=document.getElementById('hist-empty');
-  if(lista.length===0){if(empty)empty.style.display='block';return;}
+  if(!cont)return;
+  if(lista.length===0){cont.innerHTML='';if(empty)empty.style.display='block';return;}
   if(empty)empty.style.display='none';
+  var filtroProd=cont.querySelector('#hist-filtro-prod-sel')?cont.querySelector('#hist-filtro-prod-sel').value:'todos';
+  var s=calcHistStats(lista);
+  var ult=lista.length>0?lista[lista.length-1].total:0;
+  var tend=s.prom>0?Math.round((ult-s.prom)/s.prom*100):0;
+  var tendStr=(tend>=0?'+':'')+tend+'%';
+  var tendColor=tend>=0?'var(--ok)':'var(--danger)';
+  var html='';
+  // Controles
+  html+='<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">';
+  html+='<div id="hfp" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"></div>';
+  html+='<div style="display:flex;gap:8px;align-items:center"><span style="font-size:11px;color:var(--text3)">Producto:</span>';
+  html+='<select id="hfps" class="f-in" style="padding:5px 10px;font-size:12px;width:auto" onchange="renderHistorial()">';
+  html+='<option value="todos"'+(filtroProd==="todos"?" selected":"")+'>Todos</option>';
+  ["lactal","integral","campo","focaccia_cherry","focaccia_cebolla","focaccia_morron","prepizza"].forEach(function(k){html+="<option value=\""+k+"\""+( filtroProd===k?" selected":"")+">"+PROD_LABELS_H[k]+"</option>";});
+  html+='</select><button class="btn-ol" style="margin:0" onclick="exportarHistorialExcel()">Exportar Excel</button></div></div>';
+  // Stats
+  html+='<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px">';
+  [[s.tot,"Total panes","var(--accent)"],[s.prom,"Promedio/sem","var(--accent)"],[s.mejor.total+" ("+fmtSem(s.mejor)+")","Mejor semana","var(--accent)"],[PROD_LABELS_H[s.estrella],"Estrella","var(--accent)"],[tendStr,"Última vs prom",tendColor]].forEach(function(r){html+="<div style=\"background:var(--bg2);border:0.5px solid var(--border);border-radius:8px;padding:12px;text-align:center\"><div style=\"font-family:Oswald,sans-serif;font-size:18px;color:"+r[2]+"\">" + r[0]+"</div><div style=\"font-size:9px;color:var(--text3);text-transform:uppercase;margin-top:3px\">"+r[1]+"</div></div>";});
+  html+='</div>';
+  // Graficos fila 1
+  html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">';
+  html+='<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:14px"><div class="sec-lbl" style="margin-top:0">Evolución por producto</div><div id="hl1" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;font-size:11px"></div><div style="position:relative;height:220px"><canvas id="hcl"></canvas></div></div>';
+  html+='<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:14px"><div class="sec-lbl" style="margin-top:0">Total + tendencia</div><div style="position:relative;height:238px"><canvas id="hcb"></canvas></div></div>';
+  html+='</div>';
+  // Graficos fila 2
+  html+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px">';
+  html+='<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:14px"><div class="sec-lbl" style="margin-top:0">Participación</div><div id="hlt" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px;font-size:10px"></div><div style="position:relative;height:180px"><canvas id="hct"></canvas></div></div>';
+  html+='<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:14px"><div class="sec-lbl" style="margin-top:0">Ranking</div><div id="hrk"></div></div>';
+  html+='<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:14px"><div class="sec-lbl" style="margin-top:0">Última vs anteúltima</div><div id="hcmp"></div></div>';
+  html+='</div>';
+  // Tabla
+  html+='<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:14px"><div class="sec-lbl" style="margin-top:0">Tabla</div><div id="htbl" style="overflow-x:auto;font-size:12px"></div></div>';
+  cont.innerHTML=html;
+  // Filtros periodo
   renderHistFiltrosPC(lista);
-  renderHistStatsPC(lista);
+  // Ranking
+  var re=document.getElementById("hrk");if(re){var pr=PRODUCTOS.filter(function(k){return s.totProd[k]>0;}).sort(function(a,b){return s.totProd[b]-s.totProd[a];});var mx=s.totProd[pr[0]]||1;re.innerHTML="";pr.forEach(function(k,i){re.innerHTML+="<div style=\"margin-bottom:8px\"><div style=\"display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px\"><span style=\"color:var(--text2)\">"+(i+1)+". "+PROD_LABELS_H[k]+"</span><span style=\"color:var(--accent)\">"+s.totProd[k]+"</span></div><div style=\"height:5px;background:rgba(232,223,200,0.08);border-radius:3px\"><div style=\"height:100%;border-radius:3px;background:"+PROD_COLORES_H[k]+";width:"+Math.round(s.totProd[k]/mx*100)+"%\"></div></div></div>";});}
+  // Comparacion
+  var ce=document.getElementById("hcmp");if(ce&&lista.length>=2){var ul=lista[lista.length-1],an=lista[lista.length-2];var ch="<div style=\"display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-bottom:6px;padding-bottom:4px;border-bottom:0.5px solid var(--border)\"><span>Prod.</span><span>"+fmtSem(an)+"</span><span>"+fmtSem(ul)+"</span><span>Var</span></div>";PRODUCTOS.forEach(function(k){var va=an[k]||0,vu=ul[k]||0;if(va===0&&vu===0)return;var d=vu-va;ch+="<div style=\"display:flex;justify-content:space-between;font-size:11px;padding:3px 0;border-bottom:0.5px solid var(--border)\"><span style=\"color:var(--text2)\">"+PROD_LABELS_H[k]+"</span><span>"+va+"</span><span>"+vu+"</span><span style=\"color:"+(d>0?"var(--ok)":d<0?"var(--danger)":"var(--text3)")+"\">"+(d>0?"+":"")+d+"</span></div>";});var dt=ul.total-an.total;ch+="<div style=\"display:flex;justify-content:space-between;font-size:12px;padding:5px 0;font-weight:500\"><span style=\"color:var(--accent)\">TOTAL</span><span style=\"color:var(--accent)\">"+an.total+"</span><span style=\"color:var(--accent)\">"+ul.total+"</span><span style=\"color:"+(dt>0?"var(--ok)":dt<0?"var(--danger)":"var(--text3)")+"\">"+(dt>0?"+":"")+dt+"</span></div>";ce.innerHTML=ch;}
+  // Tabla
   renderHistTablaPC(lista);
-  // Usar setTimeout para asegurar que los canvas estén en el DOM
-  setTimeout(function(){renderHistGraficosPC(lista);},50);
+  // Leyendas
+  var pg=filtroProd==="todos"?PRODUCTOS.filter(function(k){return lista.some(function(h){return (h[k]||0)>0;});}): [filtroProd];
+  var l1=document.getElementById("hl1");if(l1){l1.innerHTML="";pg.forEach(function(k){l1.innerHTML+="<span style=\"display:flex;align-items:center;gap:4px;color:var(--text2)\"><span style=\"width:10px;height:10px;border-radius:2px;background:"+PROD_COLORES_H[k]+"\">&nbsp;</span>"+PROD_LABELS_H[k]+"</span>";});}
+  var lt2=document.getElementById("hlt");if(lt2){lt2.innerHTML="";PRODUCTOS.forEach(function(k){if(s.totProd[k]>0){var pc=Math.round(s.totProd[k]/s.tot*100);lt2.innerHTML+="<span style=\"display:flex;align-items:center;gap:3px;color:var(--text2)\"><span style=\"width:8px;height:8px;border-radius:2px;background:"+PROD_COLORES_H[k]+"\">&nbsp;</span>"+PROD_LABELS_H[k]+" "+pc+"%</span>";}});}
+  // Graficos con requestAnimationFrame
+  requestAnimationFrame(function(){
+    var id=window.matchMedia("(prefers-color-scheme: dark)").matches;
+    var gc=id?"rgba(255,255,255,0.08)":"rgba(0,0,0,0.06)";var tc2=id?"#b4b2a9":"#73726c";
+    var lb=lista.map(fmtSem);
+    if(chartLineasInst){chartLineasInst.destroy();chartLineasInst=null;}
+    var cl=document.getElementById("hcl");
+    if(cl){chartLineasInst=new Chart(cl,{type:"line",data:{labels:lb,datasets:pg.map(function(k,i){return{label:PROD_LABELS_H[k],data:lista.map(function(h){return h[k]||0;}),borderColor:PROD_COLORES_H[k],backgroundColor:PROD_COLORES_H[k]+"22",fill:pg.length===1,tension:0.3,pointRadius:4,borderDash:i%2===1?[4,2]:[]};})},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:tc2,font:{size:11}},grid:{color:gc}},y:{ticks:{color:tc2,font:{size:11}},grid:{color:gc},beginAtZero:true}}}});}
+    if(chartBarrasInst){chartBarrasInst.destroy();chartBarrasInst=null;}
+    var cb=document.getElementById("hcb");
+    if(cb){var ts=lista.map(function(h){return filtroProd==="todos"?h.total:(h[filtroProd]||0);});var mT=Math.max.apply(null,ts);var td=ts.map(function(_,i){var sl=ts.slice(Math.max(0,i-1),i+2);return Math.round(sl.reduce(function(a,b){return a+b;},0)/sl.length);});chartBarrasInst=new Chart(cb,{type:"bar",data:{labels:lb,datasets:[{type:"bar",label:"Total",data:ts,backgroundColor:ts.map(function(v){return v===mT?"#c9a34f":"rgba(201,163,79,0.35)";}),borderRadius:4,order:2},{type:"line",label:"Tendencia",data:td,borderColor:"rgba(90,184,138,0.8)",borderWidth:2,pointRadius:0,tension:0.4,borderDash:[5,3],fill:false,order:1}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:tc2,font:{size:11}},grid:{display:false}},y:{ticks:{color:tc2,font:{size:11}},grid:{color:gc},beginAtZero:true}}}});}
+    if(chartTortaInst){chartTortaInst.destroy();chartTortaInst=null;}
+    var ct=document.getElementById("hct");
+    if(ct){var pa=PRODUCTOS.filter(function(k){return s.totProd[k]>0;});chartTortaInst=new Chart(ct,{type:"doughnut",data:{labels:pa.map(function(k){return PROD_LABELS_H[k];}),datasets:[{data:pa.map(function(k){return s.totProd[k];}),backgroundColor:pa.map(function(k){return PROD_COLORES_H[k];}),borderWidth:2,borderColor:id?"#1a2744":"#fff"}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:"60%"}});}
+  });
 }
+
 
 
 // ── CERRAR SEMANA ─────────────────────────────────────────────
