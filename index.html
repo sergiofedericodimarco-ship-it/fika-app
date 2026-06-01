@@ -1690,8 +1690,14 @@ function getHistorialFiltrado(){
 }
 
 function fmtSem(h){
-  var f=new Date((h.fecha||h.id)+'T12:00');
-  return f.getDate()+'/'+(f.getMonth()+1);
+  try{
+    var s=(h.fecha||h.id||'').slice(0,10);
+    if(s.length===10){
+      var parts=s.split('-');
+      if(parts.length===3)return parseInt(parts[2])+'/'+parseInt(parts[1]);
+    }
+    return s;
+  }catch(e){return '?';}
 }
 
 function calcHistStats(lista){
