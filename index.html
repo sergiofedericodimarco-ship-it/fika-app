@@ -1876,7 +1876,7 @@ function renderHistGraficoMob(lista){
   if(chartMobInst){chartMobInst.destroy();chartMobInst=null;}
   var c=document.getElementById('hist-mob-chart');if(!c)return;
   var tots=lista.map(function(h){return h.total;});var maxT=Math.max.apply(null,tots);
-  chartMobInst=new Chart(c,{type:'bar',data:{labels:lista.map(fmtSem),datasets:[{label:'Total',data:tots,backgroundColor:tots.map(function(v){return v===maxT?'#c9a34f':'rgba(201,163,79,0.35)';}),borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:tc,font:{size:10}},grid:{display:false}},y:{ticks:{color:tc,font:{size:10}},grid:{color:gc},beginAtZero:true}}}});
+  chartMobInst=new Chart(c,{type:'bar',data:{labels:lista.map(fmtSem),datasets:[{label:'Total',data:tots,backgroundColor:tots.map(function(v){return v===maxT?'#c9a34f':'rgba(201,163,79,0.35)';}),borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{enabled:false}},scales:{x:{ticks:{color:tc,font:{size:10}},grid:{display:false}},y:{ticks:{color:tc,font:{size:10}},grid:{color:gc},beginAtZero:true}}}});
 }
 
 function renderHistTablaPC(lista){
@@ -1913,15 +1913,14 @@ function renderHistTablaMob(lista){
 
 function renderHistorial(){
   var lista=getHistorialFiltrado();
-  console.log('FIKA Historial: lista=',lista.length,'HIST_PRELOAD=',HIST_PRELOAD.length);
   var empty=document.getElementById('hist-empty');
   if(lista.length===0){if(empty)empty.style.display='block';return;}
   if(empty)empty.style.display='none';
-  
   renderHistFiltrosPC(lista);
   renderHistStatsPC(lista);
-  renderHistGraficosPC(lista);
   renderHistTablaPC(lista);
+  // Usar setTimeout para asegurar que los canvas estén en el DOM
+  setTimeout(function(){renderHistGraficosPC(lista);},50);
 }
 
 
