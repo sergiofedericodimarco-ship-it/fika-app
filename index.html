@@ -656,7 +656,7 @@ var ALIAS='fika.pan';
 var IG='@pan.artesanal.fika';
 var ENCARGADOS=['Cadete','Fede','Gi','Vilma','Otro'];
 var PRODUCTOS=['lactal','integral','campo','focaccia_cherry','focaccia_cebolla','focaccia_morron','prepizza'];
-var PROD_NOMBRES={lactal:'Lactal',integral:'Lactal integral',campo:'Pan de campo',focaccia_cherry:'Focaccia cherry',focaccia_cebolla:'Focaccia cebolla',focaccia_morron:'Focaccia morrón',prepizza:'Prepizza'};
+var PROD_NOMBRES={lactal:'Lactal',integral:'Integral',campo:'Pan de campo',focaccia_cherry:'Focaccia cherry',focaccia_cebolla:'Focaccia cebolla',focaccia_morron:'Focaccia morrón',prepizza:'Prepizza'};
 var PROD_COLORES={lactal:'#6a9fd8',integral:'#5ab88a',campo:'#c9a34f',focaccia_cherry:'#d4607a',focaccia_cebolla:'#c0507a',focaccia_morron:'#e07040',prepizza:'#8b6fbe'};
 var DIAS=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 var DIAS_C=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
@@ -1007,7 +1007,14 @@ function renderPedidosFiltrados(lista){
     var card=document.createElement('div');card.className='pedido-card';
     var main=document.createElement('div');main.className='pedido-main';main.onclick=function(){verPedido(p.id);};
     var hdr=document.createElement('div');hdr.className='pedido-header';
-    var nm=document.createElement('div');nm.className='pedido-nombre';nm.style.fontSize='13px';nm.textContent=p.nombre+(p.fikaId?' · '+p.fikaId:'');
+    var nm=document.createElement('div');nm.className='pedido-nombre';nm.style.fontSize='13px';
+    if(p.fikaId){
+      var nmSpan=document.createElement('span');nmSpan.textContent=p.nombre;
+      var idSpan=document.createElement('span');idSpan.style.color='var(--text3)';idSpan.textContent=' · '+p.fikaId;
+      nm.appendChild(nmSpan);nm.appendChild(idSpan);
+    } else {
+      nm.textContent=p.nombre;
+    }
     var fs=p.fecha?new Date(p.fecha+'T12:00').toLocaleDateString('es-AR',{weekday:'short',day:'numeric',month:'short'}):'Sin fecha';
     var fd=document.createElement('div');fd.className='pedido-fecha';fd.textContent=fs;
     hdr.appendChild(nm);hdr.appendChild(fd);main.appendChild(hdr);
@@ -1209,7 +1216,7 @@ function exportarPedidosSabado(){_exportarCSV(pedidos.filter(function(p){return 
 function exportarTodosPedidos(){_exportarCSV(pedidos,proximoSabadoStr());}
 function _exportarCSV(lista,nombre){
   if(lista.length===0){alert('No hay pedidos para exportar.');return;}
-  var cols=['Nombre','Fecha entrega','Telefono','Domicilio','Piso/Dpto','Ciudad','Encargado','Lactal','Lactal integral','Pan de campo','Focaccia cherry','Focaccia cebolla','Focaccia morron','Prepizza','Pago','Notas'];
+  var cols=['Nombre','Fecha entrega','Telefono','Domicilio','Piso/Dpto','Ciudad','Encargado','Lactal','Integral','Pan de campo','Focaccia cherry','Focaccia cebolla','Focaccia morron','Prepizza','Pago','Notas'];
   var lines=[cols.join(',')];
   lista.forEach(function(p){var esc=function(v){v=String(v||'');if(v.indexOf(',')>=0||v.indexOf('"')>=0)v='"'+v.replace(/"/g,'""')+'"';return v;};lines.push([esc(p.nombre),esc(p.fecha),esc(p.telefono),esc(p.domicilio),esc(p.piso),esc(p.ciudad),esc(p.encargado||'Cadete'),(p.panes&&p.panes.lactal)||0,(p.panes&&p.panes.integral)||0,(p.panes&&p.panes.campo)||0,(p.panes&&p.panes.focaccia_cherry)||0,(p.panes&&p.panes.focaccia_cebolla)||0,(p.panes&&p.panes.focaccia_morron)||0,(p.panes&&p.panes.prepizza)||0,p.pago?'Si':'No',esc(p.notas)].join(','));});
   var blob=new Blob([lines.join('\n')],{type:'text/csv;charset=utf-8'});
@@ -2056,7 +2063,7 @@ function loadChartJS(cb){if(typeof Chart!=='undefined'){cb();return;}var s=docum
 
 function exportarExcel(){
   if(pedidos.length===0){alert('No hay pedidos para exportar.');return;}
-  var filas=[['Nombre','Fecha entrega','Ciudad','Domicilio','Piso','Encargado','Tipo precio','Lactal','Lactal integral','Pan de campo','Focaccia cherry','Focaccia cebolla','Focaccia morron','Prepizza','Total','Pagado','Entregado','Notas','Cargado el']];
+  var filas=[['Nombre','Fecha entrega','Ciudad','Domicilio','Piso','Encargado','Tipo precio','Lactal','Integral','Pan de campo','Focaccia cherry','Focaccia cebolla','Focaccia morron','Prepizza','Total','Pagado','Entregado','Notas','Cargado el']];
   var ord=pedidos.slice().sort(function(a,b){var ca=a.creadoEn||a.id||'';var cb=b.creadoEn||b.id||'';return ca.localeCompare(cb);});
   ord.forEach(function(p){
     var total=calcTotal(p.panes,p.nombre,p.tipoPrecio);
@@ -2088,7 +2095,7 @@ function exportarExcel(){
 
 function exportarExcel(){
   if(pedidos.length===0){alert('No hay pedidos para exportar.');return;}
-  var filas=[['ID','Nombre','Fecha entrega','Ciudad','Domicilio','Piso','Encargado','Tipo precio','Lactal','Lactal integral','Pan de campo','Foc.cherry','Foc.cebolla','Foc.morron','Prepizza','Total','Pagado','Entregado','Notas']];
+  var filas=[['ID','Nombre','Fecha entrega','Ciudad','Domicilio','Piso','Encargado','Tipo precio','Lactal','Integral','Pan de campo','Foc.cherry','Foc.cebolla','Foc.morron','Prepizza','Total','Pagado','Entregado','Notas']];
   var ord=pedidos.slice().sort(function(a,b){var ca=a.creadoEn||a.id||'';var cb=b.creadoEn||b.id||'';return ca.localeCompare(cb);});
   ord.forEach(function(p){
     var total=calcTotal(p.panes,p.nombre,p.tipoPrecio);
