@@ -37,7 +37,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Jost',
 
 /* ── LOADING ── */
 #loading{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:998;display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px}
-.spinner{width:36px;height:36px;border:2.5px solid rgba(201,163,79,0.3);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite}
+.spinner{font-size:42px;animation:spin 1.2s linear infinite;display:inline-block;transform-origin:center}
 @keyframes spin{to{transform:rotate(360deg)}}
 .loading-msg{font-size:13px;color:var(--text2)}
 
@@ -224,7 +224,7 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
 </div>
 
 <!-- LOADING -->
-<div id="loading"><div class="spinner"></div><div class="loading-msg" id="lmsg">Cargando...</div></div>
+<div id="loading"><div class="spinner">🍞</div><div class="loading-msg" id="lmsg">Cargando...</div></div>
 
 <!-- TICKET PRINT PAGE -->
 <div id="ticket-print-page">
