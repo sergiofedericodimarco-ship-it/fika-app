@@ -461,8 +461,10 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
     <!-- PRECIOS PC -->
     <div class="dscreen" id="d-precios">
       <div style="max-width:700px">
-        <div class="sec-lbl">Precios base</div>
+        <div class="sec-lbl">Minorista</div>
         <div class="card" id="precios-lista" style="margin-bottom:20px"></div>
+        <div class="sec-lbl">Mayorista</div>
+        <div class="card" id="precios-lista-may" style="margin-bottom:20px"></div>
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
           <div class="sec-lbl" style="margin:0">Precios especiales</div>
           <button class="btn-ol" style="margin:0" onclick="abrirFormPrecioEspecial()">+ Agregar</button>
@@ -698,22 +700,22 @@ function calcTotal(panes,nombreCliente,tipoPrecio){
   PRODUCTOS.forEach(function(k){
     if(panes[k]){
       var prod=productos.find(function(p){return p.id===k;});
-      if(!prod||!prod.precio)return;
-      var precio=prod.precio;
-      // Buscar precio especial si hay nombre de cliente
+      if(!prod)return;
+      var precio=0;
+      // Precio según tipo
+      if(tipoPrecio==='Mayorista'&&prod.precio_mayorista>0){
+        precio=prod.precio_mayorista;
+      } else {
+        precio=prod.precio||0;
+      }
+      // Precio especial por cliente (sobreescribe el tipo)
       if(nombreCliente){
         var cli=clientes.find(function(c){return c.nombre.toLowerCase()===nombreCliente.toLowerCase();});
         if(cli){
-          // Precio especial específico para este producto
           var pe=preciosCliente.find(function(pc){return pc.cliente_id===cli.id&&pc.producto_id===k;});
           if(!pe)pe=preciosCliente.find(function(pc){return pc.cliente_id===cli.id&&pc.producto_id==='todos';});
           if(pe)precio=pe.precio;
         }
-      }
-      // Si el tipo es Mayorista y existe precio mayorista global
-      if(tipoPrecio==='Mayorista'&&!nombreCliente){
-        var peMay=preciosCliente.find(function(pc){return pc.tipo==='Mayorista'&&pc.producto_id===k;});
-        if(peMay)precio=peMay.precio;
       }
       t+=panes[k]*precio;
     }
@@ -1770,7 +1772,6 @@ function imprimirTickets(){
     var ticket=document.createElement('div');ticket.className='ticket';
     var header=document.createElement('div');header.className='t-logo';header.textContent='FIKA';var art=document.createElement('span');art.className='t-art';art.textContent='- - - artesanal - - -';header.appendChild(art);ticket.appendChild(header);
     var nombre=document.createElement('div');nombre.className='t-nombre';nombre.textContent=p.nombre;
-    if(p.fikaId){var tid=document.createElement('div');tid.style.cssText='text-align:center;font-size:6pt;color:#888;margin-top:1mm';tid.textContent=p.fikaId;ticket.appendChild(tid);}
     if(p.fikaId){var tid=document.createElement('div');tid.style.cssText='text-align:center;font-size:6pt;color:#888;margin-top:1mm';tid.textContent=p.fikaId;ticket.appendChild(tid);}ticket.appendChild(nombre);
     if(p.fecha){var f=new Date(p.fecha+'T12:00');var fecha=document.createElement('div');fecha.className='t-fecha';fecha.textContent=DIAS_C[f.getDay()]+' '+f.getDate()+'/'+pad(f.getMonth()+1)+'/'+f.getFullYear();ticket.appendChild(fecha);}
     var sep1=document.createElement('div');sep1.style.cssText='border-top:1px dashed #999;margin:1.5mm 0';ticket.appendChild(sep1);
@@ -1805,24 +1806,42 @@ function renderClientesDesk(){
 }
 
 // ── PRECIOS ───────────────────────────────────────────────────
-function renderPrecios(){
-  var el=document.getElementById('precios-lista');if(!el)return;el.innerHTML='';
-  if(productos.length===0){el.innerHTML='<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px">Cargando productos...</div>';cargarProductos().then(renderPrecios);return;}
+function renderPrecioLista(containerId, tipo){
+  var el=document.getElementById(containerId);if(!el)return;el.innerHTML='';
+  if(productos.length===0){el.innerHTML='<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px">Cargando...</div>';cargarProductos().then(renderPrecios);return;}
   productos.forEach(function(prod){
     var row=document.createElement('div');row.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:0.5px solid var(--border)';
     var nm=document.createElement('div');nm.style.cssText='font-size:14px;color:var(--text)';nm.textContent=prod.nombre;
     var right=document.createElement('div');right.style.cssText='display:flex;align-items:center;gap:10px';
-    var precio=document.createElement('span');precio.style.cssText='font-size:14px;color:var(--accent);font-weight:500';precio.textContent=prod.precio>0?fmtPeso(prod.precio):'Sin precio';
-    var bEdit=document.createElement('button');bEdit.className='btn-ol';bEdit.style.cssText='margin:0;padding:3px 10px;font-size:11px';bEdit.textContent='Editar';bEdit.onclick=(function(p){return function(){editarPrecio(p);};})(prod);
+    var precioVal=tipo==='mayorista'?(prod.precio_mayorista||0):(prod.precio||0);
+    var precio=document.createElement('span');precio.style.cssText='font-size:14px;color:var(--accent);font-weight:500';precio.textContent=precioVal>0?fmtPeso(precioVal):'Sin precio';
+    var bEdit=document.createElement('button');bEdit.className='btn-ol';bEdit.style.cssText='margin:0;padding:3px 10px;font-size:11px';bEdit.textContent='Editar';
+    bEdit.onclick=(function(p,t){return function(){editarPrecioTipo(p,t);};})(prod,tipo);
     right.appendChild(precio);right.appendChild(bEdit);row.appendChild(nm);row.appendChild(right);el.appendChild(row);
   });
+}
+
+function renderPrecios(){
+  if(productos.length===0){cargarProductos().then(renderPrecios);return;}
+  renderPrecioLista('precios-lista','minorista');
+  renderPrecioLista('precios-lista-may','mayorista');
   renderPreciosEspeciales();
 }
 
-function editarPrecio(prod){
-  var nuevo=prompt('Precio para '+prod.nombre+' (actual: '+(prod.precio>0?fmtPeso(prod.precio):'sin precio')+'):\nIngresá el número sin $');
-  if(nuevo===null)return;var n=parseInt(nuevo);if(isNaN(n)||n<0){alert('Número inválido.');return;}
-  prod.precio=n;sbUpsert('productos',[prod]);localStorage.setItem('fika-productos',JSON.stringify(productos));renderPrecios();alert('Precio actualizado.');
+function editarPrecio(prod){editarPrecioTipo(prod,'minorista');}
+
+function editarPrecioTipo(prod,tipo){
+  var actual=tipo==='mayorista'?(prod.precio_mayorista||0):(prod.precio||0);
+  var label=tipo==='mayorista'?'Mayorista':'Minorista';
+  var nuevo=prompt(label+' — '+prod.nombre+'\nActual: '+(actual>0?fmtPeso(actual):'sin precio')+'\nIngresá el número sin $:');
+  if(nuevo===null)return;
+  var n=parseInt(nuevo.replace(/[^0-9]/g,''));
+  if(isNaN(n)||n<0){alert('Número inválido.');return;}
+  if(tipo==='mayorista')prod.precio_mayorista=n;
+  else prod.precio=n;
+  sbUpsert('productos',[prod]);
+  localStorage.setItem('fika-productos',JSON.stringify(productos));
+  renderPrecios();
 }
 
 function renderPreciosEspeciales(){
