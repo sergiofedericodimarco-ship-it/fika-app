@@ -906,12 +906,51 @@ function checkAlertaPago(){var n=pedidos.filter(function(p){return !p.pago;}).le
 // ── BUSCADOR ──────────────────────────────────────────────────
 function buscarCliente(q){
   q=(q||'').trim().toLowerCase();
+  // Detectar pestaña activa
+  var enCobros=false;
+  if(ES_MOVIL){var mc=document.getElementById('ms-cobros');if(mc&&mc.classList.contains('active'))enCobros=true;}
+  else{var dc=document.getElementById('d-cobros');if(dc&&dc.classList.contains('active'))enCobros=true;}
+
+  if(enCobros){
+    if(!q){if(ES_MOVIL)renderCobros();else renderCobrosDesk();return;}
+    var resCob=cobros.filter(function(c){return c.nombre.toLowerCase().includes(q);});
+    if(ES_MOVIL)renderCobrosFiltrados(resCob);
+    else renderCobrosDeskFiltrados(resCob);
+    return;
+  }
+
   if(!q){if(ES_MOVIL)renderPedidos();else renderDeskPedidos();return;}
   var fuente=pedidosImportados.length>0?pedidosImportados:pedidos;
   var res=fuente.filter(function(p){return p.nombre.toLowerCase().includes(q);});
   if(ES_MOVIL)renderPedidosFiltrados(res);
   else _renderDeskTabla(res);
 }
+
+function renderCobrosFiltrados(lista){
+  var list=document.getElementById('cobros-list'),empty=document.getElementById('cobros-empty');if(!list)return;
+  var pendientes=lista.filter(function(c){return !c.pagado;});
+  var pagados=lista.filter(function(c){return c.pagado;});
+  if(lista.length===0){list.innerHTML='<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px">Sin resultados.</div>';if(empty)empty.style.display='none';return;}
+  if(empty)empty.style.display='none';list.innerHTML='';
+  if(pendientes.length>0){var sl=document.createElement('div');sl.className='sec-lbl';sl.textContent='Pendientes ('+pendientes.length+')';list.appendChild(sl);}
+  pendientes.forEach(function(c){
+    var card=document.createElement('div');card.className='cobro-card';
+    var hdr=document.createElement('div');hdr.style.cssText='display:flex;justify-content:space-between;align-items:center;margin-bottom:5px';
+    var nm=document.createElement('div');nm.style.cssText='font-size:14px;font-weight:500;color:var(--text)';nm.textContent=c.nombre;
+    var fs=c.fecha?new Date(c.fecha+'T12:00').toLocaleDateString('es-AR',{day:'numeric',month:'short'}):'';
+    var fd=document.createElement('div');fd.style.cssText='font-size:11px;color:var(--text3)';fd.textContent=fs;
+    hdr.appendChild(nm);hdr.appendChild(fd);card.appendChild(hdr);
+    var det=document.createElement('div');det.style.cssText='font-size:12px;color:var(--text2);margin-bottom:8px';det.textContent=getPanesStr(c.panes,' · ');card.appendChild(det);
+    var total=calcTotal(c.panes);if(total>0){var tv=document.createElement('div');tv.style.cssText='font-size:13px;color:var(--accent);font-weight:500;margin-bottom:8px';tv.textContent=fmtPeso(total);card.appendChild(tv);}
+    var btns=document.createElement('div');btns.style.cssText='display:flex;gap:7px';
+    var bPag=document.createElement('button');bPag.style.cssText='flex:1;padding:8px;background:var(--ok);border:none;border-radius:7px;color:var(--bg);font-family:Raleway,sans-serif;font-size:12px;cursor:pointer';bPag.textContent='Marcar como pagado';bPag.onclick=(function(id){return function(){marcarCobroPagado(id);};})(c.pedidoId);
+    var bDel=document.createElement('button');bDel.style.cssText='padding:8px 12px;background:none;border:0.5px solid rgba(224,85,85,0.3);border-radius:7px;color:var(--danger);font-family:Raleway,sans-serif;font-size:12px;cursor:pointer';bDel.textContent='Eliminar';bDel.onclick=(function(id){return function(){eliminarCobro(id);};})(c.pedidoId);
+    btns.appendChild(bPag);btns.appendChild(bDel);card.appendChild(btns);list.appendChild(card);
+  });
+  if(pagados.length>0){var sl2=document.createElement('div');sl2.className='sec-lbl';sl2.style.marginTop='14px';sl2.textContent='Cobrados ('+pagados.length+')';list.appendChild(sl2);pagados.slice(0,10).forEach(function(c){var card2=document.createElement('div');card2.className='cobro-card';card2.style.opacity='0.55';var hdr2=document.createElement('div');hdr2.style.cssText='display:flex;justify-content:space-between;align-items:center';var nm2=document.createElement('div');nm2.style.cssText='font-size:13px;color:var(--text)';nm2.textContent=c.nombre;var ok=document.createElement('span');ok.className='badge bok';ok.textContent='Cobrado';hdr2.appendChild(nm2);hdr2.appendChild(ok);card2.appendChild(hdr2);list.appendChild(card2);});}
+}
+
+function renderCobrosDeskFiltrados(lista){renderCobrosFiltrados(lista);}
 function actualizarDatalist(){}
 
 // ── AUTOCOMPLETAR AL ELEGIR CLIENTE ──────────────────────────
@@ -1177,7 +1216,40 @@ function renderCobros(){
   });
   if(pagados.length>0){var sl2=document.createElement('div');sl2.className='sec-lbl';sl2.style.marginTop='14px';sl2.textContent='Cobrados ('+pagados.length+')';list.appendChild(sl2);pagados.slice(0,10).forEach(function(c){var card2=document.createElement('div');card2.className='cobro-card';card2.style.opacity='0.55';var hdr2=document.createElement('div');hdr2.style.cssText='display:flex;justify-content:space-between;align-items:center';var nm2=document.createElement('div');nm2.style.cssText='font-size:13px;color:var(--text)';nm2.textContent=c.nombre;var ok=document.createElement('span');ok.className='badge bok';ok.textContent='Cobrado';hdr2.appendChild(nm2);hdr2.appendChild(ok);card2.appendChild(hdr2);list.appendChild(card2);});}
 }
-function renderCobrosDesk(){renderCobros();}
+function renderCobrosDesk(){
+  var list=document.getElementById('desk-cobros-lista'),empty=document.getElementById('desk-cobros-empty');if(!list)return;
+  var pendientes=cobros.filter(function(c){return !c.pagado;});
+  var pagados=cobros.filter(function(c){return c.pagado;});
+  if(cobros.length===0){list.innerHTML='';if(empty)empty.style.display='block';return;}
+  if(empty)empty.style.display='none';list.innerHTML='';
+  if(pendientes.length>0){
+    var sl=document.createElement('div');sl.className='sec-lbl';sl.textContent='Pendientes de cobro ('+pendientes.length+')';list.appendChild(sl);
+    pendientes.forEach(function(c){
+      var card=document.createElement('div');card.className='cobro-card';
+      var hdr=document.createElement('div');hdr.style.cssText='display:flex;justify-content:space-between;align-items:center;margin-bottom:5px';
+      var nm=document.createElement('div');nm.style.cssText='font-size:14px;font-weight:500;color:var(--text)';nm.textContent=c.nombre;
+      var fs=c.fecha?new Date(c.fecha+'T12:00').toLocaleDateString('es-AR',{day:'numeric',month:'short'}):'';
+      var fd=document.createElement('div');fd.style.cssText='font-size:11px;color:var(--text3)';fd.textContent=fs;
+      hdr.appendChild(nm);hdr.appendChild(fd);card.appendChild(hdr);
+      var det=document.createElement('div');det.style.cssText='font-size:12px;color:var(--text2);margin-bottom:8px';det.textContent=getPanesStr(c.panes,' · ');card.appendChild(det);
+      var total=calcTotal(c.panes);if(total>0){var tv=document.createElement('div');tv.style.cssText='font-size:13px;color:var(--accent);font-weight:500;margin-bottom:8px';tv.textContent=fmtPeso(total);card.appendChild(tv);}
+      var btns=document.createElement('div');btns.style.cssText='display:flex;gap:7px';
+      var bPag=document.createElement('button');bPag.className='btn-ol';bPag.style.cssText='margin:0;flex:1;background:var(--ok);border:none;color:var(--bg)';bPag.textContent='Marcar como pagado';bPag.onclick=(function(id){return function(){marcarCobroPagado(id);};})(c.pedidoId);
+      var bDel=document.createElement('button');bDel.className='btn-ol';bDel.style.cssText='margin:0;color:var(--danger);border-color:rgba(224,85,85,0.3)';bDel.textContent='Eliminar';bDel.onclick=(function(id){return function(){eliminarCobro(id);};})(c.pedidoId);
+      btns.appendChild(bPag);btns.appendChild(bDel);card.appendChild(btns);list.appendChild(card);
+    });
+  }
+  if(pagados.length>0){
+    var sl2=document.createElement('div');sl2.className='sec-lbl';sl2.style.marginTop='14px';sl2.textContent='Cobrados ('+pagados.length+')';list.appendChild(sl2);
+    pagados.slice(0,20).forEach(function(c){
+      var card2=document.createElement('div');card2.className='cobro-card';card2.style.opacity='0.55';
+      var hdr2=document.createElement('div');hdr2.style.cssText='display:flex;justify-content:space-between;align-items:center';
+      var nm2=document.createElement('div');nm2.style.cssText='font-size:13px;color:var(--text)';nm2.textContent=c.nombre;
+      var ok=document.createElement('span');ok.className='badge bok';ok.textContent='Cobrado';
+      hdr2.appendChild(nm2);hdr2.appendChild(ok);card2.appendChild(hdr2);list.appendChild(card2);
+    });
+  }
+}
 
 // ── STOCK ─────────────────────────────────────────────────────
 function renderStock(){
@@ -1259,8 +1331,8 @@ async function cerrarSemana(){
   // Calcular el sabado pasado (ultimo sabado inclusive)
   var hoy=new Date();hoy.setHours(0,0,0,0);
   var diaSem=hoy.getDay(); // 0=dom,1=lun,...,6=sab
-  // Dias hasta el sabado pasado: si hoy es dom(0) el sab fue ayer(-1), lun(1) hace 2 dias, etc.
-  var diasAtras=diaSem===0?1:diaSem; // dom=1 dia, lun=2, mar=3...sab=0
+  // Semana dom-sab: el sabado pasado es el ultimo sabado (diaSem=0 dom -> 1 dia atras, diaSem=1 lun -> 2, ..., diaSem=6 sab -> 7)
+  var diasAtras=diaSem===6?7:diaSem+1;
   var sabPasado=new Date(hoy);sabPasado.setDate(hoy.getDate()-diasAtras);
   sabPasado.setHours(23,59,59,999);
 
