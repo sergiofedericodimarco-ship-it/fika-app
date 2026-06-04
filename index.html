@@ -301,12 +301,17 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
     </div>
   </div>
     <div class="mscreen" id="ms-historial-mob">
-      <div id="hist-mob-filtros" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px"></div>
-      <div id="hist-mob-stats" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px"></div>
-      <div id="hist-mob-chart-wrap" style="position:relative;width:100%;height:200px;margin-bottom:12px"><canvas id="hist-mob-chart" role="img" aria-label="Gráfico historial ventas móvil">Historial de ventas por semana.</canvas></div>
-      <div class="sec-lbl">Tabla</div>
-      <div id="hist-mob-tabla" style="overflow-x:auto;font-size:11px"></div>
-      <button class="btn-ok" style="margin-top:10px" onclick="exportarHistorialExcel()">Exportar Excel</button>
+      <div id="hist-mob-filtros" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px"></div>
+      <div id="hist-mob-stats" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px"></div>
+      <div class="sec-lbl">Total por semana</div>
+      <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:10px;margin-bottom:12px">
+        <div style="position:relative;width:100%;height:180px"><canvas id="hist-mob-chart" role="img" aria-label="Gráfico historial ventas móvil">Historial de ventas por semana.</canvas></div>
+      </div>
+      <div class="sec-lbl">Detalle semanal</div>
+      <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:8px;overflow-x:auto;margin-bottom:10px">
+        <div id="hist-mob-tabla"></div>
+      </div>
+      <button class="btn-ok" onclick="exportarHistorialExcel()">Exportar Excel</button>
       <div id="hist-mob-empty" class="empty" style="display:none"><div class="empty-icon">&#128202;</div>Sin datos históricos aún.</div>
     </div>
   <button class="fab" id="fab-btn" onclick="abrirFab()">+</button>
@@ -574,7 +579,7 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
     <div class="f-lbl" style="margin-bottom:8px">Pedido</div>
     <div class="panes-grid" id="panes-form"></div>
     <div class="f-row"><div class="f-lbl">Notas</div><input class="f-in" id="p-notas" placeholder="Opcional"></div>
-    <div class="card" style="margin-bottom:10px"><div class="f-row" style="margin-bottom:8px"><div class="f-lbl">Tipo de precio</div><select class="f-in" id="p-tipo-precio"><option value="Minorista">Minorista</option><option value="Mayorista">Mayorista</option><option value="Combo">Combo / Promo</option></select></div><div class="toggle-row"><span style="font-size:13px;color:var(--text2)">¿Ya realizó el pago?</span><label class="toggle"><input type="checkbox" id="p-pago"><span class="slider"></span></label></div></div>
+    <div class="card" style="margin-bottom:10px"><div class="f-row" style="margin-bottom:8px"><div class="f-lbl">Tipo de precio</div><select class="f-in" id="p-tipo-precio" onchange="actualizarTotalPreview()"><option value="Minorista">Minorista</option><option value="Mayorista">Mayorista</option><option value="Combo">Combo / Promo</option></select></div><div class="toggle-row"><span style="font-size:13px;color:var(--text2)">¿Ya realizó el pago?</span><label class="toggle"><input type="checkbox" id="p-pago"><span class="slider"></span></label></div></div>
     <div id="p-total-preview" style="text-align:right;font-size:13px;color:var(--accent);margin-bottom:10px;display:none"></div>
     <button class="btn-p" onclick="guardarPedido()">Guardar pedido</button>
   </div>
@@ -994,17 +999,9 @@ function actualizarDatalist(){}
 // ── TOTAL PREVIEW EN FORMULARIO ───────────────────────────────
 function actualizarTotalPreview(){
   if(productos.length===0)return;
-  var total=0;
-  PRODUCTOS.forEach(function(k){
-    var q=pQtys[k]||0;if(q===0)return;
-    var nombre=document.getElementById('p-nombre').value.trim();
-    var precEsp=preciosCliente.find(function(pc){
-      var cli=clientes.find(function(c){return c.nombre.toLowerCase()===nombre.toLowerCase();});
-      return cli&&pc.cliente_id===cli.id&&pc.producto_id===k;
-    });
-    var precio=precEsp?precEsp.precio:(productos.find(function(p){return p.id===k;})||{precio:0}).precio;
-    total+=q*precio;
-  });
+  var nombre=document.getElementById('p-nombre')?document.getElementById('p-nombre').value.trim():'';
+  var tipoPrecio=document.getElementById('p-tipo-precio')?document.getElementById('p-tipo-precio').value:'Minorista';
+  var total=calcTotal(pQtys,nombre,tipoPrecio);
   var tp=document.getElementById('p-total-preview');
   if(total>0){tp.textContent='Total: '+fmtPeso(total);tp.style.display='block';}
   else tp.style.display='none';
@@ -2114,9 +2111,11 @@ function renderHistFiltrosMob(lista){
 function renderHistStatsMob(lista){
   var el=document.getElementById('hist-mob-stats');if(!el)return;
   var s=calcHistStats(lista);el.innerHTML='';
-  [[s.tot,'Total'],[s.prom,'Prom/sem'],[s.mejor.total+' ('+fmtSem(s.mejor)+')','Mejor sem'],[PROD_LABELS_H[s.estrella],'Estrella']].forEach(function(r){
-    var d=document.createElement('div');d.style.cssText='background:var(--bg2);border:0.5px solid var(--border);border-radius:8px;padding:9px;text-align:center';
-    d.innerHTML='<div style="font-size:16px;color:var(--accent);font-weight:500">'+r[0]+'</div><div style="font-size:8px;color:var(--text3);text-transform:uppercase;margin-top:2px">'+r[1]+'</div>';
+  [[s.tot,'Total panes'],[s.prom,'Promedio/sem'],['★ '+fmtSem(s.mejor),'Mejor sem ('+s.mejor.total+')'],[PROD_LABELS_H[s.estrella],'Producto estrella']].forEach(function(r){
+    var d=document.createElement('div');
+    d.style.cssText='background:var(--bg2);border:0.5px solid var(--border);border-radius:8px;padding:10px 8px;text-align:center;min-width:0';
+    d.innerHTML='<div style="font-size:15px;color:var(--accent);font-weight:500;word-break:break-word;line-height:1.2">'+r[0]+'</div>'
+      +'<div style="font-size:9px;color:var(--text3);text-transform:uppercase;margin-top:3px;line-height:1.3">'+r[1]+'</div>';
     el.appendChild(d);});
 }
 
@@ -2133,9 +2132,27 @@ function renderHistGraficoMob(lista){
 function renderHistTablaMob(lista){
   var el=document.getElementById('hist-mob-tabla');if(!el)return;
   var tots=lista.map(function(h){return h.total;});var maxT=Math.max.apply(null,tots);
-  var html='<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="border-bottom:0.5px solid var(--border2)"><th style="text-align:left;padding:7px 5px;color:var(--text3);font-size:10px;font-weight:400">Semana</th><th style="text-align:right;padding:7px 5px;color:var(--text3);font-size:10px;font-weight:400">Integral</th><th style="text-align:right;padding:7px 5px;color:var(--text3);font-size:10px;font-weight:400">Campo</th><th style="text-align:right;padding:7px 5px;color:var(--text3);font-size:10px;font-weight:400">Foc</th><th style="text-align:right;padding:7px 5px;color:var(--text3);font-size:10px;font-weight:400">Total</th></tr></thead><tbody>';
-  lista.forEach(function(h){var best=h.total===maxT;var foc=(h.focaccia_cherry||0)+(h.focaccia_cebolla||0)+(h.focaccia_morron||0);
-  html+='<tr style="border-bottom:0.5px solid var(--border)'+(best?';background:rgba(201,163,79,0.06)':'')+'"><td style="padding:7px 5px;color:var(--text);font-weight:500">'+(best?'★ ':'')+fmtSem(h)+'</td><td style="text-align:right;padding:7px 5px;color:var(--text)">'+h.integral+'</td><td style="text-align:right;padding:7px 5px;color:var(--text)">'+h.campo+'</td><td style="text-align:right;padding:7px 5px;color:var(--text)">'+foc+'</td><td style="text-align:right;padding:7px 5px;color:var(--accent);font-weight:500">'+h.total+'</td></tr>';});
+  var html='<table style="width:100%;border-collapse:collapse;font-size:11px;min-width:240px">'
+    +'<thead><tr style="border-bottom:0.5px solid var(--border2)">'
+    +'<th style="text-align:left;padding:6px 5px;color:var(--text3);font-size:9px;font-weight:400;white-space:nowrap">Sem</th>'
+    +'<th style="text-align:right;padding:6px 4px;color:var(--text3);font-size:9px;font-weight:400">Int</th>'
+    +'<th style="text-align:right;padding:6px 4px;color:var(--text3);font-size:9px;font-weight:400">Campo</th>'
+    +'<th style="text-align:right;padding:6px 4px;color:var(--text3);font-size:9px;font-weight:400">Lac</th>'
+    +'<th style="text-align:right;padding:6px 4px;color:var(--text3);font-size:9px;font-weight:400">Foc</th>'
+    +'<th style="text-align:right;padding:6px 4px;color:var(--text3);font-size:9px;font-weight:400;color:var(--accent)">Tot</th>'
+    +'</tr></thead><tbody>';
+  lista.forEach(function(h){
+    var best=h.total===maxT;
+    var foc=(h.focaccia_cherry||0)+(h.focaccia_cebolla||0)+(h.focaccia_morron||0);
+    html+='<tr style="border-bottom:0.5px solid var(--border)'+(best?';background:rgba(201,163,79,0.06)':'')+'">'
+      +'<td style="padding:6px 5px;color:var(--text);font-weight:500;white-space:nowrap">'+(best?'★ ':'')+fmtSem(h)+'</td>'
+      +'<td style="text-align:right;padding:6px 4px;color:var(--text)">'+h.integral+'</td>'
+      +'<td style="text-align:right;padding:6px 4px;color:var(--text)">'+h.campo+'</td>'
+      +'<td style="text-align:right;padding:6px 4px;color:var(--text)">'+(h.lactal||0)+'</td>'
+      +'<td style="text-align:right;padding:6px 4px;color:var(--text)">'+foc+'</td>'
+      +'<td style="text-align:right;padding:6px 4px;color:var(--accent);font-weight:500">'+h.total+'</td>'
+      +'</tr>';
+  });
   html+='</tbody></table>';el.innerHTML=html;
 }
 
