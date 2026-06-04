@@ -989,7 +989,7 @@ function renderPedidosFiltrados(lista){
     var card=document.createElement('div');card.className='pedido-card';
     var main=document.createElement('div');main.className='pedido-main';main.onclick=function(){verPedido(p.id);};
     var hdr=document.createElement('div');hdr.className='pedido-header';
-    var nm=document.createElement('div');nm.className='pedido-nombre';nm.style.fontSize='13px';nm.textContent=(p.fikaId?p.fikaId+' · ':'')+p.nombre;
+    var nm=document.createElement('div');nm.className='pedido-nombre';nm.style.fontSize='13px';nm.textContent=p.nombre+(p.fikaId?' · '+p.fikaId:'');
     var fs=p.fecha?new Date(p.fecha+'T12:00').toLocaleDateString('es-AR',{weekday:'short',day:'numeric',month:'short'}):'Sin fecha';
     var fd=document.createElement('div');fd.className='pedido-fecha';fd.textContent=fs;
     hdr.appendChild(nm);hdr.appendChild(fd);main.appendChild(hdr);
@@ -1009,7 +1009,7 @@ function renderPedidosFiltrados(lista){
 
 function verPedido(id){
   pedidoVerId=id;var p=pedidos.find(function(x){return x.id===id;});if(!p)return;
-  document.getElementById('dp-nombre').textContent=(p.fikaId?p.fikaId+' — ':'')+p.nombre;
+  document.getElementById('dp-nombre').textContent=p.nombre+(p.fikaId?' · '+p.fikaId:'');
   var fs=p.fecha?new Date(p.fecha+'T12:00').toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long',year:'numeric'}):'No especificada';
   var cont=document.getElementById('dp-content');cont.innerHTML='';
   var c1=document.createElement('div');c1.className='card';c1.style.marginBottom='12px';
