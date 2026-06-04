@@ -1245,10 +1245,14 @@ function cerrarSemana(){
 async function sincronizarPedidos(){
   var btn=document.getElementById('btn-sync');if(btn)btn.textContent='Sincronizando...';
   showLoad('Sincronizando pedidos...');
+  // Limpiar caché local para forzar carga fresca desde Supabase
+  localStorage.removeItem('fika-pedidos');
+  localStorage.removeItem('fika-cobros');
   await cargarDesdeSupabase();
   hideLoad();
   pedidosImportados=pedidos.slice();
   cadeteOrden=[];filtroPedidosFechas=[];
+  asignarIdsPedidos();
   renderPedidos();renderDeskPedidos();renderCadete();renderRepClientes();
   checkAlertaPago();
   if(btn)btn.textContent='Sincronizar';
