@@ -1255,15 +1255,73 @@ function importarHorarios(){
   catch(e){alert('Error al leer el texto.');}
 }
 
-function cerrarSemana(){
+async function cerrarSemana(){
+  // Calcular el sabado pasado (ultimo sabado inclusive)
   var hoy=new Date();hoy.setHours(0,0,0,0);
-  var pasados=pedidos.filter(function(p){if(!p.fecha)return true;return new Date(p.fecha+'T12:00')<=hoy;});
-  var futuros=pedidos.filter(function(p){if(!p.fecha)return false;return new Date(p.fecha+'T12:00')>hoy;});
-  if(pasados.length===0){alert('No hay pedidos pasados.');return;}
-  if(!confirm('Se archivarán '+pasados.length+' pedidos. Quedan '+futuros.length+' futuros. ¿Continuar?'))return;
-  var arch=[];try{arch=JSON.parse(localStorage.getItem('fika-archivo')||'[]');}catch(e){}
-  arch=arch.concat(pasados);localStorage.setItem('fika-archivo',JSON.stringify(arch));
-  pedidos=futuros;guardar();renderPedidos();checkAlertaPago();alert('Semana cerrada. '+pasados.length+' pedidos archivados.');
+  var diaSem=hoy.getDay(); // 0=dom,1=lun,...,6=sab
+  // Dias hasta el sabado pasado: si hoy es dom(0) el sab fue ayer(-1), lun(1) hace 2 dias, etc.
+  var diasAtras=diaSem===0?1:diaSem; // dom=1 dia, lun=2, mar=3...sab=0
+  var sabPasado=new Date(hoy);sabPasado.setDate(hoy.getDate()-diasAtras);
+  sabPasado.setHours(23,59,59,999);
+
+  var pasados=pedidos.filter(function(p){
+    if(!p.fecha)return true;
+    return new Date(p.fecha+'T12:00')<=sabPasado;
+  });
+  var futuros=pedidos.filter(function(p){
+    if(!p.fecha)return false;
+    return new Date(p.fecha+'T12:00')>sabPasado;
+  });
+
+  if(pasados.length===0){alert('No hay pedidos hasta el sábado pasado ('+sabPasado.getDate()+'/'+(sabPasado.getMonth()+1)+').');return;}
+  if(!confirm('Se archivarán '+pasados.length+' pedidos hasta el '+sabPasado.getDate()+'/'+(sabPasado.getMonth()+1)+'.\nQuedan '+futuros.length+' pedidos futuros.\n\nLos cobros pendientes se mantienen en COBROS.\n\n¿Continuar?'))return;
+
+  showLoad('Cerrando semana...');
+
+  // 1. Calcular estadisticas para el historial
+  var totProd={};PRODUCTOS.forEach(function(k){totProd[k]=0;});
+  pasados.forEach(function(p){PRODUCTOS.forEach(function(k){totProd[k]+=(p.panes&&p.panes[k])||0;});});
+  var totalUn=Object.values(totProd).reduce(function(a,b){return a+b;},0);
+
+  // Fecha de referencia: el sabado pasado
+  var fechaRef=sabPasado.toISOString().slice(0,10);
+  var regHist={
+    id:fechaRef,
+    fecha:sabPasado.toISOString(),
+    lactal:totProd.lactal||0,
+    integral:totProd.integral||0,
+    campo:totProd.campo||0,
+    focaccia_cherry:totProd.focaccia_cherry||0,
+    focaccia_cebolla:totProd.focaccia_cebolla||0,
+    focaccia_morron:totProd.focaccia_morron||0,
+    prepizza:totProd.prepizza||0,
+    total:totalUn,
+    inicio:'',
+    fin:''
+  };
+
+  // 2. Guardar en historial local y Supabase
+  var yaExiste=historial.find(function(h){return h.id===fechaRef;});
+  if(!yaExiste)historial.unshift(regHist);
+  localStorage.setItem('fika-historial',JSON.stringify(historial));
+  await sbUpsert('historial_produccion',regHist);
+
+  // 3. Eliminar pedidos pasados de Supabase
+  for(var i=0;i<pasados.length;i++){
+    await sbDelete('pedidos','id',pasados[i].id);
+  }
+
+  // 4. Asegurar cobros pendientes (ya estan en cobros, solo verificar)
+  reconstruirCobros();
+
+  // 5. Actualizar lista de pedidos
+  pedidos=futuros;
+  guardar();
+  hideLoad();
+  renderPedidos();
+  if(!ES_MOVIL)renderDeskPedidos();
+  checkAlertaPago();
+  alert('Semana cerrada. '+pasados.length+' pedidos archivados en el Historial.');
 }
 
 // ── DESK PEDIDOS ──────────────────────────────────────────────
