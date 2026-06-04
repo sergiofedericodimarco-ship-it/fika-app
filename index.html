@@ -237,7 +237,7 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
     <div><div class="mob-logo">FIK<span>A</span></div></div>
     <div id="alert-pago" style="font-size:11px;color:var(--danger);display:none"></div>
   </div>
-  <div id="mob-search"><span class="si">&#128269;</span><input type="search" placeholder="Buscar cliente..." oninput="buscarCliente(this.value)" id="mob-search-inp"></div>
+  <div id="mob-search" style="position:relative"><span class="si">&#128269;</span><input type="search" placeholder="Buscar cliente..." oninput="buscarCliente(this.value);document.getElementById('mob-search-clear').style.display=this.value?'flex':'none';" id="mob-search-inp"><button id="mob-search-clear" onclick="document.getElementById('mob-search-inp').value='';buscarCliente('');this.style.display='none';" style="display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text3);font-size:16px;cursor:pointer;padding:0;line-height:1">&#215;</button></div>
   <div id="mob-nav">
     <button class="mnav active" onclick="showMob('pedidos')" id="mn-pedidos">Pedidos</button>
     <button class="mnav" onclick="showMob('semana')" id="mn-semana">Semana</button>
@@ -253,11 +253,9 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
       <div id="pedidos-list"></div>
       <div id="pedidos-empty" class="empty" style="display:none"><div class="empty-icon">&#127838;</div>Sin pedidos. Toca + para agregar.</div>
       <button class="btn-p" onclick="exportarPedidosSabado()">Exportar pedidos del sábado</button>
-      <button class="btn-ok" onclick="exportarExcel()">Exportar todo a Excel</button>
-      <button class="btn-ok" onclick="exportarExcel()">Exportar todo a Excel</button>
       <button class="btn-s" onclick="exportarTodosPedidos()">Exportar todos los pedidos</button>
       <button class="btn-s" onclick="abrirModal('modal-import-horarios')">Importar horarios de entrega</button>
-      <button class="btn-ok" onclick="backupPedidos()">Backup de pedidos</button>
+      <button class="btn-ok" onclick="backupPedidos()">Backup y exportar</button>
       <button class="btn-s" onclick="abrirModal('modal-restaurar')">Restaurar backup</button>
       <button class="btn-d" onclick="cerrarSemana()">Cerrar semana</button>
     </div>
@@ -670,6 +668,7 @@ var ORIGEN_ENC=encodeURIComponent('Pedro de Villalba 400, Yerba Buena, Tucuman, 
 // ── DATOS EN MEMORIA ──────────────────────────────────────────
 var pedidos=[],compras=[],stock=[],cobros=[],clientes=[],productos=[],preciosCliente=[];
 var historial=[],stockPC=[];
+var FIKA_ID_COUNTER=350;
 var pedidoEditId=null,pedidoVerId=null,clienteVerId=null;
 var pQtys={};PRODUCTOS.forEach(function(k){pQtys[k]=0;});
 var semanaOffset=0;
@@ -754,6 +753,40 @@ async function doLogin(){
   }
 }
 
+
+function fikaIdStr(n){var s=String(n);while(s.length<4)s='0'+s;return 'FIKA-'+s;}
+
+function asignarIdsPedidos(){
+  // Ordenar todos los pedidos por fecha + creadoEn
+  var sinId=pedidos.filter(function(p){return !p.fikaId;});
+  if(sinId.length===0)return;
+  // Encontrar el máximo ID actual
+  var maxNum=349;
+  pedidos.forEach(function(p){
+    if(p.fikaId){var n=parseInt(p.fikaId.replace('FIKA-',''));if(n>maxNum)maxNum=n;}
+  });
+  // Ordenar los sin ID por fecha+creadoEn
+  sinId.sort(function(a,b){
+    var fa=a.fecha||'9999',fb=b.fecha||'9999';
+    if(fa!==fb)return fa.localeCompare(fb);
+    return (a.creadoEn||a.id||'').localeCompare(b.creadoEn||b.id||'');
+  });
+  sinId.forEach(function(p){
+    maxNum++;
+    p.fikaId=fikaIdStr(maxNum);
+    guardarPedidoSupa(p);
+  });
+  FIKA_ID_COUNTER=maxNum+1;
+}
+
+function nextFikaId(){
+  var maxNum=349;
+  pedidos.forEach(function(p){
+    if(p.fikaId){var n=parseInt(p.fikaId.replace('FIKA-',''));if(n>maxNum)maxNum=n;}
+  });
+  return fikaIdStr(maxNum+1);
+}
+
 // ── INIT ──────────────────────────────────────────────────────
 async function iniciarApp(){
   showLoad('Cargando datos...');
@@ -795,6 +828,7 @@ initLayout();
   ]);
   reconstruirCobros();
   hideLoad();
+  asignarIdsPedidos();
   renderPedidos();
   renderDeskPedidos();
   checkAlertaPago();
@@ -837,8 +871,8 @@ async function cargarClientes(){
 function cargarHistorialLocal(){try{historial=JSON.parse(localStorage.getItem('fika-historial')||'[]');}catch(e){historial=[];}}
 
 // ── MAPEADORES ────────────────────────────────────────────────
-function pedidoToRow(p){return{id:p.id,cliente_id:p.clienteId||null,nombre:p.nombre,fecha:p.fecha||null,telefono:p.telefono||null,domicilio:p.domicilio||null,piso:p.piso||null,ciudad:p.ciudad||null,encargado:p.encargado||'Cadete',notas:p.notas||null,pago:p.pago||false,entregado:p.entregado||false,panes:p.panes||{},etiqueta:p._etiqueta||null,horario_entrega:p.horarioEntrega||null,horario_desde:p.horarioDesde||null,horario_hasta:p.horarioHasta||null,creado_en:p.creadoEn||new Date().toISOString()};}
-function rowToPedido(r){return{id:r.id,clienteId:r.cliente_id,nombre:r.nombre,fecha:r.fecha,telefono:r.telefono,domicilio:r.domicilio,piso:r.piso,ciudad:r.ciudad,encargado:r.encargado||'Cadete',notas:r.notas,pago:r.pago||false,entregado:r.entregado||false,panes:r.panes||{},_etiqueta:r.etiqueta,horarioEntrega:r.horario_entrega,horarioDesde:r.horario_desde,horarioHasta:r.horario_hasta,creadoEn:r.creado_en};}
+function pedidoToRow(p){return{id:p.id,fika_id:p.fikaId||null,cliente_id:p.clienteId||null,nombre:p.nombre,fecha:p.fecha||null,telefono:p.telefono||null,domicilio:p.domicilio||null,piso:p.piso||null,ciudad:p.ciudad||null,encargado:p.encargado||'Cadete',notas:p.notas||null,pago:p.pago||false,entregado:p.entregado||false,panes:p.panes||{},etiqueta:p._etiqueta||null,horario_entrega:p.horarioEntrega||null,horario_desde:p.horarioDesde||null,horario_hasta:p.horarioHasta||null,creado_en:p.creadoEn||new Date().toISOString()};}
+function rowToPedido(r){return{id:r.id,fikaId:r.fika_id||null,clienteId:r.cliente_id,nombre:r.nombre,fecha:r.fecha,telefono:r.telefono,domicilio:r.domicilio,piso:r.piso,ciudad:r.ciudad,encargado:r.encargado||'Cadete',notas:r.notas,pago:r.pago||false,entregado:r.entregado||false,panes:r.panes||{},_etiqueta:r.etiqueta,horarioEntrega:r.horario_entrega,horarioDesde:r.horario_desde,horarioHasta:r.horario_hasta,creadoEn:r.creado_en};}
 function cobroToRow(c){return{pedido_id:c.pedidoId,nombre:c.nombre,fecha:c.fecha,panes:c.panes||{},pagado:c.pagado||false,fecha_registro:c.fechaRegistro||new Date().toISOString(),fecha_pago:c.fechaPago||null};}
 function rowToCobro(r){return{pedidoId:r.pedido_id,nombre:r.nombre,fecha:r.fecha,panes:r.panes||{},pagado:r.pagado||false,fechaRegistro:r.fecha_registro,fechaPago:r.fecha_pago};}
 
@@ -931,7 +965,8 @@ async function guardarPedido(){
   if(Object.values(pQtys).reduce(function(a,b){return a+b;},0)===0){alert('Agrega al menos un producto.');return;}
   var pExist=pedidoEditId?pedidos.find(function(x){return x.id===pedidoEditId;}):null;
   var cli=clientes.find(function(c){return c.nombre.toLowerCase()===nombre.toLowerCase();});
-  var p={id:pedidoEditId||Date.now().toString(),clienteId:cli?cli.id:null,nombre:nombre,fecha:document.getElementById('p-fecha').value,telefono:document.getElementById('p-tel').value.trim(),domicilio:document.getElementById('p-dom').value.trim(),piso:document.getElementById('p-piso').value.trim(),ciudad:document.getElementById('p-ciudad').value,encargado:document.getElementById('p-enc').value,notas:document.getElementById('p-notas').value.trim(),pago:document.getElementById('p-pago').checked,tipoPrecio:document.getElementById('p-tipo-precio')?document.getElementById('p-tipo-precio').value:'Minorista',entregado:pExist?pExist.entregado||false:false,panes:JSON.parse(JSON.stringify(pQtys)),_etiqueta:pExist?pExist._etiqueta:null,creadoEn:pExist?pExist.creadoEn:new Date().toISOString()};
+  var nuevoFikaId=pedidoEditId?(pedidos.find(function(x){return x.id===pedidoEditId;})||{}).fikaId||nextFikaId():nextFikaId();
+  var p={id:pedidoEditId||Date.now().toString(),fikaId:nuevoFikaId,clienteId:cli?cli.id:null,nombre:nombre,fecha:document.getElementById('p-fecha').value,telefono:document.getElementById('p-tel').value.trim(),domicilio:document.getElementById('p-dom').value.trim(),piso:document.getElementById('p-piso').value.trim(),ciudad:document.getElementById('p-ciudad').value,encargado:document.getElementById('p-enc').value,notas:document.getElementById('p-notas').value.trim(),pago:document.getElementById('p-pago').checked,tipoPrecio:document.getElementById('p-tipo-precio')?document.getElementById('p-tipo-precio').value:'Minorista',entregado:pExist?pExist.entregado||false:false,panes:JSON.parse(JSON.stringify(pQtys)),_etiqueta:pExist?pExist._etiqueta:null,creadoEn:pExist?pExist.creadoEn:new Date().toISOString()};
   if(pedidoEditId){var idx=pedidos.findIndex(function(x){return x.id===pedidoEditId;});if(idx>=0)pedidos[idx]=p;}else pedidos.unshift(p);
   await guardarPedidoSupa(p);
   sincronizarCobro(p);
@@ -948,13 +983,13 @@ function renderPedidosFiltrados(lista){
   if(!list)return;
   if(lista.length===0){list.innerHTML='';empty.style.display='block';return;}
   empty.style.display='none';
-  var ord=lista.slice().sort(function(a,b){var ca=a.creadoEn||a.id||'';var cb=b.creadoEn||b.id||'';return ca.localeCompare(cb);});
+  var ord=lista.slice().sort(function(a,b){var fa=a.fecha||'9999';var fb=b.fecha||'9999';if(fa!==fb)return fa.localeCompare(fb);var ca=a.creadoEn||a.id||'';var cb=b.creadoEn||b.id||'';return ca.localeCompare(cb);});
   list.innerHTML='';
   ord.forEach(function(p){
     var card=document.createElement('div');card.className='pedido-card';
     var main=document.createElement('div');main.className='pedido-main';main.onclick=function(){verPedido(p.id);};
     var hdr=document.createElement('div');hdr.className='pedido-header';
-    var nm=document.createElement('div');nm.className='pedido-nombre';nm.style.fontSize='13px';nm.textContent=p.nombre;
+    var nm=document.createElement('div');nm.className='pedido-nombre';nm.style.fontSize='13px';nm.textContent=(p.fikaId?p.fikaId+' · ':'')+p.nombre;
     var fs=p.fecha?new Date(p.fecha+'T12:00').toLocaleDateString('es-AR',{weekday:'short',day:'numeric',month:'short'}):'Sin fecha';
     var fd=document.createElement('div');fd.className='pedido-fecha';fd.textContent=fs;
     hdr.appendChild(nm);hdr.appendChild(fd);main.appendChild(hdr);
@@ -974,7 +1009,7 @@ function renderPedidosFiltrados(lista){
 
 function verPedido(id){
   pedidoVerId=id;var p=pedidos.find(function(x){return x.id===id;});if(!p)return;
-  document.getElementById('dp-nombre').textContent=p.nombre;
+  document.getElementById('dp-nombre').textContent=(p.fikaId?p.fikaId+' — ':'')+p.nombre;
   var fs=p.fecha?new Date(p.fecha+'T12:00').toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long',year:'numeric'}):'No especificada';
   var cont=document.getElementById('dp-content');cont.innerHTML='';
   var c1=document.createElement('div');c1.className='card';c1.style.marginBottom='12px';
@@ -1227,7 +1262,7 @@ function renderDeskPedidos(){
   var wrap=document.getElementById('desk-ped-tabla'),empty=document.getElementById('desk-ped-empty');
   if(todos.length===0){wrap.innerHTML='';empty.style.display='block';document.getElementById('cnt-produccion').style.display='none';return;}
   empty.style.display='none';
-  var ord=lista.slice().sort(function(a,b){var ca=a.creadoEn||a.id||'';var cb=b.creadoEn||b.id||'';return ca.localeCompare(cb);});
+  var ord=lista.slice().sort(function(a,b){var fa=a.fecha||'9999';var fb=b.fecha||'9999';if(fa!==fb)return fa.localeCompare(fb);var ca=a.creadoEn||a.id||'';var cb=b.creadoEn||b.id||'';return ca.localeCompare(cb);});
   var tot={};PRODUCTOS.forEach(function(k){tot[k]=0;});ord.forEach(function(p){PRODUCTOS.forEach(function(k){tot[k]+=((p.panes&&p.panes[k])||0);});});
   renderContadorProduccion(tot);
   var DIAS_C2=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
@@ -1255,7 +1290,7 @@ function _renderDeskTabla(lista){
   var todos=pedidosImportados.length>0?pedidosImportados:pedidos;
   if(todos.length===0){wrap.innerHTML='';empty.style.display='block';document.getElementById('cnt-produccion').style.display='none';return;}
   empty.style.display='none';
-  var ord=lista.slice().sort(function(a,b){var ca=a.creadoEn||a.id||'';var cb=b.creadoEn||b.id||'';return ca.localeCompare(cb);});
+  var ord=lista.slice().sort(function(a,b){var fa=a.fecha||'9999';var fb=b.fecha||'9999';if(fa!==fb)return fa.localeCompare(fb);var ca=a.creadoEn||a.id||'';var cb=b.creadoEn||b.id||'';return ca.localeCompare(cb);});
   var tot={};PRODUCTOS.forEach(function(k){tot[k]=0;});ord.forEach(function(p){PRODUCTOS.forEach(function(k){tot[k]+=((p.panes&&p.panes[k])||0);});});
   renderContadorProduccion(tot);
   var DIAS_C2=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
@@ -1542,7 +1577,9 @@ function imprimirTickets(){
   lista.forEach(function(p){
     var ticket=document.createElement('div');ticket.className='ticket';
     var header=document.createElement('div');header.className='t-logo';header.textContent='FIKA';var art=document.createElement('span');art.className='t-art';art.textContent='- - - artesanal - - -';header.appendChild(art);ticket.appendChild(header);
-    var nombre=document.createElement('div');nombre.className='t-nombre';nombre.textContent=p.nombre;ticket.appendChild(nombre);
+    var nombre=document.createElement('div');nombre.className='t-nombre';nombre.textContent=p.nombre;
+    if(p.fikaId){var tid=document.createElement('div');tid.style.cssText='text-align:center;font-size:6pt;color:#888;margin-top:1mm';tid.textContent=p.fikaId;ticket.appendChild(tid);}
+    if(p.fikaId){var tid=document.createElement('div');tid.style.cssText='text-align:center;font-size:6pt;color:#888;margin-top:1mm';tid.textContent=p.fikaId;ticket.appendChild(tid);}ticket.appendChild(nombre);
     if(p.fecha){var f=new Date(p.fecha+'T12:00');var fecha=document.createElement('div');fecha.className='t-fecha';fecha.textContent=DIAS_C[f.getDay()]+' '+f.getDate()+'/'+pad(f.getMonth()+1)+'/'+f.getFullYear();ticket.appendChild(fecha);}
     var sep1=document.createElement('div');sep1.style.cssText='border-top:1px dashed #999;margin:1.5mm 0';ticket.appendChild(sep1);
     var panes=document.createElement('div');panes.className='t-panes';
@@ -2029,7 +2066,7 @@ function exportarExcel(){
 
 function exportarExcel(){
   if(pedidos.length===0){alert('No hay pedidos para exportar.');return;}
-  var filas=[['Nombre','Fecha entrega','Ciudad','Domicilio','Piso','Encargado','Tipo precio','Lactal','Lactal integral','Pan de campo','Foc.cherry','Foc.cebolla','Foc.morron','Prepizza','Total','Pagado','Entregado','Notas']];
+  var filas=[['ID','Nombre','Fecha entrega','Ciudad','Domicilio','Piso','Encargado','Tipo precio','Lactal','Lactal integral','Pan de campo','Foc.cherry','Foc.cebolla','Foc.morron','Prepizza','Total','Pagado','Entregado','Notas']];
   var ord=pedidos.slice().sort(function(a,b){var ca=a.creadoEn||a.id||'';var cb=b.creadoEn||b.id||'';return ca.localeCompare(cb);});
   ord.forEach(function(p){
     var total=calcTotal(p.panes,p.nombre,p.tipoPrecio);
