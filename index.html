@@ -880,7 +880,25 @@ function rowToCobro(r){return{pedidoId:r.pedido_id,nombre:r.nombre,fecha:r.fecha
 function guardar(){localStorage.setItem('fika-pedidos',JSON.stringify(pedidos));localStorage.setItem('fika-compras',JSON.stringify(compras));}
 function guardarStock(){localStorage.setItem('fika-stock',JSON.stringify(stock));sbUpsert('stock',stock);}
 function guardarCobros(){localStorage.setItem('fika-cobros',JSON.stringify(cobros));sbUpsert('cobros',cobros.map(cobroToRow));}
-async function guardarPedidoSupa(p){guardar();await sbUpsert('pedidos',pedidoToRow(p));}
+async function guardarPedidoSupa(p){
+  // Actualizar en memoria
+  var idx=pedidos.findIndex(function(x){return x.id===p.id;});
+  if(idx>=0)pedidos[idx]=p;
+  // Guardar en localStorage inmediatamente
+  guardar();
+  // Guardar en Supabase con PATCH (update) o POST (insert)
+  var row=pedidoToRow(p);
+  try{
+    var r=await fetch(SUPA_URL+'/pedidos?id=eq.'+encodeURIComponent(p.id),{
+      method:'PATCH',headers:sbH({'Prefer':'return=minimal'}),body:JSON.stringify(row)
+    });
+    if(r.ok)return true;
+  }catch(e){}
+  // Fallback: upsert
+  var ok=await sbUpsert('pedidos',row);
+  if(!ok){delete row.fika_id;ok=await sbUpsert('pedidos',row);}
+  return ok;
+}
 async function eliminarPedidoSupa(id){pedidos=pedidos.filter(function(x){return x.id!==id;});guardar();await sbDelete('pedidos','id',id);}
 
 function checkAlertaPago(){var n=pedidos.filter(function(p){return !p.pago;}).length;var al=document.getElementById('alert-pago');if(al){if(n>0){al.textContent=n+' sin cobrar';al.style.display='block';}else al.style.display='none';}actualizarBadgeCobros();}
