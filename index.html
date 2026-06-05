@@ -687,7 +687,7 @@ var pedidosImportados=[];
 // ── SUPABASE ──────────────────────────────────────────────────
 function sbH(e){var h={'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json'};if(e)Object.assign(h,e);return h;}
 async function sbGet(t,q){try{var r=await fetch(SUPA_URL+'/'+t+'?select=*'+(q||''),{headers:sbH()});if(!r.ok)return null;return await r.json();}catch(e){return null;}}
-async function sbUpsert(t,d){try{var r=await fetch(SUPA_URL+'/'+t,{method:'POST',headers:sbH({'Prefer':'resolution=merge-duplicates,return=minimal'}),body:JSON.stringify(Array.isArray(d)?d:[d])});return r.ok;}catch(e){return false;}}
+async function sbUpsert(t,d){try{var r=await fetch(SUPA_URL+'/'+t,{method:'POST',headers:sbH({'Prefer':'resolution=merge-duplicates,return=minimal'}),body:JSON.stringify(Array.isArray(d)?d:[d])});if(!r.ok){var err=await r.text();alert('Error Supabase ('+t+'): '+r.status+' '+err.slice(0,150));}return r.ok;}catch(e){alert('Error red: '+e.message);return false;}}
 async function sbDelete(t,f,v){try{var r=await fetch(SUPA_URL+'/'+t+'?'+f+'=eq.'+encodeURIComponent(v),{method:'DELETE',headers:sbH()});return r.ok;}catch(e){return false;}}
 
 // ── UI HELPERS ────────────────────────────────────────────────
@@ -893,18 +893,17 @@ async function guardarPedidoSupa(p){
   if(idx>=0)pedidos[idx]=p;
   // Guardar en localStorage inmediatamente
   guardar();
-  // Guardar en Supabase con PATCH (update) o POST (insert)
+  // Intentar con todos los campos
   var row=pedidoToRow(p);
-  try{
-    var r=await fetch(SUPA_URL+'/pedidos?id=eq.'+encodeURIComponent(p.id),{
-      method:'PATCH',headers:sbH({'Prefer':'return=minimal'}),body:JSON.stringify(row)
-    });
-    if(r.ok)return true;
-  }catch(e){}
-  // Fallback: upsert
   var ok=await sbUpsert('pedidos',row);
-  if(!ok){delete row.fika_id;ok=await sbUpsert('pedidos',row);}
-  return ok;
+  if(ok)return true;
+  // Si falla, intentar sin campos nuevos que pueden no existir en Supabase
+  var rowSafe={id:row.id,cliente_id:row.cliente_id,nombre:row.nombre,fecha:row.fecha,
+    telefono:row.telefono,domicilio:row.domicilio,piso:row.piso,ciudad:row.ciudad,
+    encargado:row.encargado,notas:row.notas,pago:row.pago,entregado:row.entregado,
+    panes:row.panes,etiqueta:row.etiqueta,horario_entrega:row.horario_entrega,
+    horario_desde:row.horario_desde,horario_hasta:row.horario_hasta,creado_en:row.creado_en};
+  return await sbUpsert('pedidos',rowSafe);
 }
 async function eliminarPedidoSupa(id){pedidos=pedidos.filter(function(x){return x.id!==id;});guardar();await sbDelete('pedidos','id',id);}
 
