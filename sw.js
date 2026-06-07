@@ -1,4 +1,4 @@
-const CACHE = 'fikapp-v2';
+const CACHE = 'fikapp-v3';
 const ASSETS = ['./index.html', './manifest.json'];
 
 self.addEventListener('install', e => {
