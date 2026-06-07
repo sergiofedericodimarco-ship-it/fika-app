@@ -1949,22 +1949,25 @@ function getSemanaEnCurso(){
   var hoy=new Date();hoy.setHours(23,59,59,999);
   var diaSem=hoy.getDay();
   var dom=new Date(hoy);dom.setDate(hoy.getDate()-diaSem);dom.setHours(0,0,0,0);
-  var sab=new Date(dom);sab.setDate(dom.getDate()+6);sab.setHours(23,59,59,999);
-  // Fecha del sabado de cierre como ID
+  var sab=new Date(dom);sab.setDate(dom.getDate()+6);
+  // Usar formato local para evitar desfase UTC
   var sabStr=sab.getFullYear()+'-'+('0'+(sab.getMonth()+1)).slice(-2)+'-'+('0'+sab.getDate()).slice(-2);
-  // Si ya existe en el historial, no mostrar como "en curso"
-  var yaExiste=(historial||[]).some(function(h){return h.id===sabStr;});
-  var yaEnPreload=(HIST_PRELOAD||[]).some(function(h){return h.id===sabStr;});
+  // Si ya existe en el historial cerrado, no mostrar como "en curso"
+  var yaExiste=(historial||[]).some(function(h){return (h.id||'').slice(0,10)===sabStr;});
+  var yaEnPreload=(HIST_PRELOAD||[]).some(function(h){return (h.id||'').slice(0,10)===sabStr;});
   if(yaExiste||yaEnPreload)return null;
   var pedSemana=pedidos.filter(function(p){
     if(!p.fecha)return false;
-    var f=new Date(p.fecha+'T12:00');return f>=dom&&f<=sab;
+    var f=new Date(p.fecha+'T12:00');
+    var domCheck=new Date(dom);domCheck.setHours(0,0,0,0);
+    var sabCheck=new Date(sab);sabCheck.setHours(23,59,59,999);
+    return f>=domCheck&&f<=sabCheck;
   });
-  // Siempre mostrar aunque no haya pedidos
   var totProd={};PRODUCTOS.forEach(function(k){totProd[k]=0;});
   pedSemana.forEach(function(p){PRODUCTOS.forEach(function(k){totProd[k]+=(p.panes&&p.panes[k])||0;});});
   var total=Object.values(totProd).reduce(function(a,b){return a+b;},0);
-  return {id:'en-curso',fecha:sab.toISOString(),lactal:totProd.lactal||0,integral:totProd.integral||0,
+  // Usar sabStr como fecha para evitar desfase UTC
+  return {id:'en-curso',fecha:sabStr+'T12:00:00.000Z',lactal:totProd.lactal||0,integral:totProd.integral||0,
     campo:totProd.campo||0,focaccia_cherry:totProd.focaccia_cherry||0,
     focaccia_cebolla:totProd.focaccia_cebolla||0,focaccia_morron:totProd.focaccia_morron||0,
     prepizza:totProd.prepizza||0,total:total,enCurso:true};
