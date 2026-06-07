@@ -253,7 +253,6 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
       <div id="pedidos-list"></div>
       <div id="pedidos-empty" class="empty" style="display:none"><div class="empty-icon">&#127838;</div>Sin pedidos. Toca + para agregar.</div>
       <button class="btn-p" onclick="exportarPedidosSabado()">Exportar pedidos del sábado</button>
-      <button class="btn-s" onclick="exportarTodosPedidos()">Exportar todos los pedidos</button>
       <button class="btn-ok" onclick="actualizarHorariosCadete()">Actualizar horarios cadete</button>
       <button class="btn-ok" onclick="backupPedidos()">Backup y exportar</button>
       <button class="btn-s" onclick="abrirModal('modal-restaurar')">Restaurar backup</button>
@@ -1948,12 +1947,16 @@ function getSemanaEnCurso(){
 
 
 function getSemanaEnCurso(){
-  // Tomar pedidos de la semana actual (desde el domingo pasado hasta hoy)
+  // Semana va de domingo a sabado
+  // "Semana en curso" = la semana que aun no fue cerrada
+  // Tomamos pedidos desde el ultimo domingo hasta el proximo sabado
   var hoy=new Date();hoy.setHours(23,59,59,999);
-  var dom=new Date(hoy);dom.setDate(hoy.getDate()-hoy.getDay());dom.setHours(0,0,0,0);
+  var diaSem=hoy.getDay(); // 0=dom
+  var dom=new Date(hoy);dom.setDate(hoy.getDate()-diaSem);dom.setHours(0,0,0,0);
+  var sab=new Date(dom);sab.setDate(dom.getDate()+6);sab.setHours(23,59,59,999);
   var pedSemana=pedidos.filter(function(p){
     if(!p.fecha)return false;
-    var f=new Date(p.fecha+'T12:00');return f>=dom&&f<=hoy;
+    var f=new Date(p.fecha+'T12:00');return f>=dom&&f<=sab;
   });
   if(pedSemana.length===0)return null;
   var totProd={};PRODUCTOS.forEach(function(k){totProd[k]=0;});
