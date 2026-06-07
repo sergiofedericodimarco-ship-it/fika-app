@@ -234,7 +234,7 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
 <!-- MOBILE APP -->
 <div id="app">
   <div id="mob-header">
-    <div><div class="mob-logo">FIK<span>A</span></div></div>
+    <div><div class="mob-logo" onclick="showMob('pedidos')" style="cursor:pointer">FIK<span>A</span></div></div>
     <div id="alert-pago" style="font-size:11px;color:var(--danger);display:none"></div>
   </div>
   <div id="mob-search" style="position:relative"><span class="si">&#128269;</span><input type="search" placeholder="Buscar cliente..." oninput="buscarCliente(this.value);document.getElementById('mob-search-clear').style.display=this.value?'flex':'none';" id="mob-search-inp"><button id="mob-search-clear" onclick="document.getElementById('mob-search-inp').value='';buscarCliente('');this.style.display='none';" style="display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text3);font-size:16px;cursor:pointer;padding:0;line-height:1">&#215;</button></div>
@@ -289,7 +289,7 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
       <div id="cobros-empty" class="empty" style="display:none"><div class="empty-icon">&#36;</div>Sin cobros pendientes.</div>
     </div>
     <div class="mscreen" id="ms-stock">
-      <div class="sec-lbl">Stock en freezer</div>
+      <div class="sec-lbl">Stock</div>
       <div class="card" id="stock-list"></div>
       <div class="sec-lbl" style="margin-top:14px">❄️ Congelados</div>
       <div id="congelados-list"></div>
@@ -301,9 +301,6 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
       <button class="btn-s" onclick="enviarComprasWA()">Enviar por WhatsApp</button>
     </div>
   </div>
-      <div id="congelados-list"></div>
-      <div id="congelados-empty" class="empty" style="display:none"><div class="empty-icon">❄️</div>Sin stock registrado.</div>
-    </div>
     <div class="mscreen" id="ms-historial-mob">
       <div id="hist-mob-filtros" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px"></div>
       <div id="hist-mob-stats" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px"></div>
@@ -324,7 +321,7 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
 <!-- DESKTOP APP -->
 <div id="desk">
   <div id="desk-header">
-    <div><div class="desk-logo">FIK<span>A</span></div><div class="desk-sub">Sistema de gestión pan artesanal</div></div>
+    <div><div class="desk-logo" onclick="showDesk('d-pedidos')" style="cursor:pointer" title="Ir a Pedidos">FIK<span>A</span></div><div class="desk-sub">Sistema de gestión pan artesanal</div></div>
     <div style="display:flex;align-items:center;gap:12px">
       <div id="desk-search"><span style="color:var(--text3);font-size:14px">&#128269;</span><input type="search" placeholder="Buscar cliente..." oninput="buscarCliente(this.value)" id="desk-search-inp"></div>
       <div id="desk-fecha" style="font-size:11px;color:var(--text3)"></div>
@@ -443,12 +440,12 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
     <div class="dscreen" id="d-stock">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
         <div>
-          <div class="sec-lbl">Stock en freezer</div>
+          <div class="sec-lbl">Stock</div>
           <div class="card" id="desk-stock-list"></div>
         </div>
         <div>
           <div class="sec-lbl">❄️ Congelados</div>
-          <div id="desk-congelados-list"></div>
+          <div class="card" id="desk-congelados-list"></div>
         </div>
       </div>
     </div>
@@ -521,14 +518,6 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
       </div>
     </div>
 
-    <!-- CONGELADOS PC -->
-      <div style="max-width:500px">
-        <div class="sec-lbl">Stock de congelados</div>
-        <div id="desk-congelados-list"></div>
-      </div>
-        <div class="sec-lbl" style="margin-top:20px">❄️ Congelados</div>
-        <div id="desk-congelados-list" style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:4px 15px"></div>
-      </div>
     </div>
     <!-- HISTORIAL PC -->
     <div class="dscreen" id="d-historial">
@@ -1939,10 +1928,51 @@ var chartLineasInst=null,chartBarrasInst=null,chartTortaInst=null,chartMobInst=n
 var PROD_COLORES_H={lactal:'#6a9fd8',integral:'#5ab88a',campo:'#c9a34f',focaccia_cherry:'#d4607a',focaccia_cebolla:'#c0507a',focaccia_morron:'#e07040',prepizza:'#8b6fbe'};
 var PROD_LABELS_H={lactal:'Lactal',integral:'Integral',campo:'Campo',focaccia_cherry:'Cherry',focaccia_cebolla:'Cebolla',focaccia_morron:'Morrón',prepizza:'Prepizza'};
 
+function getSemanaEnCurso(){
+  // Calcular totales de la semana actual desde pedidos
+  var hoy=new Date();hoy.setHours(0,0,0,0);
+  var diaSem=hoy.getDay();
+  var diasAtras=diaSem===0?0:diaSem; // domingo=0, lunes=1, etc
+  var domActual=new Date(hoy);domActual.setDate(hoy.getDate()-diasAtras);
+  var sabActual=new Date(domActual);sabActual.setDate(domActual.getDate()+6);
+  var pedSemana=pedidos.filter(function(p){
+    if(!p.fecha)return false;
+    var f=new Date(p.fecha+'T12:00');
+    return f>=domActual&&f<=sabActual;
+  });
+  if(pedSemana.length===0)return null;
+  var tot={lactal:0,integral:0,campo:0,focaccia_cherry:0,focaccia_cebolla:0,focaccia_morron:0,prepizza:0,total:0};
+  pedSemana.forEach(function(p){PRODUCTOS.forEach(function(k){tot[k]+=(p.panes&&p.panes[k])||0;tot.total+=(p.panes&&p.panes[k])||0;});});
+  return{id:'semana-actual',fecha:domActual.toISOString(),lactal:tot.lactal,integral:tot.integral,campo:tot.campo,focaccia_cherry:tot.focaccia_cherry,focaccia_cebolla:tot.focaccia_cebolla,focaccia_morron:tot.focaccia_morron,prepizza:tot.prepizza,total:tot.total,esActual:true};
+}
+
+
+function getSemanaEnCurso(){
+  // Tomar pedidos de la semana actual (desde el domingo pasado hasta hoy)
+  var hoy=new Date();hoy.setHours(23,59,59,999);
+  var dom=new Date(hoy);dom.setDate(hoy.getDate()-hoy.getDay());dom.setHours(0,0,0,0);
+  var pedSemana=pedidos.filter(function(p){
+    if(!p.fecha)return false;
+    var f=new Date(p.fecha+'T12:00');return f>=dom&&f<=hoy;
+  });
+  if(pedSemana.length===0)return null;
+  var totProd={};PRODUCTOS.forEach(function(k){totProd[k]=0;});
+  pedSemana.forEach(function(p){PRODUCTOS.forEach(function(k){totProd[k]+=(p.panes&&p.panes[k])||0;});});
+  var total=Object.values(totProd).reduce(function(a,b){return a+b;},0);
+  return {id:'en-curso',fecha:hoy.toISOString(),lactal:totProd.lactal||0,integral:totProd.integral||0,
+    campo:totProd.campo||0,focaccia_cherry:totProd.focaccia_cherry||0,
+    focaccia_cebolla:totProd.focaccia_cebolla||0,focaccia_morron:totProd.focaccia_morron||0,
+    prepizza:totProd.prepizza||0,total:total,enCurso:true};
+}
+
 function getHistorialCompleto(){
   var ids=new Set(historial.map(function(h){return h.id;}));
   var base=HIST_PRELOAD.filter(function(h){return !ids.has(h.id);});
-  return base.concat(historial).sort(function(a,b){return (a.fecha||a.id).localeCompare(b.fecha||b.id);});
+  var lista=base.concat(historial).sort(function(a,b){return (a.fecha||a.id).localeCompare(b.fecha||b.id);});
+  // Agregar semana en curso al final
+  var semActual=getSemanaEnCurso();
+  if(semActual)lista.push(semActual);
+  return lista;
 }
 
 function getHistorialFiltrado(){
@@ -1952,6 +1982,7 @@ function getHistorialFiltrado(){
 }
 
 function fmtSem(h){
+  if(h&&h.esActual)return 'En curso';
   try{
     var s=(h.fecha||h.id||'').slice(0,10);
     if(s.length===10){
@@ -2048,7 +2079,7 @@ function renderHistGraficosPC(lista){
     var tdLine=tots.map(function(_,i){var sl=tots.slice(Math.max(0,i-1),i+2);return Math.round(sl.reduce(function(a,b){return a+b;},0)/sl.length);});
     chartBarrasInst=new Chart(c2,{type:'bar',
       data:{labels:labels,datasets:[
-        {type:'bar',label:'Total',data:tots,backgroundColor:tots.map(function(v){return v===maxT?'#c9a34f':'rgba(201,163,79,0.35)';}),borderRadius:4,order:2,hoverBackgroundColor:'#e8b84b'},
+        {type:'bar',label:'Total',data:tots,backgroundColor:lista.map(function(h,i){return h.esActual?'rgba(90,184,138,0.7)':tots[i]===maxT?'#c9a34f':'rgba(201,163,79,0.35)';}),borderRadius:4,order:2,hoverBackgroundColor:'#e8b84b'},
         {type:'line',label:'Tendencia',data:tdLine,borderColor:'rgba(90,184,138,0.9)',borderWidth:2,pointRadius:0,tension:0.4,borderDash:[5,3],fill:false,order:1}
       ]},
       options:{responsive:true,maintainAspectRatio:false,
@@ -2142,7 +2173,7 @@ function renderHistGraficoMob(lista){
   if(chartMobInst){chartMobInst.destroy();chartMobInst=null;}
   var c=document.getElementById('hist-mob-chart');if(!c)return;
   var tots=lista.map(function(h){return h.total;});var maxT=Math.max.apply(null,tots);
-  chartMobInst=new Chart(c,{type:'bar',data:{labels:lista.map(fmtSem),datasets:[{label:'Total',data:tots,backgroundColor:tots.map(function(v){return v===maxT?'#c9a34f':'rgba(201,163,79,0.35)';}),borderRadius:4}]},
+  chartMobInst=new Chart(c,{type:'bar',data:{labels:lista.map(fmtSem),datasets:[{label:'Total',data:tots,backgroundColor:lista.map(function(h,i){return h.esActual?'rgba(90,184,138,0.7)':tots[i]===maxT?'#c9a34f':'rgba(201,163,79,0.35)';}),borderRadius:4}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{enabled:false}},scales:{x:{ticks:{color:tc,font:{size:10}},grid:{display:false}},y:{ticks:{color:tc,font:{size:10}},grid:{color:gc},beginAtZero:true}}}});
 }
 
