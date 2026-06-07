@@ -305,7 +305,7 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
       <div id="hist-mob-stats" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px"></div>
       <div class="sec-lbl">Total por semana</div>
       <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:10px;margin-bottom:12px">
-        <div style="position:relative;width:100%;height:180px"><canvas id="hist-mob-chart" role="img" aria-label="Gráfico historial ventas móvil">Historial de ventas por semana.</canvas></div>
+        <div style="position:relative;width:100%;height:180px;overflow:hidden"><canvas id="hist-mob-chart" role="img" aria-label="Gráfico historial ventas móvil" style="display:block;width:100%!important;height:180px!important">Historial de ventas por semana.</canvas></div>
       </div>
       <div class="sec-lbl">Detalle semanal</div>
       <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:8px;overflow-x:auto;margin-bottom:10px">
@@ -830,7 +830,7 @@ initLayout();
     cargarDesdeSupabase(),
     cargarProductos(),
     cargarClientes(),
-    cargarHistorialLocal()
+    cargarHistorialLocal(),
   ]);
   reconstruirCobros();
   hideLoad();
@@ -880,7 +880,21 @@ async function cargarClientes(){
   else{try{preciosCliente=JSON.parse(localStorage.getItem('fika-precios-cli')||'[]');}catch(e){preciosCliente=[];}}
 }
 
-function cargarHistorialLocal(){try{historial=JSON.parse(localStorage.getItem('fika-historial')||'[]');}catch(e){historial=[];}}
+async function cargarHistorialLocal(){
+  // Intentar traer desde Supabase primero
+  var rows=await sbGet('historial_produccion','&order=fecha.asc');
+  if(rows&&rows.length>0){
+    historial=rows.map(function(r){return{
+      id:r.id,fecha:r.fecha,lactal:r.lactal||0,integral:r.integral||0,
+      campo:r.campo||0,focaccia_cherry:r.focaccia_cherry||0,
+      focaccia_cebolla:r.focaccia_cebolla||0,focaccia_morron:r.focaccia_morron||0,
+      prepizza:r.prepizza||0,total:r.total||0,inicio:r.inicio||'',fin:r.fin||''
+    };});
+    localStorage.setItem('fika-historial',JSON.stringify(historial));
+  } else {
+    try{historial=JSON.parse(localStorage.getItem('fika-historial')||'[]');}catch(e){historial=[];}
+  }
+}
 
 // ── MAPEADORES ────────────────────────────────────────────────
 function pedidoToRow(p){return{id:p.id,fika_id:p.fikaId||null,cliente_id:p.clienteId||null,nombre:p.nombre,fecha:p.fecha||null,telefono:p.telefono||null,domicilio:p.domicilio||null,piso:p.piso||null,ciudad:p.ciudad||null,encargado:p.encargado||'Cadete',notas:p.notas||null,pago:p.pago||false,entregado:p.entregado||false,panes:p.panes||{},etiqueta:p._etiqueta||null,tipo_precio:p.tipoPrecio||'Minorista',horario_entrega:p.horarioEntrega||null,horario_desde:p.horarioDesde||null,horario_hasta:p.horarioHasta||null,creado_en:p.creadoEn||new Date().toISOString()};}
@@ -1927,23 +1941,7 @@ var chartLineasInst=null,chartBarrasInst=null,chartTortaInst=null,chartMobInst=n
 var PROD_COLORES_H={lactal:'#6a9fd8',integral:'#5ab88a',campo:'#c9a34f',focaccia_cherry:'#d4607a',focaccia_cebolla:'#c0507a',focaccia_morron:'#e07040',prepizza:'#8b6fbe'};
 var PROD_LABELS_H={lactal:'Lactal',integral:'Integral',campo:'Campo',focaccia_cherry:'Cherry',focaccia_cebolla:'Cebolla',focaccia_morron:'Morrón',prepizza:'Prepizza'};
 
-function getSemanaEnCurso(){
-  // Calcular totales de la semana actual desde pedidos
-  var hoy=new Date();hoy.setHours(0,0,0,0);
-  var diaSem=hoy.getDay();
-  var diasAtras=diaSem===0?0:diaSem; // domingo=0, lunes=1, etc
-  var domActual=new Date(hoy);domActual.setDate(hoy.getDate()-diasAtras);
-  var sabActual=new Date(domActual);sabActual.setDate(domActual.getDate()+6);
-  var pedSemana=pedidos.filter(function(p){
-    if(!p.fecha)return false;
-    var f=new Date(p.fecha+'T12:00');
-    return f>=domActual&&f<=sabActual;
-  });
-  if(pedSemana.length===0)return null;
-  var tot={lactal:0,integral:0,campo:0,focaccia_cherry:0,focaccia_cebolla:0,focaccia_morron:0,prepizza:0,total:0};
-  pedSemana.forEach(function(p){PRODUCTOS.forEach(function(k){tot[k]+=(p.panes&&p.panes[k])||0;tot.total+=(p.panes&&p.panes[k])||0;});});
-  return{id:'semana-actual',fecha:domActual.toISOString(),lactal:tot.lactal,integral:tot.integral,campo:tot.campo,focaccia_cherry:tot.focaccia_cherry,focaccia_cebolla:tot.focaccia_cebolla,focaccia_morron:tot.focaccia_morron,prepizza:tot.prepizza,total:tot.total,esActual:true};
-}
+
 
 
 function getSemanaEnCurso(){
@@ -1985,7 +1983,7 @@ function getHistorialFiltrado(){
 }
 
 function fmtSem(h){
-  if(h&&h.esActual)return 'En curso';
+  if(h&&(h.enCurso||h.esActual))return '📍 Actual';
   try{
     var s=(h.fecha||h.id||'').slice(0,10);
     if(s.length===10){
