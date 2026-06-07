@@ -247,6 +247,8 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
     <button class="mnav" onclick="showMob('stock')" id="mn-stock">Stock</button>
     <button class="mnav" onclick="showMob('compras')" id="mn-compras">Compras</button>
     <button class="mnav" onclick="showMob('historial-mob')" id="mn-historial-mob">Historial</button>
+    <button class="mnav" onclick="showMob('congelados')" id="mn-congelados">❄️</button>
+    <button class="mnav" onclick="showMob('congelados')" id="mn-congelados">Congelados</button>
   </div>
   <div id="mob-screens">
     <div class="mscreen active" id="ms-pedidos">
@@ -254,7 +256,7 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
       <div id="pedidos-empty" class="empty" style="display:none"><div class="empty-icon">&#127838;</div>Sin pedidos. Toca + para agregar.</div>
       <button class="btn-p" onclick="exportarPedidosSabado()">Exportar pedidos del sábado</button>
       <button class="btn-s" onclick="exportarTodosPedidos()">Exportar todos los pedidos</button>
-      <button class="btn-s" onclick="abrirModal('modal-import-horarios')">Importar horarios de entrega</button>
+      <button class="btn-ok" onclick="actualizarHorariosCadete()">Actualizar horarios cadete</button>
       <button class="btn-ok" onclick="backupPedidos()">Backup y exportar</button>
       <button class="btn-s" onclick="abrirModal('modal-restaurar')">Restaurar backup</button>
       <button class="btn-d" onclick="cerrarSemana()">Cerrar semana</button>
@@ -300,6 +302,16 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
       <button class="btn-s" onclick="enviarComprasWA()">Enviar por WhatsApp</button>
     </div>
   </div>
+    <div class="mscreen" id="ms-congelados">
+      <div class="sec-lbl">Stock de congelados</div>
+      <div id="congelados-list"></div>
+      <div id="congelados-empty" class="empty" style="display:none"><div class="empty-icon">❄️</div>Sin stock registrado.</div>
+    </div>
+    <div class="mscreen" id="ms-congelados">
+      <div class="sec-lbl">Stock de congelados</div>
+      <div id="congelados-list"></div>
+      <div id="congelados-empty" class="empty" style="display:none"><div class="empty-icon">❄️</div>Sin stock.</div>
+    </div>
     <div class="mscreen" id="ms-historial-mob">
       <div id="hist-mob-filtros" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px"></div>
       <div id="hist-mob-stats" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px"></div>
@@ -336,6 +348,8 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
     <button class="dtab" onclick="showDesk('d-cobros')" id="dt-d-cobros">Cobros</button>
     <button class="dtab" onclick="showDesk('d-precios')" id="dt-d-precios">Precios</button>
     <button class="dtab" onclick="showDesk('d-historial')" id="dt-d-historial">Historial</button>
+    <button class="dtab" onclick="showDesk('d-congelados')" id="dt-d-congelados">❄️ Congelados</button>
+    <button class="dtab" onclick="showDesk('d-congelados')" id="dt-d-congelados">Congelados</button>
   </div>
   <div id="desk-body">
     <!-- PEDIDOS PC -->
@@ -519,7 +533,15 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
       </div>
     </div>
 
+    <!-- CONGELADOS PC -->
+    <div class="dscreen" id="d-congelados">
+      <div style="max-width:500px">
+        <div class="sec-lbl">Stock de congelados</div>
+        <div id="desk-congelados-list"></div>
+      </div>
+    </div>
     <!-- HISTORIAL PC -->
+    <div class="dscreen" id="d-congelados"><div style="max-width:500px"><div class="sec-lbl">Stock de congelados</div><div id="desk-congelados-list"></div></div></div>
     <div class="dscreen" id="d-historial">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px">
         <div style="display:flex;gap:6px;flex-wrap:wrap" id="hist-filtros-pc"></div>
@@ -687,7 +709,7 @@ var pedidosImportados=[];
 // ── SUPABASE ──────────────────────────────────────────────────
 function sbH(e){var h={'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json'};if(e)Object.assign(h,e);return h;}
 async function sbGet(t,q){try{var r=await fetch(SUPA_URL+'/'+t+'?select=*'+(q||''),{headers:sbH()});if(!r.ok)return null;return await r.json();}catch(e){return null;}}
-async function sbUpsert(t,d){try{var r=await fetch(SUPA_URL+'/'+t,{method:'POST',headers:sbH({'Prefer':'resolution=merge-duplicates,return=minimal'}),body:JSON.stringify(Array.isArray(d)?d:[d])});if(!r.ok){var err=await r.text();alert('Error Supabase ('+t+'): '+r.status+' '+err.slice(0,150));}return r.ok;}catch(e){alert('Error red: '+e.message);return false;}}
+async function sbUpsert(t,d){try{var r=await fetch(SUPA_URL+'/'+t,{method:'POST',headers:sbH({'Prefer':'resolution=merge-duplicates,return=minimal'}),body:JSON.stringify(Array.isArray(d)?d:[d])});return r.ok;}catch(e){return false;}}
 async function sbDelete(t,f,v){try{var r=await fetch(SUPA_URL+'/'+t+'?'+f+'=eq.'+encodeURIComponent(v),{method:'DELETE',headers:sbH()});return r.ok;}catch(e){return false;}}
 
 // ── UI HELPERS ────────────────────────────────────────────────
@@ -739,8 +761,8 @@ function initLayout(){
 window.addEventListener('resize',function(){initLayout();});
 
 // ── NAVEGACION ────────────────────────────────────────────────
-function showMob(id){document.querySelectorAll('.mscreen').forEach(function(s){s.classList.remove('active');});document.querySelectorAll('.mnav').forEach(function(b){b.classList.remove('active');});document.getElementById('ms-'+id).classList.add('active');document.getElementById('mn-'+id).classList.add('active');if(id==='pedidos')renderPedidos();if(id==='semana')renderSemana();if(id==='clientes')renderClientesMob();if(id==='cadete-mob')renderCadeteMob();if(id==='historial-mob')renderHistorialMob();if(id==='cobros')renderCobros();if(id==='stock')renderStock();if(id==='compras')renderCompras();}
-function showDesk(id){document.querySelectorAll('.dscreen').forEach(function(s){s.classList.remove('active');});document.querySelectorAll('.dtab').forEach(function(t){t.classList.remove('active');});document.getElementById(id).classList.add('active');document.getElementById('dt-'+id).classList.add('active');if(id==='d-pedidos')renderDeskPedidos();if(id==='d-produccion')renderProdItems();if(id==='d-reparto'){loadApiKey();renderRepClientes();}if(id==='d-cadete')renderCadete();if(id==='d-stock')renderDeskStock();if(id==='d-clientes')renderClientesDesk();if(id==='d-cobros')renderCobrosDesk();if(id==='d-precios')renderPrecios();if(id==='d-historial')renderHistorial();}
+function showMob(id){document.querySelectorAll('.mscreen').forEach(function(s){s.classList.remove('active');});document.querySelectorAll('.mnav').forEach(function(b){b.classList.remove('active');});document.getElementById('ms-'+id).classList.add('active');document.getElementById('mn-'+id).classList.add('active');if(id==='pedidos')renderPedidos();if(id==='semana')renderSemana();if(id==='clientes')renderClientesMob();if(id==='cadete-mob')renderCadeteMob();if(id==='historial-mob')renderHistorialMob();if(id==='congelados')renderCongelados();if(id==='cobros')renderCobros();if(id==='stock')renderStock();if(id==='compras')renderCompras();}
+function showDesk(id){document.querySelectorAll('.dscreen').forEach(function(s){s.classList.remove('active');});document.querySelectorAll('.dtab').forEach(function(t){t.classList.remove('active');});document.getElementById(id).classList.add('active');document.getElementById('dt-'+id).classList.add('active');if(id==='d-pedidos')renderDeskPedidos();if(id==='d-produccion')renderProdItems();if(id==='d-reparto'){loadApiKey();renderRepClientes();}if(id==='d-cadete')renderCadete();if(id==='d-stock')renderDeskStock();if(id==='d-clientes')renderClientesDesk();if(id==='d-cobros')renderCobrosDesk();if(id==='d-precios')renderPrecios();if(id==='d-historial')renderHistorial();if(id==='d-congelados')renderCongeladosDesk();}
 function abrirFab(){var s=document.querySelector('.mscreen.active').id.replace('ms-','');if(['pedidos','semana','clientes'].includes(s))abrirModalPedido(null);if(s==='compras')abrirModal('modal-compra');}
 
 // ── LOGIN ─────────────────────────────────────────────────────
@@ -835,6 +857,7 @@ initLayout();
   ]);
   reconstruirCobros();
   hideLoad();
+  cargarCongelados();
   asignarIdsPedidos();
   renderPedidos();
   renderDeskPedidos();
@@ -861,9 +884,14 @@ async function cargarDesdeSupabase(){
 }
 
 async function cargarProductos(){
+  // Siempre desde Supabase para tener precio_mayorista actualizado
   var rows=await sbGet('productos');
-  if(rows&&rows.length>0){productos=rows;localStorage.setItem('fika-productos',JSON.stringify(productos));}
-  else{try{productos=JSON.parse(localStorage.getItem('fika-productos')||'[]');}catch(e){productos=[];}}
+  if(rows&&rows.length>0){
+    productos=rows;
+    localStorage.setItem('fika-productos',JSON.stringify(productos));
+  } else {
+    try{productos=JSON.parse(localStorage.getItem('fika-productos')||'[]');}catch(e){productos=[];}
+  }
 }
 
 async function cargarClientes(){
@@ -1434,6 +1462,7 @@ async function sincronizarPedidos(){
   // Limpiar caché local para forzar carga fresca desde Supabase
   localStorage.removeItem('fika-pedidos');
   localStorage.removeItem('fika-cobros');
+  localStorage.removeItem('fika-productos');
   await cargarDesdeSupabase();
   hideLoad();
   pedidosImportados=pedidos.slice();
@@ -2347,6 +2376,79 @@ function togglePagado(){
   guardarCobros();
   renderPedidos();
   checkAlertaPago();
+}
+
+
+function actualizarHorariosCadete(){
+  // Recalcular horarios basado en el orden del cadete
+  var todos=pedidosImportados.length>0?pedidosImportados:pedidos;
+  var conHorario=todos.filter(function(p){return p.horarioEntrega;});
+  if(conHorario.length===0){alert('No hay pedidos con horario asignado.');return;}
+  conHorario.forEach(function(p){
+    // Calcular desde/hasta redondeado a :00/:30
+    var parts=p.horarioEntrega.split(':').map(Number);
+    var minEst=parts[0]*60+parts[1];
+    var minR=Math.round(minEst/30)*30;
+    var dH=Math.floor(minR/60);var dM=minR%60;
+    var hH=Math.floor((minR+30)/60);var hM=(minR+30)%60;
+    p.horarioDesde=dH+':'+(dM<10?'0':'')+dM;
+    p.horarioHasta=hH+':'+(hM<10?'0':'')+hM;
+    guardarPedidoSupa(p);
+  });
+  renderPedidos();
+  if(!ES_MOVIL)renderDeskPedidos();
+  alert('Horarios actualizados para '+conHorario.length+' pedidos.');
+}
+
+
+var congelados={};
+var CONGELADOS_KEY='fika-congelados';
+
+function cargarCongelados(){try{congelados=JSON.parse(localStorage.getItem(CONGELADOS_KEY)||'{}');}catch(e){congelados={};}}
+
+function guardarCongelados(){localStorage.setItem(CONGELADOS_KEY,JSON.stringify(congelados));}
+
+function renderCongelados(){
+  var list=document.getElementById('congelados-list');
+  var empty=document.getElementById('congelados-empty');
+  if(!list)return;
+  list.innerHTML='';
+  var hayAlgo=false;
+  PRODUCTOS.forEach(function(k){
+    var cant=congelados[k]||0;
+    if(cant>0)hayAlgo=true;
+    var card=document.createElement('div');
+    card.style.cssText='background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:7px;display:flex;align-items:center;justify-content:space-between';
+    var nm=document.createElement('div');nm.style.cssText='font-size:14px;font-weight:500;color:var(--text)';nm.textContent=PROD_NOMBRES[k];
+    var right=document.createElement('div');right.style.cssText='display:flex;align-items:center;gap:10px';
+    var btnM=document.createElement('button');btnM.style.cssText='width:28px;height:28px;border-radius:50%;border:0.5px solid var(--border2);background:none;color:var(--accent);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center';btnM.textContent='-';
+    btnM.onclick=(function(pk){return function(){if(congelados[pk]>0){congelados[pk]--;guardarCongelados();renderCongelados();renderCongeladosDesk();}};})(k);
+    var cant2=document.createElement('span');cant2.style.cssText='font-size:16px;font-weight:500;color:'+(cant>0?'var(--accent)':'var(--text3)')+';min-width:24px;text-align:center';cant2.textContent=cant;
+    var btnP=document.createElement('button');btnP.style.cssText='width:28px;height:28px;border-radius:50%;border:0.5px solid var(--border2);background:none;color:var(--accent);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center';btnP.textContent='+';
+    btnP.onclick=(function(pk){return function(){congelados[pk]=(congelados[pk]||0)+1;guardarCongelados();renderCongelados();renderCongeladosDesk();};})(k);
+    right.appendChild(btnM);right.appendChild(cant2);right.appendChild(btnP);
+    card.appendChild(nm);card.appendChild(right);list.appendChild(card);
+  });
+  if(empty)empty.style.display=hayAlgo?'none':'block';
+}
+
+function renderCongeladosDesk(){
+  var list=document.getElementById('desk-congelados-list');if(!list)return;
+  list.innerHTML='';
+  PRODUCTOS.forEach(function(k){
+    var cant=congelados[k]||0;
+    var row=document.createElement('div');
+    row.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:0.5px solid var(--border)';
+    var nm=document.createElement('div');nm.style.cssText='font-size:14px;color:var(--text)';nm.textContent=PROD_NOMBRES[k];
+    var right=document.createElement('div');right.style.cssText='display:flex;align-items:center;gap:12px';
+    var btnM=document.createElement('button');btnM.className='btn-ol';btnM.style.cssText='margin:0;padding:2px 10px;font-size:16px';btnM.textContent='−';
+    btnM.onclick=(function(pk){return function(){if(congelados[pk]>0){congelados[pk]--;guardarCongelados();renderCongeladosDesk();renderCongelados();}}})(k);
+    var cant2=document.createElement('span');cant2.style.cssText='font-size:16px;font-weight:500;color:'+(cant>0?'var(--accent)':'var(--text3)')+';min-width:30px;text-align:center';cant2.textContent=cant;
+    var btnP=document.createElement('button');btnP.className='btn-ol';btnP.style.cssText='margin:0;padding:2px 10px;font-size:16px';btnP.textContent='+';
+    btnP.onclick=(function(pk){return function(){congelados[pk]=(congelados[pk]||0)+1;guardarCongelados();renderCongeladosDesk();renderCongelados();}})(k);
+    right.appendChild(btnM);right.appendChild(cant2);right.appendChild(btnP);
+    row.appendChild(nm);row.appendChild(right);list.appendChild(row);
+  });
 }
 
 function actualizarBadgeCobros(){
