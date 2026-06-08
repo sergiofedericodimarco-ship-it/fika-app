@@ -522,7 +522,7 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
     <div class="dscreen" id="d-historial">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px">
         <div style="display:flex;gap:6px;flex-wrap:wrap" id="hist-filtros-pc"></div>
-        <button class="btn-ol" style="margin:0" onclick="exportarHistorialExcel()">Exportar Excel</button>
+        <button class="btn-ol" style="margin:0" onclick="editarObjetivo()">🎯 Objetivo</button><button class="btn-ol" style="margin:0" onclick="editarObjetivo()">🎯 Objetivo</button><button class="btn-ol" style="margin:0" onclick="exportarHistorialExcel()">Exportar Excel</button>
       </div>
       <div id="hist-stats-pc" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px"></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
@@ -674,6 +674,7 @@ var ORIGEN_ENC=encodeURIComponent('Pedro de Villalba 400, Yerba Buena, Tucuman, 
 // ── DATOS EN MEMORIA ──────────────────────────────────────────
 var pedidos=[],compras=[],stock=[],cobros=[],clientes=[],productos=[],preciosCliente=[];
 var historial=[],stockPC=[];
+var OBJETIVO_SEMANAL=0; // 0 = sin objetivo
 var FIKA_ID_COUNTER=350;
 var pedidoEditId=null,pedidoVerId=null,clienteVerId=null;
 var pQtys={};PRODUCTOS.forEach(function(k){pQtys[k]=0;});
@@ -835,6 +836,8 @@ initLayout();
   reconstruirCobros();
   hideLoad();
   cargarCongelados();
+  cargarObjetivo();
+  cargarObjetivo();
   asignarIdsPedidos();
   renderPedidos();
   renderDeskPedidos();
@@ -2001,6 +2004,23 @@ function fmtSem(h){
   }catch(e){return '?';}
 }
 
+
+function cargarObjetivo(){
+  OBJETIVO_SEMANAL=parseInt(localStorage.getItem('fika-objetivo')||'0');
+}
+function guardarObjetivo(n){
+  OBJETIVO_SEMANAL=n;
+  localStorage.setItem('fika-objetivo',String(n));
+}
+function editarObjetivo(){
+  var actual=OBJETIVO_SEMANAL>0?OBJETIVO_SEMANAL:'sin objetivo';
+  var nuevo=prompt('Objetivo semanal (panes)\nActual: '+actual+'\nIngresá el número (0 para quitar):');
+  if(nuevo===null)return;
+  var n=parseInt(nuevo);if(isNaN(n)||n<0){alert('Número inválido');return;}
+  guardarObjetivo(n);
+  renderHistorial();
+}
+
 function calcHistStats(lista){
   var tot=lista.reduce(function(a,h){return a+h.total;},0);
   var prom=lista.length>0?Math.round(tot/lista.length):0;
@@ -2085,20 +2105,37 @@ function renderHistGraficosPC(lista){
   if(c2){
     var tots=lista.map(function(h){return h.total;});var maxT=Math.max.apply(null,tots);
     var tdLine=tots.map(function(_,i){var sl=tots.slice(Math.max(0,i-1),i+2);return Math.round(sl.reduce(function(a,b){return a+b;},0)/sl.length);});
+    var datasets=[
+      {type:'bar',label:'Total',data:tots,backgroundColor:lista.map(function(h,i){return h.enCurso?'rgba(90,184,138,0.7)':tots[i]===maxT?'#c9a34f':'rgba(201,163,79,0.35)';}),borderRadius:4,order:3,hoverBackgroundColor:'#e8b84b'},
+      {type:'line',label:'Tendencia (promedio móvil de 3 semanas)',data:tdLine,borderColor:'rgba(90,184,138,0.9)',borderWidth:2,pointRadius:0,tension:0.4,borderDash:[5,3],fill:false,order:2}
+    ];
+    if(OBJETIVO_SEMANAL>0){
+      datasets.push({type:'line',label:'Objetivo: '+OBJETIVO_SEMANAL+' panes',data:lista.map(function(){return OBJETIVO_SEMANAL;}),
+        borderColor:'rgba(224,85,85,0.8)',borderWidth:2,pointRadius:0,borderDash:[8,4],fill:false,order:1});
+    }
     chartBarrasInst=new Chart(c2,{type:'bar',
-      data:{labels:labels,datasets:[
-        {type:'bar',label:'Total',data:tots,backgroundColor:lista.map(function(h,i){return h.esActual?'rgba(90,184,138,0.7)':tots[i]===maxT?'#c9a34f':'rgba(201,163,79,0.35)';}),borderRadius:4,order:2,hoverBackgroundColor:'#e8b84b'},
-        {type:'line',label:'Tendencia',data:tdLine,borderColor:'rgba(90,184,138,0.9)',borderWidth:2,pointRadius:0,tension:0.4,borderDash:[5,3],fill:false,order:1}
-      ]},
+      data:{labels:labels,datasets:datasets},
       options:{responsive:true,maintainAspectRatio:false,
         onClick:function(e){
+          // Click en barra: detalle de semana. Click en tendencia: explicación
           var pts=chartBarrasInst.getElementsAtEventForMode(e,'nearest',{intersect:true},true);
-          if(pts.length>0){var idx=pts[0].index;var sem=lista[idx];
+          if(pts.length>0){
+            var ds=chartBarrasInst.data.datasets[pts[0].datasetIndex];
+            if(ds.label&&ds.label.indexOf('Tendencia')>=0){
+              alert('Línea de tendencia\n\nMuestra el promedio móvil de 3 semanas (semana anterior + actual + siguiente).\nSi la línea sube, las ventas van en aumento. Si baja, van en caída.');
+              return;
+            }
+            var idx=pts[0].index;var sem=lista[idx];
             var det='Semana '+fmtSem(sem)+' - Total: '+sem.total+' panes\n';
-            PRODUCTOS.forEach(function(k){if(sem[k]>0)det+='  '+PROD_LABELS_H[k]+': '+sem[k]+'\n';});alert(det);}
+            PRODUCTOS.forEach(function(k){if(sem[k]>0)det+='  '+PROD_LABELS_H[k]+': '+sem[k]+'\n';});
+            if(OBJETIVO_SEMANAL>0){var dif=sem.total-OBJETIVO_SEMANAL;det+='\nObjetivo: '+OBJETIVO_SEMANAL+' ('+(dif>=0?'+':'')+dif+')';}
+            alert(det);
+          }
         },
-        plugins:{legend:{display:false},
-          tooltip:{backgroundColor:'rgba(26,39,68,0.95)',titleColor:'#c9a34f',bodyColor:'#e8dfc8',borderColor:'rgba(201,163,79,0.3)',borderWidth:1,padding:10}},
+        plugins:{
+          legend:{display:OBJETIVO_SEMANAL>0,position:'top',labels:{color:tc,font:{size:10},boxWidth:10,padding:8,filter:function(item){return item.text.indexOf('Total')<0;}}},
+          tooltip:{backgroundColor:'rgba(26,39,68,0.95)',titleColor:'#c9a34f',bodyColor:'#e8dfc8',borderColor:'rgba(201,163,79,0.3)',borderWidth:1,padding:10}
+        },
         scales:{x:{ticks:{color:tc,font:{size:11}},grid:{display:false}},y:{ticks:{color:tc,font:{size:11}},grid:{color:gc},beginAtZero:true}}
       }
     });
