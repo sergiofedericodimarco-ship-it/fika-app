@@ -305,7 +305,7 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
       <div id="hist-mob-stats" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px"></div>
       <div class="sec-lbl">Total por semana</div>
       <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:10px;margin-bottom:12px">
-        <div style="position:relative;width:100%;height:180px;overflow:hidden"><canvas id="hist-mob-chart" role="img" aria-label="Gráfico historial ventas móvil" style="display:block;width:100%!important;height:180px!important">Historial de ventas por semana.</canvas></div>
+        <div id="hist-mob-chart-wrap" style="width:100%;overflow:hidden"></div>
       </div>
       <div class="sec-lbl">Detalle semanal</div>
       <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:8px;overflow-x:auto;margin-bottom:10px">
@@ -674,7 +674,7 @@ var ORIGEN_ENC=encodeURIComponent('Pedro de Villalba 400, Yerba Buena, Tucuman, 
 // ── DATOS EN MEMORIA ──────────────────────────────────────────
 var pedidos=[],compras=[],stock=[],cobros=[],clientes=[],productos=[],preciosCliente=[];
 var historial=[],stockPC=[];
-var OBJETIVO_SEMANAL=0; // 0 = sin objetivo
+var OBJETIVOS_MES={}; // {YYYY-MM: numero}
 var FIKA_ID_COUNTER=350;
 var pedidoEditId=null,pedidoVerId=null,clienteVerId=null;
 var pQtys={};PRODUCTOS.forEach(function(k){pQtys[k]=0;});
@@ -2006,18 +2006,32 @@ function fmtSem(h){
 
 
 function cargarObjetivo(){
-  OBJETIVO_SEMANAL=parseInt(localStorage.getItem('fika-objetivo')||'0');
+  try{OBJETIVOS_MES=JSON.parse(localStorage.getItem('fika-objetivos')||'{}');}catch(e){OBJETIVOS_MES={};}
 }
-function guardarObjetivo(n){
-  OBJETIVO_SEMANAL=n;
-  localStorage.setItem('fika-objetivo',String(n));
+function guardarObjetivoMes(mes,n){
+  if(n>0)OBJETIVOS_MES[mes]=n;else delete OBJETIVOS_MES[mes];
+  localStorage.setItem('fika-objetivos',JSON.stringify(OBJETIVOS_MES));
 }
+function getObjetivoMes(mes){return OBJETIVOS_MES[mes]||0;}
 function editarObjetivo(){
-  var actual=OBJETIVO_SEMANAL>0?OBJETIVO_SEMANAL:'sin objetivo';
-  var nuevo=prompt('Objetivo semanal (panes)\nActual: '+actual+'\nIngresá el número (0 para quitar):');
+  // Mostrar todos los meses del historial con sus objetivos
+  var lista=getHistorialCompleto();
+  var meses={};
+  lista.forEach(function(h){if(h.enCurso)return;var m=(h.fecha||h.id||'').slice(0,7);if(m)meses[m]=1;});
+  var mesActual=new Date().toISOString().slice(0,7);meses[mesActual]=1;
+  var lineas=Object.keys(meses).sort().map(function(m){
+    var d=new Date(m+'-01');var label=d.toLocaleDateString('es-AR',{month:'long',year:'numeric'});
+    return label+': '+(OBJETIVOS_MES[m]||0);
+  }).join('\n');
+  var mes=prompt('¿Qué mes querés editar?\n\nObjetivos actuales:\n'+lineas+'\n\nIngresá el mes (YYYY-MM, ej: 2026-06):');
+  if(!mes)return;
+  mes=mes.trim();
+  if(!/^\d{4}-\d{2}$/.test(mes)){alert('Formato inválido. Usá YYYY-MM, ej: 2026-06');return;}
+  var actual=OBJETIVOS_MES[mes]||0;
+  var nuevo=prompt('Objetivo para '+mes+'\nActual: '+(actual||'sin objetivo')+'\nIngresá el número (0 para quitar):');
   if(nuevo===null)return;
   var n=parseInt(nuevo);if(isNaN(n)||n<0){alert('Número inválido');return;}
-  guardarObjetivo(n);
+  guardarObjetivoMes(mes,n);
   renderHistorial();
 }
 
@@ -2109,9 +2123,13 @@ function renderHistGraficosPC(lista){
       {type:'bar',label:'Total',data:tots,backgroundColor:lista.map(function(h,i){return h.enCurso?'rgba(90,184,138,0.7)':tots[i]===maxT?'#c9a34f':'rgba(201,163,79,0.35)';}),borderRadius:4,order:3,hoverBackgroundColor:'#e8b84b'},
       {type:'line',label:'Tendencia (promedio móvil de 3 semanas)',data:tdLine,borderColor:'rgba(90,184,138,0.9)',borderWidth:2,pointRadius:0,tension:0.4,borderDash:[5,3],fill:false,order:2}
     ];
-    if(OBJETIVO_SEMANAL>0){
-      datasets.push({type:'line',label:'Objetivo: '+OBJETIVO_SEMANAL+' panes',data:lista.map(function(){return OBJETIVO_SEMANAL;}),
-        borderColor:'rgba(224,85,85,0.8)',borderWidth:2,pointRadius:0,borderDash:[8,4],fill:false,order:1});
+    // Línea de objetivo por mes
+    var objData=lista.map(function(h){var m=(h.fecha||h.id||'').slice(0,7);return getObjetivoMes(m)||null;});
+    var hayObjetivo=objData.some(function(v){return v!==null&&v>0;});
+    if(hayObjetivo){
+      datasets.push({type:'line',label:'Objetivo mensual',data:objData,
+        borderColor:'rgba(224,85,85,0.8)',borderWidth:2,pointRadius:4,pointBackgroundColor:'rgba(224,85,85,0.8)',
+        borderDash:[8,4],fill:false,order:1,spanGaps:false});
     }
     chartBarrasInst=new Chart(c2,{type:'bar',
       data:{labels:labels,datasets:datasets},
@@ -2128,12 +2146,12 @@ function renderHistGraficosPC(lista){
             var idx=pts[0].index;var sem=lista[idx];
             var det='Semana '+fmtSem(sem)+' - Total: '+sem.total+' panes\n';
             PRODUCTOS.forEach(function(k){if(sem[k]>0)det+='  '+PROD_LABELS_H[k]+': '+sem[k]+'\n';});
-            if(OBJETIVO_SEMANAL>0){var dif=sem.total-OBJETIVO_SEMANAL;det+='\nObjetivo: '+OBJETIVO_SEMANAL+' ('+(dif>=0?'+':'')+dif+')';}
+            var semMes=(sem.fecha||sem.id||'').slice(0,7);var obj=getObjetivoMes(semMes);if(obj>0){var dif=sem.total-obj;det+='\nObjetivo '+semMes+': '+obj+' ('+(dif>=0?'+':'')+dif+')';}
             alert(det);
           }
         },
         plugins:{
-          legend:{display:OBJETIVO_SEMANAL>0,position:'top',labels:{color:tc,font:{size:10},boxWidth:10,padding:8,filter:function(item){return item.text.indexOf('Total')<0;}}},
+          legend:{display:hayObjetivo,position:'top',labels:{color:tc,font:{size:10},boxWidth:10,padding:8,filter:function(item){return item.text.indexOf('Total')<0;}}},
           tooltip:{backgroundColor:'rgba(26,39,68,0.95)',titleColor:'#c9a34f',bodyColor:'#e8dfc8',borderColor:'rgba(201,163,79,0.3)',borderWidth:1,padding:10}
         },
         scales:{x:{ticks:{color:tc,font:{size:11}},grid:{display:false}},y:{ticks:{color:tc,font:{size:11}},grid:{color:gc},beginAtZero:true}}
@@ -2213,13 +2231,70 @@ function renderHistStatsMob(lista){
 }
 
 function renderHistGraficoMob(lista){
-  var isDark=window.matchMedia('(prefers-color-scheme: dark)').matches;
-  var gc=isDark?'rgba(255,255,255,0.08)':'rgba(0,0,0,0.06)';var tc=isDark?'#b4b2a9':'#73726c';
-  if(chartMobInst){chartMobInst.destroy();chartMobInst=null;}
-  var c=document.getElementById('hist-mob-chart');if(!c)return;
-  var tots=lista.map(function(h){return h.total;});var maxT=Math.max.apply(null,tots);
-  chartMobInst=new Chart(c,{type:'bar',data:{labels:lista.map(fmtSem),datasets:[{label:'Total',data:tots,backgroundColor:lista.map(function(h,i){return h.esActual?'rgba(90,184,138,0.7)':tots[i]===maxT?'#c9a34f':'rgba(201,163,79,0.35)';}),borderRadius:4}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{enabled:false}},scales:{x:{ticks:{color:tc,font:{size:10}},grid:{display:false}},y:{ticks:{color:tc,font:{size:10}},grid:{color:gc},beginAtZero:true}}}});
+  if(chartMobInst){try{chartMobInst.destroy();}catch(e){}chartMobInst=null;}
+  var wrap=document.getElementById('hist-mob-chart-wrap')||document.querySelector('#ms-historial-mob .hist-chart-wrap');
+  var c=document.getElementById('hist-mob-chart');
+  var parent=c?c.parentNode:null;
+  if(!parent)return;
+
+  var tots=lista.map(function(h){return h.total;});
+  var maxT=Math.max.apply(null,tots)||1;
+  var W=parent.offsetWidth||280;
+  var H=160;
+  var padL=28,padB=22,padR=8,padT=8;
+  var chartW=W-padL-padR;
+  var chartH=H-padB-padT;
+  var barW=Math.max(4,Math.floor(chartW/lista.length)-3);
+  var gap=(chartW-barW*lista.length)/(lista.length+1);
+
+  var svg='<svg width="'+W+'" height="'+H+'" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%;height:'+H+'px">';
+
+  // Líneas guía Y
+  var steps=[0,0.25,0.5,0.75,1];
+  steps.forEach(function(s){
+    var y=padT+chartH*(1-s);
+    var val=Math.round(maxT*s);
+    svg+='<line x1="'+padL+'" y1="'+y+'" x2="'+(W-padR)+'" y2="'+y+'" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>';
+    if(s>0)svg+='<text x="'+(padL-3)+'" y="'+(y+4)+'" text-anchor="end" font-size="8" fill="rgba(232,223,200,0.3)">'+val+'</text>';
+  });
+
+  // Barras
+  lista.forEach(function(h,i){
+    var x=padL+gap+(barW+gap)*i;
+    var barH=Math.round(chartH*(h.total/maxT));
+    var y=padT+chartH-barH;
+    var isBest=h.total===maxT;
+    var isCurso=h.enCurso;
+    var color=isCurso?'rgba(90,184,138,0.8)':isBest?'#c9a34f':'rgba(201,163,79,0.35)';
+    svg+='<rect x="'+x+'" y="'+y+'" width="'+barW+'" height="'+barH+'" rx="2" fill="'+color+'"/>';
+    // Label eje X
+    var label=fmtSem(h);
+    if(label.indexOf('📍')>=0)label='●';
+    svg+='<text x="'+(x+barW/2)+'" y="'+(H-6)+'" text-anchor="middle" font-size="8" fill="rgba(232,223,200,0.3)">'+label+'</text>';
+  });
+
+  // Objetivo por mes si existe
+  var objLineDrawn={};
+  lista.forEach(function(h,i){
+    var mes=(h.fecha||h.id||'').slice(0,7);
+    var obj=getObjetivoMes(mes);
+    if(obj>0&&!objLineDrawn[mes]){
+      var y=padT+chartH*(1-obj/maxT);
+      if(y>=padT&&y<=padT+chartH){
+        var x1=padL+gap+(barW+gap)*i;
+        // Encontrar último i de este mes
+        var lastI=i;
+        lista.forEach(function(h2,j){if((h2.fecha||h2.id||'').slice(0,7)===mes)lastI=j;});
+        var x2=padL+gap+(barW+gap)*lastI+barW;
+        svg+='<line x1="'+x1+'" y1="'+y+'" x2="'+x2+'" y2="'+y+'" stroke="rgba(224,85,85,0.7)" stroke-width="1.5" stroke-dasharray="5,3"/>';
+        svg+='<text x="'+(x2+2)+'" y="'+(y+4)+'" font-size="7" fill="rgba(224,85,85,0.7)">'+obj+'</text>';
+      }
+      objLineDrawn[mes]=1;
+    }
+  });
+
+  svg+='</svg>';
+  parent.innerHTML=svg;
 }
 
 function renderHistTablaMob(lista){
