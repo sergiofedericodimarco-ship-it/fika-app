@@ -487,7 +487,18 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
             <div><div class="f-lbl">Precio final ($)</div><input class="f-in" type="number" id="combo-precio" placeholder="Ej: 19500"></div>
           </div>
           <div class="f-lbl" style="margin-bottom:8px">Productos incluidos</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px" id="combo-prod-grid"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px" id="combo-prod-grid"></div>
+          <div style="background:var(--bg3);border:0.5px solid var(--border2);border-radius:8px;padding:10px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div style="font-size:12px;color:var(--text)">Focaccias a elección</div>
+              <div style="font-size:10px;color:var(--text3);margin-top:2px">Cualquier combinación de Cherry/Cebolla/Morrón</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <button onclick="cFocTotal(-1)" style="width:22px;height:22px;border-radius:50%;border:0.5px solid var(--border2);background:none;color:var(--accent);font-size:14px;cursor:pointer;line-height:1">−</button>
+              <span id="cq-foc-total" style="font-size:13px;color:var(--accent);min-width:16px;text-align:center">0</span>
+              <button onclick="cFocTotal(1)" style="width:22px;height:22px;border-radius:50%;border:0.5px solid var(--border2);background:none;color:var(--accent);font-size:14px;cursor:pointer;line-height:1">+</button>
+            </div>
+          </div>
           <div style="display:flex;gap:8px">
             <button class="btn-p" style="margin:0;flex:1" onclick="guardarCombo()">Guardar combo</button>
             <button class="btn-s" style="margin:0;padding:0 18px" onclick="cerrarFormCombo()">Cancelar</button>
@@ -723,16 +734,36 @@ function ceil(n,d){return d===0?0:Math.ceil(n/d);}
 function getPanesStr(panes,sep){var it=[];if(panes){PRODUCTOS.forEach(function(k){if(panes[k])it.push(panes[k]+' '+PROD_NOMBRES[k].toLowerCase());});} return it.join(sep||' · ');}
 function calcTotalConCombo(p){
   if(p.precioCombo&&p.tipoPrecio==='Combo'){
-    // Precio combo para los productos del combo, precio unitario para los extras
-    var comboMatch=combos.find(function(c){return c.precio===p.precioCombo;});
+    var comboMatch=combos.find(function(c){return c.precio===p.precioCombo&&c.nombre===p.comboNombre;});
+    if(!comboMatch)comboMatch=combos.find(function(c){return c.precio===p.precioCombo;});
     if(comboMatch){
       var extra=0;
-      PRODUCTOS.forEach(function(k){
-        var enCombo=comboMatch.panes[k]||0;
-        var enPedido=(p.panes&&p.panes[k])||0;
-        var extras=Math.max(0,enPedido-enCombo);
-        if(extras>0){var prod=productos.find(function(pr){return pr.id===k;});if(prod)extra+=extras*(prod.precio||0);}
-      });
+      if(comboMatch.focaccias_total>0){
+        // Focaccias flexibles: las primeras N son del combo, las demás son extras
+        var totalFocPedido=FOCACCIAS.reduce(function(a,k){return a+(p.panes&&p.panes[k]||0);},0);
+        var focExtras=Math.max(0,totalFocPedido-comboMatch.focaccias_total);
+        if(focExtras>0){
+          // Precio promedio de las focaccias extras
+          var precFoc=0;var nFoc=0;
+          FOCACCIAS.forEach(function(k){var pr=productos.find(function(x){return x.id===k;});if(pr&&pr.precio>0){precFoc+=pr.precio;nFoc++;}});
+          extra+=focExtras*(nFoc>0?Math.round(precFoc/nFoc):0);
+        }
+        // Extras de otros productos
+        PRODUCTOS.forEach(function(k){
+          if(FOCACCIAS.indexOf(k)>=0)return;
+          var enCombo=comboMatch.panes[k]||0;
+          var enPedido=(p.panes&&p.panes[k])||0;
+          var extras=Math.max(0,enPedido-enCombo);
+          if(extras>0){var prod=productos.find(function(pr){return pr.id===k;});if(prod)extra+=extras*(prod.precio||0);}
+        });
+      } else {
+        PRODUCTOS.forEach(function(k){
+          var enCombo=comboMatch.panes[k]||0;
+          var enPedido=(p.panes&&p.panes[k])||0;
+          var extras=Math.max(0,enPedido-enCombo);
+          if(extras>0){var prod=productos.find(function(pr){return pr.id===k;});if(prod)extra+=extras*(prod.precio||0);}
+        });
+      }
       return p.precioCombo+extra;
     }
   }
@@ -1128,7 +1159,8 @@ async function guardarPedido(){
   var nuevoFikaId=pedidoEditId?(pedidos.find(function(x){return x.id===pedidoEditId;})||{}).fikaId||nextFikaId():nextFikaId();
   var tipoPrecioFinal=usarCombo?'Combo':(document.getElementById('p-tipo-precio')?document.getElementById('p-tipo-precio').value:'Minorista');
   var precioComboFinal=usarCombo?comboDetectado.precio:null;
-  var p={id:pedidoEditId||Date.now().toString(),fikaId:nuevoFikaId,clienteId:cli?cli.id:null,nombre:nombre,fecha:document.getElementById('p-fecha').value,telefono:document.getElementById('p-tel').value.trim(),domicilio:document.getElementById('p-dom').value.trim(),piso:document.getElementById('p-piso').value.trim(),ciudad:document.getElementById('p-ciudad').value,encargado:document.getElementById('p-enc').value,notas:document.getElementById('p-notas').value.trim(),pago:document.getElementById('p-pago').checked,tipoPrecio:tipoPrecioFinal,precioCombo:precioComboFinal,entregado:pExist?pExist.entregado||false:false,panes:JSON.parse(JSON.stringify(pQtys)),_etiqueta:pExist?pExist._etiqueta:null,creadoEn:pExist?pExist.creadoEn:new Date().toISOString()};
+  var comboNombreFinal=usarCombo?comboDetectado.nombre:null;
+  var p={id:pedidoEditId||Date.now().toString(),fikaId:nuevoFikaId,clienteId:cli?cli.id:null,nombre:nombre,fecha:document.getElementById('p-fecha').value,telefono:document.getElementById('p-tel').value.trim(),domicilio:document.getElementById('p-dom').value.trim(),piso:document.getElementById('p-piso').value.trim(),ciudad:document.getElementById('p-ciudad').value,encargado:document.getElementById('p-enc').value,notas:document.getElementById('p-notas').value.trim(),pago:document.getElementById('p-pago').checked,tipoPrecio:tipoPrecioFinal,precioCombo:precioComboFinal,comboNombre:comboNombreFinal,entregado:pExist?pExist.entregado||false:false,panes:JSON.parse(JSON.stringify(pQtys)),_etiqueta:pExist?pExist._etiqueta:null,creadoEn:pExist?pExist.creadoEn:new Date().toISOString()};
   if(pedidoEditId){var idx=pedidos.findIndex(function(x){return x.id===pedidoEditId;});if(idx>=0)pedidos[idx]=p;}else pedidos.unshift(p);
   await guardarPedidoSupa(p);
   sincronizarCobro(p);
@@ -2076,16 +2108,28 @@ function cargarCombos(){try{combos=JSON.parse(localStorage.getItem('fika-combos'
 
 function guardarCombos(){localStorage.setItem('fika-combos',JSON.stringify(combos));sbUpsert('combos_precios',combos);}
 
+var FOCACCIAS=['focaccia_cherry','focaccia_cebolla','focaccia_morron'];
+
 function detectarCombo(panes){
   if(!panes||combos.length===0)return null;
   for(var i=0;i<combos.length;i++){
     var c=combos[i];var match=true;
-    PRODUCTOS.forEach(function(k){
-      var pc=c.panes[k]||0;var pp=panes[k]||0;
-      if(pp<pc)match=false; // el pedido tiene al menos lo del combo
-    });
-    var esCombo=match&&PRODUCTOS.some(function(k){return (c.panes[k]||0)>0;});
-    if(esCombo)return c;
+    // Combos con focaccias flexibles
+    if(c.focaccias_total>0){
+      var totalFocPedido=FOCACCIAS.reduce(function(a,k){return a+(panes[k]||0);},0);
+      if(totalFocPedido<c.focaccias_total)match=false;
+      // Verificar otros productos no-focaccia del combo
+      PRODUCTOS.forEach(function(k){
+        if(FOCACCIAS.indexOf(k)>=0)return; // ya chequeamos focaccias
+        if((panes[k]||0)<(c.panes[k]||0))match=false;
+      });
+    } else {
+      PRODUCTOS.forEach(function(k){
+        if((panes[k]||0)<(c.panes[k]||0))match=false;
+      });
+    }
+    var tieneProductos=c.focaccias_total>0||PRODUCTOS.some(function(k){return (c.panes[k]||0)>0;});
+    if(match&&tieneProductos)return c;
   }
   return null;
 }
@@ -2102,7 +2146,7 @@ function renderCombos(){
     var left=document.createElement('div');
     var nm=document.createElement('div');nm.style.cssText='font-size:14px;color:var(--text);font-weight:500';nm.textContent=c.nombre;
     var det=document.createElement('div');det.style.cssText='font-size:11px;color:var(--text3);margin-top:2px';
-    var partes=[];PRODUCTOS.forEach(function(k){if(c.panes[k]>0)partes.push(c.panes[k]+' '+PROD_NOMBRES[k]);});
+    var partes=[];PRODUCTOS.forEach(function(k){if(FOCACCIAS.indexOf(k)<0&&c.panes[k]>0)partes.push(c.panes[k]+' '+PROD_NOMBRES[k]);});if(c.focaccias_total>0)partes.push(c.focaccias_total+' focaccias a elección');
     det.textContent=partes.join(' · ');left.appendChild(nm);left.appendChild(det);
     var right=document.createElement('div');right.style.cssText='display:flex;align-items:center;gap:10px';
     var pv=document.createElement('span');pv.style.cssText='font-size:14px;color:var(--accent);font-weight:500';pv.textContent=fmtPeso(c.precio);
@@ -2115,14 +2159,18 @@ function renderCombos(){
 
 var comboEditId=null;
 var comboQtys={};
+var comboFocTotal=0;
+function cFocTotal(d){comboFocTotal=Math.max(0,comboFocTotal+d);var el=document.getElementById('cq-foc-total');if(el)el.textContent=comboFocTotal;}
 
 function abrirFormCombo(c){
   comboEditId=c?c.id:null;
+  comboFocTotal=c?(c.focaccias_total||0):0;
   PRODUCTOS.forEach(function(k){comboQtys[k]=c?(c.panes[k]||0):0;});
   var form=document.getElementById('form-combo');if(!form)return;
   document.getElementById('combo-nombre').value=c?c.nombre:'';
   document.getElementById('combo-precio').value=c?c.precio:'';
   PRODUCTOS.forEach(function(k){var el=document.getElementById('cq-'+k);if(el)el.textContent=comboQtys[k];});
+  var fEl=document.getElementById('cq-foc-total');if(fEl)fEl.textContent=comboFocTotal;
   form.style.display='block';
 }
 
@@ -2136,7 +2184,7 @@ function guardarCombo(){
   if(!nombre){alert('Ingresá un nombre.');return;}
   if(isNaN(precio)||precio<=0){alert('Ingresá un precio válido.');return;}
   if(PRODUCTOS.every(function(k){return (comboQtys[k]||0)===0;})){alert('Agregá al menos un producto.');return;}
-  var c={id:comboEditId||'combo_'+Date.now(),nombre:nombre,panes:Object.assign({},comboQtys),precio:precio};
+  var c={id:comboEditId||'combo_'+Date.now(),nombre:nombre,panes:Object.assign({},comboQtys),focaccias_total:comboFocTotal,precio:precio};
   if(comboEditId){var idx=combos.findIndex(function(x){return x.id===comboEditId;});if(idx>=0)combos[idx]=c;else combos.push(c);}
   else combos.push(c);
   guardarCombos();renderCombos();cerrarFormCombo();
