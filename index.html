@@ -473,6 +473,26 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
           <button class="btn-ol" style="margin:0" onclick="abrirFormPrecioEspecial()">+ Agregar</button>
         </div>
         <div id="precios-especiales-lista"></div>
+        <!-- COMBOS -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;margin-top:20px">
+          <div class="sec-lbl" style="margin:0">Combos / Promociones</div>
+          <button class="btn-ol" style="margin:0" onclick="abrirFormCombo(null)">+ Crear combo</button>
+        </div>
+        <div class="card" id="combos-lista" style="margin-bottom:16px"></div>
+        <!-- FORM COMBO -->
+        <div id="form-combo" style="display:none;background:var(--bg2);border:0.5px solid var(--border2);border-radius:10px;padding:18px;margin-bottom:20px">
+          <div style="font-size:13px;font-weight:500;color:var(--accent);margin-bottom:14px">Combo / Promoción</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+            <div><div class="f-lbl">Nombre del combo</div><input class="f-in" id="combo-nombre" placeholder="Ej: Combo Semanal A"></div>
+            <div><div class="f-lbl">Precio final ($)</div><input class="f-in" type="number" id="combo-precio" placeholder="Ej: 19500"></div>
+          </div>
+          <div class="f-lbl" style="margin-bottom:8px">Productos incluidos</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px" id="combo-prod-grid"></div>
+          <div style="display:flex;gap:8px">
+            <button class="btn-p" style="margin:0;flex:1" onclick="guardarCombo()">Guardar combo</button>
+            <button class="btn-s" style="margin:0;padding:0 18px" onclick="cerrarFormCombo()">Cancelar</button>
+          </div>
+        </div>
         <div id="precios-esp-empty" style="text-align:center;padding:20px;color:var(--text3);font-size:13px;display:none">Sin precios especiales aún.</div>
         <!-- Formulario agregar precio especial -->
         <div id="form-precio-esp" style="display:none;background:var(--bg2);border:0.5px solid var(--border2);border-radius:10px;padding:18px;margin-top:14px">
@@ -675,6 +695,7 @@ var ORIGEN_ENC=encodeURIComponent('Pedro de Villalba 400, Yerba Buena, Tucuman, 
 var pedidos=[],compras=[],stock=[],cobros=[],clientes=[],productos=[],preciosCliente=[];
 var historial=[],stockPC=[];
 var OBJETIVOS_MES={}; // {YYYY-MM: numero}
+var combos=[]; // [{id,nombre,panes:{},precio}]
 var FIKA_ID_COUNTER=350;
 var pedidoEditId=null,pedidoVerId=null,clienteVerId=null;
 var pQtys={};PRODUCTOS.forEach(function(k){pQtys[k]=0;});
@@ -700,6 +721,24 @@ function fromMin(m){return pad(Math.floor(m/60)%24)+':'+pad(m%60);}
 function toMin(t){var p=t.split(':').map(Number);return p[0]*60+p[1];}
 function ceil(n,d){return d===0?0:Math.ceil(n/d);}
 function getPanesStr(panes,sep){var it=[];if(panes){PRODUCTOS.forEach(function(k){if(panes[k])it.push(panes[k]+' '+PROD_NOMBRES[k].toLowerCase());});} return it.join(sep||' · ');}
+function calcTotalConCombo(p){
+  if(p.precioCombo&&p.tipoPrecio==='Combo'){
+    // Precio combo para los productos del combo, precio unitario para los extras
+    var comboMatch=combos.find(function(c){return c.precio===p.precioCombo;});
+    if(comboMatch){
+      var extra=0;
+      PRODUCTOS.forEach(function(k){
+        var enCombo=comboMatch.panes[k]||0;
+        var enPedido=(p.panes&&p.panes[k])||0;
+        var extras=Math.max(0,enPedido-enCombo);
+        if(extras>0){var prod=productos.find(function(pr){return pr.id===k;});if(prod)extra+=extras*(prod.precio||0);}
+      });
+      return p.precioCombo+extra;
+    }
+  }
+  return calcTotal(p.panes,p.nombre,p.tipoPrecio);
+}
+
 function calcTotal(panes,nombreCliente,tipoPrecio){
   var t=0;if(!panes||productos.length===0)return 0;
   PRODUCTOS.forEach(function(k){
@@ -836,6 +875,7 @@ initLayout();
   reconstruirCobros();
   hideLoad();
   cargarCongelados();
+  cargarCombos();
   cargarObjetivo();
   cargarObjetivo();
   asignarIdsPedidos();
@@ -1073,10 +1113,22 @@ async function guardarPedido(){
   var nombre=document.getElementById('p-nombre').value.trim();
   if(!nombre){alert('El nombre es obligatorio.');return;}
   if(Object.values(pQtys).reduce(function(a,b){return a+b;},0)===0){alert('Agrega al menos un producto.');return;}
+  // Detectar combo
+  var comboDetectado=detectarCombo(pQtys);
+  var usarCombo=false;
+  if(comboDetectado){
+    var totalRegular=calcTotal(pQtys,nombre,'Minorista');
+    var msg='El pedido coincide con "'+comboDetectado.nombre+'"\n';
+    var partes=[];PRODUCTOS.forEach(function(k){if(comboDetectado.panes[k]>0)partes.push(comboDetectado.panes[k]+' '+PROD_NOMBRES[k]);});
+    msg+=partes.join(' + ')+'\n\nPrecio regular: '+fmtPeso(totalRegular)+'\nPrecio combo: '+fmtPeso(comboDetectado.precio)+'\n\n¿Aplicar precio del combo?';
+    usarCombo=confirm(msg);
+  }
   var pExist=pedidoEditId?pedidos.find(function(x){return x.id===pedidoEditId;}):null;
   var cli=clientes.find(function(c){return c.nombre.toLowerCase()===nombre.toLowerCase();});
   var nuevoFikaId=pedidoEditId?(pedidos.find(function(x){return x.id===pedidoEditId;})||{}).fikaId||nextFikaId():nextFikaId();
-  var p={id:pedidoEditId||Date.now().toString(),fikaId:nuevoFikaId,clienteId:cli?cli.id:null,nombre:nombre,fecha:document.getElementById('p-fecha').value,telefono:document.getElementById('p-tel').value.trim(),domicilio:document.getElementById('p-dom').value.trim(),piso:document.getElementById('p-piso').value.trim(),ciudad:document.getElementById('p-ciudad').value,encargado:document.getElementById('p-enc').value,notas:document.getElementById('p-notas').value.trim(),pago:document.getElementById('p-pago').checked,tipoPrecio:document.getElementById('p-tipo-precio')?document.getElementById('p-tipo-precio').value:'Minorista',entregado:pExist?pExist.entregado||false:false,panes:JSON.parse(JSON.stringify(pQtys)),_etiqueta:pExist?pExist._etiqueta:null,creadoEn:pExist?pExist.creadoEn:new Date().toISOString()};
+  var tipoPrecioFinal=usarCombo?'Combo':(document.getElementById('p-tipo-precio')?document.getElementById('p-tipo-precio').value:'Minorista');
+  var precioComboFinal=usarCombo?comboDetectado.precio:null;
+  var p={id:pedidoEditId||Date.now().toString(),fikaId:nuevoFikaId,clienteId:cli?cli.id:null,nombre:nombre,fecha:document.getElementById('p-fecha').value,telefono:document.getElementById('p-tel').value.trim(),domicilio:document.getElementById('p-dom').value.trim(),piso:document.getElementById('p-piso').value.trim(),ciudad:document.getElementById('p-ciudad').value,encargado:document.getElementById('p-enc').value,notas:document.getElementById('p-notas').value.trim(),pago:document.getElementById('p-pago').checked,tipoPrecio:tipoPrecioFinal,precioCombo:precioComboFinal,entregado:pExist?pExist.entregado||false:false,panes:JSON.parse(JSON.stringify(pQtys)),_etiqueta:pExist?pExist._etiqueta:null,creadoEn:pExist?pExist.creadoEn:new Date().toISOString()};
   if(pedidoEditId){var idx=pedidos.findIndex(function(x){return x.id===pedidoEditId;});if(idx>=0)pedidos[idx]=p;}else pedidos.unshift(p);
   await guardarPedidoSupa(p);
   sincronizarCobro(p);
@@ -1845,6 +1897,20 @@ function renderPrecios(){
   renderPrecioLista('precios-lista','minorista');
   renderPrecioLista('precios-lista-may','mayorista');
   renderPreciosEspeciales();
+  renderCombos();
+  // Construir grid de productos para form de combo
+  var grid=document.getElementById('combo-prod-grid');
+  if(grid&&grid.children.length===0){
+    PRODUCTOS.forEach(function(k){
+      var w=document.createElement('div');w.style.cssText='background:var(--bg3);border:0.5px solid var(--border2);border-radius:8px;padding:8px;display:flex;justify-content:space-between;align-items:center';
+      var nm=document.createElement('span');nm.style.cssText='font-size:12px;color:var(--text)';nm.textContent=PROD_NOMBRES[k];
+      var ctrl=document.createElement('div');ctrl.style.cssText='display:flex;align-items:center;gap:6px';
+      var bm=document.createElement('button');bm.style.cssText='width:22px;height:22px;border-radius:50%;border:0.5px solid var(--border2);background:none;color:var(--accent);font-size:14px;cursor:pointer;line-height:1';bm.textContent='−';bm.onclick=(function(kk){return function(){cQty(kk,-1);};})(k);
+      var sp=document.createElement('span');sp.id='cq-'+k;sp.style.cssText='font-size:13px;color:var(--accent);min-width:16px;text-align:center';sp.textContent='0';
+      var bp=document.createElement('button');bp.style.cssText='width:22px;height:22px;border-radius:50%;border:0.5px solid var(--border2);background:none;color:var(--accent);font-size:14px;cursor:pointer;line-height:1';bp.textContent='+';bp.onclick=(function(kk){return function(){cQty(kk,1);};})(k);
+      ctrl.appendChild(bm);ctrl.appendChild(sp);ctrl.appendChild(bp);w.appendChild(nm);w.appendChild(ctrl);grid.appendChild(w);
+    });
+  }
 }
 
 function editarPrecio(prod){editarPrecioTipo(prod,'minorista');}
@@ -2004,6 +2070,77 @@ function fmtSem(h){
   }catch(e){return '?';}
 }
 
+
+
+function cargarCombos(){try{combos=JSON.parse(localStorage.getItem('fika-combos')||'[]');}catch(e){combos=[];}sbGet('combos_precios').then(function(rows){if(rows&&rows.length>0){combos=rows;localStorage.setItem('fika-combos',JSON.stringify(combos));}});}
+
+function guardarCombos(){localStorage.setItem('fika-combos',JSON.stringify(combos));sbUpsert('combos_precios',combos);}
+
+function detectarCombo(panes){
+  if(!panes||combos.length===0)return null;
+  for(var i=0;i<combos.length;i++){
+    var c=combos[i];var match=true;
+    PRODUCTOS.forEach(function(k){
+      var pc=c.panes[k]||0;var pp=panes[k]||0;
+      if(pp<pc)match=false; // el pedido tiene al menos lo del combo
+    });
+    var esCombo=match&&PRODUCTOS.some(function(k){return (c.panes[k]||0)>0;});
+    if(esCombo)return c;
+  }
+  return null;
+}
+
+function renderCombos(){
+  var el=document.getElementById('combos-lista');if(!el)return;
+  el.innerHTML='';
+  if(combos.length===0){
+    el.innerHTML='<div style="text-align:center;padding:14px;color:var(--text3);font-size:12px">Sin combos creados.</div>';
+    return;
+  }
+  combos.forEach(function(c){
+    var row=document.createElement('div');row.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:0.5px solid var(--border)';
+    var left=document.createElement('div');
+    var nm=document.createElement('div');nm.style.cssText='font-size:14px;color:var(--text);font-weight:500';nm.textContent=c.nombre;
+    var det=document.createElement('div');det.style.cssText='font-size:11px;color:var(--text3);margin-top:2px';
+    var partes=[];PRODUCTOS.forEach(function(k){if(c.panes[k]>0)partes.push(c.panes[k]+' '+PROD_NOMBRES[k]);});
+    det.textContent=partes.join(' · ');left.appendChild(nm);left.appendChild(det);
+    var right=document.createElement('div');right.style.cssText='display:flex;align-items:center;gap:10px';
+    var pv=document.createElement('span');pv.style.cssText='font-size:14px;color:var(--accent);font-weight:500';pv.textContent=fmtPeso(c.precio);
+    var bEdit=document.createElement('button');bEdit.className='btn-ol';bEdit.style.cssText='margin:0;padding:3px 10px;font-size:11px';bEdit.textContent='Editar';bEdit.onclick=(function(cc){return function(){abrirFormCombo(cc);};})(c);
+    var bDel=document.createElement('button');bDel.style.cssText='padding:3px 10px;background:none;border:0.5px solid rgba(224,85,85,0.3);border-radius:6px;color:var(--danger);font-size:11px;cursor:pointer';bDel.textContent='Quitar';
+    bDel.onclick=(function(id){return function(){if(!confirm('¿Eliminar este combo?'))return;combos=combos.filter(function(x){return x.id!==id;});guardarCombos();sbDelete('combos_precios','id',id);renderCombos();};})(c.id);
+    right.appendChild(pv);right.appendChild(bEdit);right.appendChild(bDel);row.appendChild(left);row.appendChild(right);el.appendChild(row);
+  });
+}
+
+var comboEditId=null;
+var comboQtys={};
+
+function abrirFormCombo(c){
+  comboEditId=c?c.id:null;
+  PRODUCTOS.forEach(function(k){comboQtys[k]=c?(c.panes[k]||0):0;});
+  var form=document.getElementById('form-combo');if(!form)return;
+  document.getElementById('combo-nombre').value=c?c.nombre:'';
+  document.getElementById('combo-precio').value=c?c.precio:'';
+  PRODUCTOS.forEach(function(k){var el=document.getElementById('cq-'+k);if(el)el.textContent=comboQtys[k];});
+  form.style.display='block';
+}
+
+function cerrarFormCombo(){var form=document.getElementById('form-combo');if(form)form.style.display='none';comboEditId=null;}
+
+function cQty(k,d){comboQtys[k]=Math.max(0,(comboQtys[k]||0)+d);var el=document.getElementById('cq-'+k);if(el)el.textContent=comboQtys[k];}
+
+function guardarCombo(){
+  var nombre=document.getElementById('combo-nombre').value.trim();
+  var precio=parseInt(document.getElementById('combo-precio').value);
+  if(!nombre){alert('Ingresá un nombre.');return;}
+  if(isNaN(precio)||precio<=0){alert('Ingresá un precio válido.');return;}
+  if(PRODUCTOS.every(function(k){return (comboQtys[k]||0)===0;})){alert('Agregá al menos un producto.');return;}
+  var c={id:comboEditId||'combo_'+Date.now(),nombre:nombre,panes:Object.assign({},comboQtys),precio:precio};
+  if(comboEditId){var idx=combos.findIndex(function(x){return x.id===comboEditId;});if(idx>=0)combos[idx]=c;else combos.push(c);}
+  else combos.push(c);
+  guardarCombos();renderCombos();cerrarFormCombo();
+}
 
 function cargarObjetivo(){
   try{OBJETIVOS_MES=JSON.parse(localStorage.getItem('fika-objetivos')||'{}');}catch(e){OBJETIVOS_MES={};}
