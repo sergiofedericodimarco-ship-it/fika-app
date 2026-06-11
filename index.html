@@ -581,12 +581,13 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
             <button class="btn-ol" style="margin:0" onclick="exportarComprasExcel()">Exportar Excel</button>
           </div>
           <div id="desk-compras-real-list"></div>
-          <div id="desk-compras-real-empty" style="text-align:center;padding:20px;color:var(--text3);font-size:12px;display:none">Sin compras registradas.<br><br><button class="btn-p" onclick="abrirFormCompraRealizada(null)">+ Registrar primera compra</button></div>
+          <div id="desk-compras-real-empty" style="text-align:center;padding:20px;color:var(--text3);font-size:12px;display:none">Sin compras registradas.</div>
         </div>
       </div>
     </div>
     <div class="dscreen" id="d-historial">
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px">
+      <div id="hist-container"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
         <div style="display:flex;gap:6px;flex-wrap:wrap" id="hist-filtros-pc"></div>
         <button class="btn-ol" style="margin:0" onclick="editarObjetivo()">🎯 Objetivo</button><button class="btn-ol" style="margin:0" onclick="exportarHistorialExcel()">Exportar Excel</button>
       </div>
@@ -2371,5 +2372,26 @@ function renderComprasRealizadasDesk(){
 }
 
 </script>
+  <!-- Modal compra realizada -->
+  <div class="modal" id="modal-compra-real" style="display:none">
+    <div class="modal-box" style="max-width:480px">
+      <div class="modal-title">Registrar compra</div>
+      <input type="hidden" id="cr-id">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div><div class="f-lbl">Fecha</div><input class="f-in" type="date" id="cr-fecha"></div>
+        <div><div class="f-lbl">Insumo</div><input class="f-in" id="cr-insumo" placeholder="Ej: Harina" list="list-insumos" autocomplete="off"><datalist id="list-insumos"></datalist></div>
+        <div><div class="f-lbl">Marca</div><input class="f-in" id="cr-marca" placeholder="Ej: Cañuelas" list="list-marcas" autocomplete="off"><datalist id="list-marcas"></datalist></div>
+        <div><div class="f-lbl">Proveedor</div><input class="f-in" id="cr-proveedor" placeholder="Ej: Makro" list="list-proveedores" autocomplete="off"><datalist id="list-proveedores"></datalist></div>
+        <div><div class="f-lbl">Cantidad</div><input class="f-in" type="number" id="cr-cantidad" placeholder="Ej: 25" oninput="actualizarTotalCompra()"></div>
+        <div><div class="f-lbl">Unidad</div><select class="f-in" id="cr-unidad"><option value="kg">kg</option><option value="g">g</option><option value="l">litros</option><option value="ml">ml</option><option value="u">unidades</option><option value="doc">docena</option></select></div>
+        <div><div class="f-lbl">Precio por unidad ($)</div><input class="f-in" type="number" id="cr-precio-unit" placeholder="Ej: 1200" oninput="actualizarTotalCompra()"></div>
+        <div><div class="f-lbl">Total ($)</div><input class="f-in" type="number" id="cr-total" placeholder="Se calcula solo"></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:4px">
+        <button class="btn-p" style="flex:1;margin:0" onclick="guardarFormCompraRealizada()">Guardar</button>
+        <button class="btn-s" style="margin:0;padding:0 18px" onclick="cerrarModal('modal-compra-real')">Cancelar</button>
+      </div>
+    </div>
+  </div>
 </body>
 </html>
