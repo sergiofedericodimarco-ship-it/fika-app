@@ -915,6 +915,8 @@ initLayout();
   hideLoad();
   cargarCongelados();
   cargarComprasRealizadas();
+  cargarObjetivo();
+  cargarCombos();
   asignarIdsPedidos();
   renderPedidos();
   renderDeskPedidos();
@@ -1937,6 +1939,7 @@ function renderPrecioLista(containerId, tipo){
 
 function renderPrecios(){
   if(productos.length===0){cargarProductos().then(renderPrecios);return;}
+  renderCombos();
   renderPrecioLista('precios-lista','minorista');
   renderPrecioLista('precios-lista-may','mayorista');
   renderPreciosEspeciales();
@@ -2760,6 +2763,149 @@ function guardarEditarCliente(){
   renderClientesMob();
 }
 
+
+
+var OBJETIVOS_MES={};
+function cargarObjetivo(){try{OBJETIVOS_MES=JSON.parse(localStorage.getItem('fika-objetivos')||'{}');}catch(e){OBJETIVOS_MES={};}}
+function getObjetivoMes(mes){return OBJETIVOS_MES[mes]||0;}
+function guardarObjetivoMes(mes,n){if(n>0)OBJETIVOS_MES[mes]=n;else delete OBJETIVOS_MES[mes];localStorage.setItem('fika-objetivos',JSON.stringify(OBJETIVOS_MES));}
+function editarObjetivo(){
+  var lista=getHistorialCompleto();
+  var meses={};lista.forEach(function(h){if(!h.enCurso){var m=(h.fecha||h.id||'').slice(0,7);if(m)meses[m]=1;}});
+  meses[new Date().toISOString().slice(0,7)]=1;
+  var lineas=Object.keys(meses).sort().map(function(m){var d=new Date(m+'-15');return d.toLocaleDateString('es-AR',{month:'short',year:'numeric'})+': '+(OBJETIVOS_MES[m]||'sin objetivo');}).join('\n');
+  var mes=prompt('Objetivos actuales:\n'+lineas+'\n\nIngresá el mes (YYYY-MM, ej: 2026-06):');
+  if(!mes)return;mes=mes.trim();
+  var nuevo=prompt('Objetivo para '+mes+'\nActual: '+(OBJETIVOS_MES[mes]||'sin objetivo')+'\nIngresá el número (0 para quitar):');
+  if(nuevo===null)return;var n=parseInt(nuevo);if(isNaN(n)||n<0){alert('Número inválido');return;}
+  guardarObjetivoMes(mes,n);renderHistorial();
+}
+
+// ── SEMANA EN CURSO ──────────────────────────────────────────────
+function getSemanaEnCurso(){
+  var hoy=new Date();hoy.setHours(23,59,59,999);
+  var diaSem=hoy.getDay();
+  var dom=new Date(hoy);dom.setDate(hoy.getDate()-diaSem);dom.setHours(0,0,0,0);
+  var sab=new Date(dom);sab.setDate(dom.getDate()+6);
+  var sabStr=sab.getFullYear()+'-'+('0'+(sab.getMonth()+1)).slice(-2)+'-'+('0'+sab.getDate()).slice(-2);
+  var yaExiste=(historial||[]).some(function(h){return (h.id||'').slice(0,10)===sabStr;});
+  var yaEnPreload=(HIST_PRELOAD||[]).some(function(h){return (h.id||'').slice(0,10)===sabStr;});
+  if(yaExiste||yaEnPreload)return null;
+  var pedSemana=pedidos.filter(function(p){
+    if(!p.fecha)return false;
+    var f=new Date(p.fecha+'T12:00');
+    return f>=dom&&f<=sab;
+  });
+  var totProd={};PRODUCTOS.forEach(function(k){totProd[k]=0;});
+  pedSemana.forEach(function(p){PRODUCTOS.forEach(function(k){totProd[k]+=(p.panes&&p.panes[k])||0;});});
+  var total=Object.values(totProd).reduce(function(a,b){return a+b;},0);
+  return {id:'en-curso',fecha:sabStr+'T12:00:00.000Z',lactal:totProd.lactal||0,integral:totProd.integral||0,
+    campo:totProd.campo||0,focaccia_cherry:totProd.focaccia_cherry||0,
+    focaccia_cebolla:totProd.focaccia_cebolla||0,focaccia_morron:totProd.focaccia_morron||0,
+    prepizza:totProd.prepizza||0,total:total,enCurso:true};
+}
+
+// ── COMBOS ───────────────────────────────────────────────────────
+var combos=[];
+var comboQtys={};
+var comboFocTotal=0;
+var comboEditId=null;
+var FOCACCIAS=['focaccia_cherry','focaccia_cebolla','focaccia_morron'];
+
+function cargarCombos(){
+  try{combos=JSON.parse(localStorage.getItem('fika-combos')||'[]');}catch(e){combos=[];}
+}
+
+function guardarCombos(){
+  localStorage.setItem('fika-combos',JSON.stringify(combos));
+  sbUpsert('combos_precios',combos);
+}
+
+function cFocTotal(d){
+  comboFocTotal=Math.max(0,comboFocTotal+d);
+  var el=document.getElementById('cq-foc-total');if(el)el.textContent=comboFocTotal;
+}
+
+function abrirFormCombo(c){
+  comboEditId=c?c.id:null;
+  comboFocTotal=c?(c.focaccias_total||0):0;
+  PRODUCTOS.forEach(function(k){comboQtys[k]=c?(c.panes[k]||0):0;});
+  document.getElementById('combo-nombre').value=c?c.nombre:'';
+  document.getElementById('combo-precio').value=c?c.precio:'';
+  var fEl=document.getElementById('cq-foc-total');if(fEl)fEl.textContent=comboFocTotal;
+  PRODUCTOS.forEach(function(k){var el=document.getElementById('cq-'+k);if(el)el.textContent=comboQtys[k];});
+  // Construir grid de productos si está vacío
+  var grid=document.getElementById('combo-prod-grid');
+  if(grid&&grid.children.length===0){
+    PRODUCTOS.forEach(function(k){
+      var w=document.createElement('div');w.style.cssText='background:var(--bg3);border:0.5px solid var(--border2);border-radius:8px;padding:8px;display:flex;justify-content:space-between;align-items:center';
+      var nm=document.createElement('span');nm.style.cssText='font-size:12px;color:var(--text)';nm.textContent=PROD_NOMBRES[k];
+      var ctrl=document.createElement('div');ctrl.style.cssText='display:flex;align-items:center;gap:6px';
+      var bm=document.createElement('button');bm.style.cssText='width:22px;height:22px;border-radius:50%;border:0.5px solid var(--border2);background:none;color:var(--accent);font-size:14px;cursor:pointer;line-height:1';bm.textContent='-';(function(kk){bm.onclick=function(){comboQtys[kk]=Math.max(0,(comboQtys[kk]||0)-1);var sp=document.getElementById('cq-'+kk);if(sp)sp.textContent=comboQtys[kk];};})(k);
+      var sp=document.createElement('span');sp.id='cq-'+k;sp.style.cssText='font-size:13px;color:var(--accent);min-width:16px;text-align:center';sp.textContent='0';
+      var bp=document.createElement('button');bp.style.cssText='width:22px;height:22px;border-radius:50%;border:0.5px solid var(--border2);background:none;color:var(--accent);font-size:14px;cursor:pointer;line-height:1';bp.textContent='+';(function(kk){bp.onclick=function(){comboQtys[kk]=(comboQtys[kk]||0)+1;var sp=document.getElementById('cq-'+kk);if(sp)sp.textContent=comboQtys[kk];};})(k);
+      ctrl.appendChild(bm);ctrl.appendChild(sp);ctrl.appendChild(bp);w.appendChild(nm);w.appendChild(ctrl);grid.appendChild(w);
+    });
+  }
+  document.getElementById('form-combo').style.display='block';
+}
+
+function cerrarFormCombo(){
+  document.getElementById('form-combo').style.display='none';
+  comboEditId=null;
+}
+
+function guardarCombo(){
+  var nombre=document.getElementById('combo-nombre').value.trim();
+  var precio=parseInt(document.getElementById('combo-precio').value);
+  if(!nombre){alert('Ingresa un nombre.');return;}
+  if(isNaN(precio)||precio<=0){alert('Ingresa un precio válido.');return;}
+  if(PRODUCTOS.every(function(k){return (comboQtys[k]||0)===0;})&&comboFocTotal===0){alert('Agrega al menos un producto.');return;}
+  var c={id:comboEditId||'combo_'+Date.now(),nombre:nombre,panes:Object.assign({},comboQtys),focaccias_total:comboFocTotal,precio:precio};
+  if(comboEditId){var idx=combos.findIndex(function(x){return x.id===comboEditId;});if(idx>=0)combos[idx]=c;else combos.push(c);}
+  else combos.push(c);
+  guardarCombos();renderCombos();cerrarFormCombo();
+}
+
+function renderCombos(){
+  var el=document.getElementById('combos-lista');if(!el)return;
+  el.innerHTML='';
+  if(combos.length===0){el.innerHTML='<div style="text-align:center;padding:14px;color:var(--text3);font-size:12px">Sin combos creados.</div>';return;}
+  combos.forEach(function(c){
+    var row=document.createElement('div');row.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:0.5px solid var(--border)';
+    var left=document.createElement('div');
+    var nm=document.createElement('div');nm.style.cssText='font-size:14px;color:var(--text);font-weight:500';nm.textContent=c.nombre;
+    var det=document.createElement('div');det.style.cssText='font-size:11px;color:var(--text3);margin-top:2px';
+    var partes=[];
+    PRODUCTOS.forEach(function(k){if(FOCACCIAS.indexOf(k)<0&&c.panes[k]>0)partes.push(c.panes[k]+' '+PROD_NOMBRES[k]);});
+    if(c.focaccias_total>0)partes.push(c.focaccias_total+' focaccias a elección');
+    det.textContent=partes.join(' · ');
+    left.appendChild(nm);left.appendChild(det);
+    var right=document.createElement('div');right.style.cssText='display:flex;align-items:center;gap:10px';
+    var pv=document.createElement('span');pv.style.cssText='font-size:14px;color:var(--accent);font-weight:500';pv.textContent=fmtPeso(c.precio);
+    var bEdit=document.createElement('button');bEdit.className='btn-ol';bEdit.style.cssText='margin:0;padding:3px 10px;font-size:11px';bEdit.textContent='Editar';(function(cc){bEdit.onclick=function(){abrirFormCombo(cc);};})(c);
+    var bDel=document.createElement('button');bDel.style.cssText='padding:3px 10px;background:none;border:0.5px solid rgba(224,85,85,0.3);border-radius:6px;color:var(--danger);font-size:11px;cursor:pointer';bDel.textContent='Quitar';
+    (function(id){bDel.onclick=function(){if(!confirm('Eliminar?'))return;combos=combos.filter(function(x){return x.id!==id;});guardarCombos();sbDelete('combos_precios','id',id);renderCombos();};})(c.id);
+    right.appendChild(pv);right.appendChild(bEdit);right.appendChild(bDel);row.appendChild(left);row.appendChild(right);el.appendChild(row);
+  });
+}
+
+function detectarCombo(panes){
+  if(!panes||combos.length===0)return null;
+  for(var i=0;i<combos.length;i++){
+    var c=combos[i];var match=true;
+    if(c.focaccias_total>0){
+      var totalFoc=FOCACCIAS.reduce(function(a,k){return a+(panes[k]||0);},0);
+      if(totalFoc<c.focaccias_total)match=false;
+      PRODUCTOS.forEach(function(k){if(FOCACCIAS.indexOf(k)>=0)return;if((panes[k]||0)<(c.panes[k]||0))match=false;});
+    } else {
+      PRODUCTOS.forEach(function(k){if((panes[k]||0)<(c.panes[k]||0))match=false;});
+    }
+    var tieneProds=c.focaccias_total>0||PRODUCTOS.some(function(k){return (c.panes[k]||0)>0;});
+    if(match&&tieneProds)return c;
+  }
+  return null;
+}
 
 </script>
   <div class="modal-ov" id="modal-editar-cliente">
