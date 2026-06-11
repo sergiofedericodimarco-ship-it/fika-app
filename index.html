@@ -460,7 +460,10 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
           <div class="sec-lbl">❄️ Congelados</div>
           <div id="desk-congelados-list"></div>
         </div>
-      </div>
+      
+        <div class="sec-lbl" style="margin-top:16px">❄️ Congelados</div>
+        <div class="card" id="desk-congelados-list"></div>
+    </div>
     </div>
 
     <!-- CLIENTES PC -->
@@ -528,15 +531,37 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
             <button class="btn-s" style="margin:0;padding:0 18px" onclick="cerrarFormPrecioEspecial()">Cancelar</button>
           </div>
         </div>
-      </div>
+      
+        <!-- COMBOS -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin:20px 0 8px">
+          <div class="sec-lbl" style="margin:0">Combos / Promociones</div>
+          <button class="btn-ol" style="margin:0" onclick="abrirFormCombo(null)">+ Crear combo</button>
+        </div>
+        <div class="card" id="combos-lista" style="margin-bottom:16px"></div>
+        <div id="form-combo" style="display:none;background:var(--bg2);border:0.5px solid var(--border2);border-radius:10px;padding:18px;margin-bottom:20px">
+          <div style="font-size:13px;font-weight:500;color:var(--accent);margin-bottom:14px">Combo / Promoción</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+            <div><div class="f-lbl">Nombre</div><input class="f-in" id="combo-nombre" placeholder="Ej: Combo Semanal A"></div>
+            <div><div class="f-lbl">Precio final ($)</div><input class="f-in" type="number" id="combo-precio" placeholder="Ej: 19500"></div>
+          </div>
+          <div class="f-lbl" style="margin-bottom:8px">Productos incluidos</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px" id="combo-prod-grid"></div>
+          <div style="background:var(--bg3);border:0.5px solid var(--border2);border-radius:8px;padding:10px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
+            <div><div style="font-size:12px;color:var(--text)">Focaccias a elección</div><div style="font-size:10px;color:var(--text3);margin-top:2px">Cualquier combinación Cherry/Cebolla/Morrón</div></div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <button onclick="cFocTotal(-1)" style="width:22px;height:22px;border-radius:50%;border:0.5px solid var(--border2);background:none;color:var(--accent);font-size:14px;cursor:pointer">−</button>
+              <span id="cq-foc-total" style="font-size:13px;color:var(--accent);min-width:16px;text-align:center">0</span>
+              <button onclick="cFocTotal(1)" style="width:22px;height:22px;border-radius:50%;border:0.5px solid var(--border2);background:none;color:var(--accent);font-size:14px;cursor:pointer">+</button>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn-p" style="margin:0;flex:1" onclick="guardarCombo()">Guardar combo</button>
+            <button class="btn-s" style="margin:0;padding:0 18px" onclick="cerrarFormCombo()">Cancelar</button>
+          </div>
+        </div>
+    </div>
     </div>
 
-    <!-- CONGELADOS PC -->
-      <div style="max-width:500px">
-        <div class="sec-lbl">Stock de congelados</div>
-        <div id="desk-congelados-list"></div>
-      </div>
-    </div>
     <!-- HISTORIAL PC -->
     <div class="dscreen" id="d-compras">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
@@ -559,34 +584,49 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
       </div>
     </div>
     <div class="dscreen" id="d-historial">
+      <!-- Controles -->
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px">
         <div style="display:flex;gap:6px;flex-wrap:wrap" id="hist-filtros-pc"></div>
-        <button class="btn-ol" style="margin:0" onclick="exportarHistorialExcel()">Exportar Excel</button>
+        <div style="display:flex;gap:8px">
+          <button class="btn-ol" style="margin:0" onclick="editarObjetivo()">🎯 Objetivo</button>
+          <button class="btn-ol" style="margin:0" onclick="exportarHistorialExcel()">Exportar Excel</button>
+        </div>
       </div>
-      <div id="hist-stats-pc" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px"></div>
+      <!-- Stats 5 columnas -->
+      <div id="hist-stats-pc" style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px"></div>
+      <!-- Gráficos fila 1 -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
         <div>
           <div class="sec-lbl">Evolución semanal por producto</div>
           <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;font-size:11px" id="hist-legend-pc"></div>
           <div style="position:relative;width:100%;height:240px"><canvas id="hist-chart-lineas" role="img" aria-label="Gráfico líneas historial">Evolución semanal.</canvas></div>
+          <button class="btn-ol" style="margin:4px 0 0;padding:3px 10px;font-size:11px" onclick="if(chartLineasInst)chartLineasInst.resetZoom()">Reset zoom</button>
         </div>
         <div>
-          <div class="sec-lbl">Total por semana</div>
+          <div class="sec-lbl">Total por semana + tendencia</div>
           <div style="position:relative;width:100%;height:260px"><canvas id="hist-chart-barras" role="img" aria-label="Barras total semanal">Totales semanales.</canvas></div>
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+      <!-- Gráficos fila 2 -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px">
         <div>
           <div class="sec-lbl">Participación por producto</div>
-          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;font-size:11px" id="hist-legend-torta"></div>
-          <div style="position:relative;width:100%;height:220px"><canvas id="hist-chart-torta" role="img" aria-label="Torta por producto">Participación.</canvas></div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;font-size:11px" id="hist-legend-torta"></div>
+          <div style="position:relative;width:100%;height:200px"><canvas id="hist-chart-torta" role="img" aria-label="Torta por producto">Participación.</canvas></div>
         </div>
         <div>
-          <div class="sec-lbl">Tabla completa</div>
-          <div id="hist-tabla-pc" style="overflow-x:auto;font-size:12px"></div>
+          <div class="sec-lbl">Ranking productos</div>
+          <div id="hist-ranking"></div>
+        </div>
+        <div>
+          <div class="sec-lbl">Última vs anteúltima semana</div>
+          <div id="hist-comparacion"></div>
         </div>
       </div>
-      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún. Los datos se cargan al cerrar semana.</div>
+      <!-- Tabla -->
+      <div class="sec-lbl">Tabla completa</div>
+      <div id="hist-tabla-pc" style="overflow-x:auto;font-size:12px;margin-bottom:20px"></div>
+      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
     </div>
   </div>
 </div>
@@ -1837,33 +1877,46 @@ function imprimirTickets(){
 // ── CLIENTES DESK ─────────────────────────────────────────────
 function renderClientesDesk(){
   var el=document.getElementById('desk-clientes-lista'),empty=document.getElementById('desk-clientes-empty');if(!el)return;
-  var todos={};
-  clientes.forEach(function(c){todos[c.nombre]={cli:c,pedidos:0};});
-  pedidos.forEach(function(p){if(!todos[p.nombre])todos[p.nombre]={cli:null,pedidos:0};todos[p.nombre].pedidos++;});
-  var lista=Object.values(todos).sort(function(a,b){return b.pedidos-a.pedidos;});
+  // Construir mapa combinando clientes + pedidos históricos
+  var mapa={};
+  clientes.forEach(function(c){mapa[c.nombre]={cli:c,pedidos:0,panes:{},total:0};});
+  pedidos.forEach(function(p){
+    if(!mapa[p.nombre])mapa[p.nombre]={cli:null,pedidos:0,panes:{},total:0};
+    mapa[p.nombre].pedidos++;
+    if(p.panes)PRODUCTOS.forEach(function(k){mapa[p.nombre].panes[k]=(mapa[p.nombre].panes[k]||0)+(p.panes[k]||0);});
+    mapa[p.nombre].total+=calcTotal(p.panes,p.nombre,p.tipoPrecio);
+  });
+  var lista=Object.values(mapa).sort(function(a,b){return b.pedidos-a.pedidos;});
   if(lista.length===0){el.innerHTML='';if(empty)empty.style.display='block';return;}
   if(empty)empty.style.display='none';el.innerHTML='';
-  var tbl=document.createElement('table');tbl.style.cssText='width:100%;border-collapse:collapse;font-size:13px';
-  var thead=document.createElement('thead');var hr=document.createElement('tr');
-  hr.style.cssText='border-bottom:0.5px solid var(--border2)';
-  ['Nombre','Teléfono','Ciudad','Tipo precio','Pedidos',''].forEach(function(c,i){
-    var th=document.createElement('th');th.style.cssText='padding:8px 6px;text-align:'+(i>=4?'right':'left')+';color:var(--text3);font-weight:400;font-size:10px;text-transform:uppercase';th.textContent=c;hr.appendChild(th);
-  });
-  thead.appendChild(hr);tbl.appendChild(thead);
-  var tbody=document.createElement('tbody');
   lista.forEach(function(item){
     var c=item.cli||{};
-    var tr=document.createElement('tr');tr.style.cssText='border-bottom:0.5px solid var(--border)';
-    [item.cli?item.cli.nombre||item.cli.nombre:Object.keys(todos).find(function(k){return todos[k]===item;})||'',
-     c.telefono||'—',c.ciudad||'—',c.tipoPrecio||'—',item.pedidos].forEach(function(v,i){
-      var td=document.createElement('td');td.style.cssText='padding:8px 6px;text-align:'+(i>=4?'right':'left')+';color:'+(i===0?'var(--text)':i===4?'var(--accent)':'var(--text2)');
-      if(i===0)td.style.fontWeight='500';td.textContent=v;tr.appendChild(td);
-    });
-    var tdA=document.createElement('td');tdA.style.cssText='padding:8px 6px;text-align:right';
-    if(c.id){var bE=document.createElement('button');bE.className='btn-ol';bE.style.cssText='margin:0;padding:3px 10px;font-size:11px';bE.textContent='Editar';(function(id){bE.onclick=function(){abrirEditarCliente(id);};})(c.id);tdA.appendChild(bE);}
-    tr.appendChild(tdA);tbody.appendChild(tr);
+    var card=document.createElement('div');
+    card.style.cssText='background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px';
+    // Header
+    var hdr=document.createElement('div');hdr.style.cssText='display:flex;align-items:center;justify-content:space-between;margin-bottom:8px';
+    var left=document.createElement('div');
+    var nm=document.createElement('div');nm.style.cssText='font-size:14px;font-weight:500;color:var(--text)';nm.textContent=c.nombre||item.cli?item.cli.nombre||'':Object.keys(mapa).find(function(k){return mapa[k]===item;})||'';
+    var sub=document.createElement('div');sub.style.cssText='font-size:11px;color:var(--text3);margin-top:2px';
+    var parts=[];
+    if(c.telefono)parts.push('📞 '+c.telefono);
+    if(c.ciudad)parts.push(c.ciudad);
+    if(c.tipoPrecio)parts.push(c.tipoPrecio);
+    sub.textContent=parts.join(' · ');
+    left.appendChild(nm);left.appendChild(sub);
+    var right=document.createElement('div');right.style.cssText='display:flex;align-items:center;gap:10px;flex-shrink:0';
+    var stats=document.createElement('div');stats.style.cssText='text-align:right';
+    var sp1=document.createElement('div');sp1.style.cssText='font-size:13px;font-weight:500;color:var(--accent)';sp1.textContent=item.pedidos+' pedidos';
+    var sp2=document.createElement('div');sp2.style.cssText='font-size:11px;color:var(--text3)';sp2.textContent=item.total>0?fmtPeso(item.total)+' total':'';
+    stats.appendChild(sp1);stats.appendChild(sp2);
+    if(c.id){var bE=document.createElement('button');bE.className='btn-ol';bE.style.cssText='margin:0;padding:3px 10px;font-size:11px;flex-shrink:0';bE.textContent='Editar';(function(id){bE.onclick=function(){abrirEditarCliente(id);};})(c.id);right.appendChild(stats);right.appendChild(bE);}
+    else right.appendChild(stats);
+    hdr.appendChild(left);hdr.appendChild(right);card.appendChild(hdr);
+    // Productos que compra
+    var prodStr=PRODUCTOS.filter(function(k){return (item.panes[k]||0)>0;}).map(function(k){return PROD_NOMBRES[k]+': '+item.panes[k];}).join(' · ');
+    if(prodStr){var det=document.createElement('div');det.style.cssText='font-size:11px;color:var(--text2);padding-top:8px;border-top:0.5px solid var(--border)';det.textContent=prodStr;card.appendChild(det);}
+    el.appendChild(card);
   });
-  tbl.appendChild(tbody);el.appendChild(tbl);
 }
 
 // ── PRECIOS ───────────────────────────────────────────────────
