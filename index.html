@@ -1441,11 +1441,8 @@ function renderCompras(){
 function enviarComprasWA(){
   var pendientes=compras.filter(function(c){return !c.done;});
   if(pendientes.length===0){alert('No hay ítems en la lista.');return;}
-  var msg='*Lista de compras FIKA*
-
-';
-  pendientes.forEach(function(c,i){msg+=(i+1)+'. '+c.nombre+(c.cantidad?' ('+c.cantidad+')':'')+'
-';});
+  var msg='*Lista de compras FIKA*\n\n';
+  pendientes.forEach(function(c,i){msg+=(i+1)+'. '+c.nombre+(c.cantidad?' ('+c.cantidad+')':'')+'\n';});
   var url='https://wa.me/543813499797?text='+encodeURIComponent(msg);
   window.open(url,'_blank');
 }
@@ -2254,3 +2251,7 @@ function renderComprasRealizadasDesk(){
   });
   tbl.appendChild(tbody);el.appendChild(tbl);
 }
+
+</script>
+</body>
+</html>
