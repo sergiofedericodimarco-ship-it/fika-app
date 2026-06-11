@@ -559,8 +559,6 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
       </div>
     </div>
     <div class="dscreen" id="d-historial">
-      <div id="hist-container"></div>
-      <div id="hist-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin registros aún.</div>
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px">
         <div style="display:flex;gap:6px;flex-wrap:wrap" id="hist-filtros-pc"></div>
         <button class="btn-ol" style="margin:0" onclick="exportarHistorialExcel()">Exportar Excel</button>
@@ -2711,8 +2709,8 @@ function guardarEditarCliente(){
 
 
 </script>
-  <div class="modal" id="modal-editar-cliente" style="display:none">
-    <div class="modal-box" style="max-width:460px">
+  <div class="modal-ov" id="modal-editar-cliente">
+  <div class="modal" style="padding:20px;max-width:460px;border-radius:12px">
       <div class="modal-title">Editar cliente</div>
       <input type="hidden" id="ec-id">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
@@ -2730,8 +2728,8 @@ function guardarEditarCliente(){
       </div>
     </div>
   </div>
-  <div class="modal" id="modal-compra-real" style="display:none">
-    <div class="modal-box" style="max-width:480px">
+  <div class="modal-ov" id="modal-compra-real">
+  <div class="modal" style="padding:20px;max-width:480px;border-radius:12px">
       <div class="modal-title">Registrar compra</div>
       <input type="hidden" id="cr-id">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
