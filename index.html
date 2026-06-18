@@ -1282,8 +1282,8 @@ function enviarHorarioVisita(){
   if(total>0)msg+=' Total: '+fmtPeso(total)+'.';
   msg+=' Gracias por elegirnos! 🍞';
   var tel=(p.telefono||'').replace(/\D/g,'');
-  if(!tel){alert('Este cliente no tiene teléfono cargado. Agrégalo en CLIENTES.');return;}
-  window.open('https://wa.me/549'+tel+'?text='+encodeURIComponent(msg),'_blank');
+  var url=tel?'https://wa.me/549'+tel+'?text='+encodeURIComponent(msg):'https://wa.me/?text='+encodeURIComponent(msg);
+  window.open(url,'_blank');
 }
 
 // ── SEMANA ────────────────────────────────────────────────────
