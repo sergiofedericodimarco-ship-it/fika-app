@@ -1259,7 +1259,8 @@ function enviarAlias(){
 }
 
 function enviarHorarioVisita(){
-  var p=pedidos.find(function(x){return x.id===pedidoVerId;});if(!p)return;
+  var todos2=(pedidosImportados&&pedidosImportados.length>0?pedidosImportados:pedidos);
+  var p=todos2.find(function(x){return x.id===pedidoVerId;});if(!p)return;
   var desde=p.horarioDesde||p.horarioEntrega||'';
   var hasta=p.horarioHasta||(p.horarioEntrega?p.horarioEntrega+' hs':'');
   if(!desde){alert('No tiene horario asignado aún. Asignálo en CADETE o genéra la ruta en REPARTO.');return;}
