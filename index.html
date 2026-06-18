@@ -671,8 +671,9 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
       <button id="btn-pagado" onclick="togglePagado()" style="width:100%;padding:13px;border-radius:8px;border:0.5px solid var(--border2);font-family:Jost,sans-serif;font-size:14px;font-weight:700;cursor:pointer;background:var(--bg3);color:var(--text2)">Sin pago</button>
       <button id="btn-entregado" onclick="toggleEntregado()" style="width:100%;padding:13px;border-radius:8px;border:0.5px solid var(--border2);font-family:Jost,sans-serif;font-size:14px;font-weight:700;cursor:pointer;background:var(--bg3);color:var(--text2)">Sin entregar</button>
     </div>
-    <button class="btn-s" style="margin-top:0;margin-bottom:6px" onclick="enviarHorarioVisita()">Enviar horario de visita</button>
+    <button class="btn-s" style="margin-top:0;margin-bottom:6px" onclick="enviarHorarioVisita()">&#128241; Enviar horario por WhatsApp</button>
     <button class="btn-s" style="margin-top:0;margin-bottom:6px" onclick="enviarAlias()">Enviar alias de pago</button>
+    <button class="btn-s" style="margin-top:0;margin-bottom:6px" onclick="enviarHorarioVisita()">&#128241; Enviar horario WhatsApp</button>
     <div style="display:flex;gap:7px;margin-top:6px">
       <button class="btn-s" style="margin-top:0" onclick="editarPedido()">Editar</button>
       <button class="btn-s" style="margin-top:0;color:var(--text3);border-color:var(--border)" onclick="cerrarModal('modal-det-pedido')">Cerrar</button>
@@ -1116,13 +1117,13 @@ function abrirModalPedido(id){
   pedidoEditId=id;
   PRODUCTOS.forEach(function(k){pQtys[k]=0;document.getElementById('pq-'+k).textContent=0;});
   ['p-nombre','p-tel','p-dom','p-piso','p-notas'].forEach(function(x){document.getElementById(x).value='';});
-  document.getElementById('p-fecha').value='';document.getElementById('p-ciudad').value='';document.getElementById('p-enc').value='Cadete';document.getElementById('p-pago').checked=false;document.getElementById('p-coord').checked=false;
+  document.getElementById('p-fecha').value='';document.getElementById('p-ciudad').value='';document.getElementById('p-enc').value='Cadete';document.getElementById('p-pago').checked=false;document.getElementById('p-coord').checked=false;if(document.getElementById('p-tipo-precio'))document.getElementById('p-tipo-precio').value='Minorista';
   document.getElementById('p-dom').disabled=false;document.getElementById('p-dom').style.opacity='1';document.getElementById('p-piso').disabled=false;document.getElementById('p-piso').style.opacity='1';
   document.getElementById('p-total-preview').style.display='none';
   if(id){
     var p=pedidos.find(function(x){return x.id===id;});
     if(p){
-      document.getElementById('p-nombre').value=p.nombre||'';document.getElementById('p-fecha').value=p.fecha||'';document.getElementById('p-tel').value=p.telefono||'';document.getElementById('p-dom').value=p.domicilio||'';document.getElementById('p-piso').value=p.piso||'';document.getElementById('p-ciudad').value=p.ciudad||'';document.getElementById('p-enc').value=p.encargado||'Cadete';document.getElementById('p-notas').value=p.notas||'';document.getElementById('p-pago').checked=p.pago||false;if(document.getElementById('p-tipo-precio'))document.getElementById('p-tipo-precio').value=p.tipoPrecio||'Minorista';
+      document.getElementById('p-nombre').value=p.nombre||'';document.getElementById('p-fecha').value=p.fecha||'';document.getElementById('p-tel').value=p.telefono||'';document.getElementById('p-dom').value=p.domicilio||'';document.getElementById('p-piso').value=p.piso||'';document.getElementById('p-ciudad').value=p.ciudad||'';document.getElementById('p-enc').value=p.encargado||'Cadete';document.getElementById('p-notas').value=p.notas||'';document.getElementById('p-pago').checked=p.pago||false;if(document.getElementById('p-tipo-precio'))document.getElementById('p-tipo-precio').value='Minorista';
       if(p.domicilio==='Coordinar'){document.getElementById('p-coord').checked=true;toggleCoord();}
       if(p.panes)PRODUCTOS.forEach(function(k){pQtys[k]=p.panes[k]||0;document.getElementById('pq-'+k).textContent=pQtys[k];});
     }
@@ -1138,8 +1139,25 @@ async function guardarPedido(){
   var nombre=document.getElementById('p-nombre').value.trim();
   if(!nombre){alert('El nombre es obligatorio.');return;}
   if(Object.values(pQtys).reduce(function(a,b){return a+b;},0)===0){alert('Agrega al menos un producto.');return;}
+  // Detectar combo (solo si no es mayorista)
+  var tipoPrecioActual=document.getElementById('p-tipo-precio')?document.getElementById('p-tipo-precio').value:'Minorista';
+  var comboDetectado=null;var usarCombo=false;
+  if(tipoPrecioActual!=='Mayorista'){
+    comboDetectado=detectarCombo(pQtys);
+    if(comboDetectado){
+      var totalRegular=calcTotal(pQtys,nombre,'Minorista');
+      var partes=[];
+      PRODUCTOS.forEach(function(k){if(FOCACCIAS.indexOf(k)<0&&comboDetectado.panes[k]>0)partes.push(comboDetectado.panes[k]+' '+PROD_NOMBRES[k]);});
+      if(comboDetectado.focaccias_total>0)partes.push(comboDetectado.focaccias_total+' focaccias a elección');
+      var msg='El pedido coincide con el combo "'+comboDetectado.nombre+'"\n'+partes.join(' + ')+'\n\nPrecio regular: '+fmtPeso(totalRegular)+'\nPrecio combo: '+fmtPeso(comboDetectado.precio)+'\n\n¿Aplicar precio del combo?';
+      usarCombo=confirm(msg);
+    }
+  }
   var pExist=pedidoEditId?pedidos.find(function(x){return x.id===pedidoEditId;}):null;
   var cli=clientes.find(function(c){return c.nombre.toLowerCase()===nombre.toLowerCase();});
+  var tipoPrecioFinal=usarCombo?'Combo':tipoPrecioActual;
+  var precioComboFinal=usarCombo?comboDetectado.precio:null;
+  var comboNombreFinal=usarCombo?comboDetectado.nombre:null;
   var nuevoFikaId=pedidoEditId?(pedidos.find(function(x){return x.id===pedidoEditId;})||{}).fikaId||nextFikaId():nextFikaId();
   var p={id:pedidoEditId||Date.now().toString(),fikaId:nuevoFikaId,clienteId:cli?cli.id:null,nombre:nombre,fecha:document.getElementById('p-fecha').value,telefono:document.getElementById('p-tel').value.trim(),domicilio:document.getElementById('p-dom').value.trim(),piso:document.getElementById('p-piso').value.trim(),ciudad:document.getElementById('p-ciudad').value,encargado:document.getElementById('p-enc').value,notas:document.getElementById('p-notas').value.trim(),pago:document.getElementById('p-pago').checked,tipoPrecio:document.getElementById('p-tipo-precio')?document.getElementById('p-tipo-precio').value:'Minorista',entregado:pExist?pExist.entregado||false:false,panes:JSON.parse(JSON.stringify(pQtys)),_etiqueta:pExist?pExist._etiqueta:null,creadoEn:pExist?pExist.creadoEn:new Date().toISOString()};
   if(pedidoEditId){var idx=pedidos.findIndex(function(x){return x.id===pedidoEditId;});if(idx>=0)pedidos[idx]=p;}else pedidos.unshift(p);
@@ -1242,11 +1260,18 @@ function enviarAlias(){
 
 function enviarHorarioVisita(){
   var p=pedidos.find(function(x){return x.id===pedidoVerId;});if(!p)return;
-  if(!p.horarioDesde){alert('No tiene horario asignado. Importá los horarios desde el planificador.');return;}
+  if(!p.horarioDesde){alert('No tiene horario asignado aún. Generá la ruta en REPARTO primero.');return;}
   var nombre=p.nombre.split(' ')[0];
-  var msg='Hola '+nombre+'! Mañana entre las '+p.horarioDesde+' y las '+p.horarioHasta+' hs tu pedido FIKA será entregado &#127838;';
+  var fecha=p.fecha?new Date(p.fecha+'T12:00').toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'}):'';
+  var detalle=getPanesStr(p.panes,' + ');
+  var total=calcTotal(p.panes,p.nombre,p.tipoPrecio);
+  var msg='Hola '+nombre+'! Tu pedido FIKA llega el '+fecha+' entre las '+p.horarioDesde+' y las '+p.horarioHasta+'.';
+  if(detalle)msg+=' Pedido: '+detalle+'.';
+  if(total>0)msg+=' Total: '+fmtPeso(total)+'.';
+  msg+=' Gracias por elegirnos! 🍞';
   var tel=(p.telefono||'').replace(/\D/g,'');
-  window.open(tel?'https://wa.me/549'+tel+'?text='+encodeURIComponent(msg):'https://wa.me/?text='+encodeURIComponent(msg),'_blank');
+  if(!tel){alert('Este cliente no tiene teléfono cargado. Agrégalo en CLIENTES.');return;}
+  window.open('https://wa.me/549'+tel+'?text='+encodeURIComponent(msg),'_blank');
 }
 
 // ── SEMANA ────────────────────────────────────────────────────
