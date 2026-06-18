@@ -1260,12 +1260,14 @@ function enviarAlias(){
 
 function enviarHorarioVisita(){
   var p=pedidos.find(function(x){return x.id===pedidoVerId;});if(!p)return;
-  if(!p.horarioDesde){alert('No tiene horario asignado aún. Generá la ruta en REPARTO primero.');return;}
+  var desde=p.horarioDesde||p.horarioEntrega||'';
+  var hasta=p.horarioHasta||(p.horarioEntrega?p.horarioEntrega+' hs':'');
+  if(!desde){alert('No tiene horario asignado aún. Asignálo en CADETE o genéra la ruta en REPARTO.');return;}
   var nombre=p.nombre.split(' ')[0];
   var fecha=p.fecha?new Date(p.fecha+'T12:00').toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'}):'';
   var detalle=getPanesStr(p.panes,' + ');
   var total=calcTotal(p.panes,p.nombre,p.tipoPrecio);
-  var msg='Hola '+nombre+'! Tu pedido FIKA llega el '+fecha+' entre las '+p.horarioDesde+' y las '+p.horarioHasta+'.';
+  var msg='Hola '+nombre+'! Tu pedido FIKA llega el '+fecha+(hasta?' entre las '+desde+' y las '+hasta:' a las '+desde)+'.';
   if(detalle)msg+=' Pedido: '+detalle+'.';
   if(total>0)msg+=' Total: '+fmtPeso(total)+'.';
   msg+=' Gracias por elegirnos! 🍞';
