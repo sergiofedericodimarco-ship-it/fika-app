@@ -1259,8 +1259,10 @@ function enviarAlias(){
 }
 
 function enviarHorarioVisita(){
-  var todos2=(pedidosImportados&&pedidosImportados.length>0?pedidosImportados:pedidos);
-  var p=todos2.find(function(x){return x.id===pedidoVerId;});if(!p)return;
+  var _allP=pedidos.concat(pedidosImportados&&pedidosImportados.length>0?pedidosImportados:[]);
+  var p=_allP.find(function(x){return x.id===pedidoVerId;});
+  if(!p){var _nm=document.getElementById('dp-nombre').textContent.split(' ·')[0].trim();p=_allP.find(function(x){return x.nombre===_nm&&x.horarioEntrega;});}
+  if(!p)return;
   var desde=p.horarioDesde||p.horarioEntrega||'';
   var hasta=p.horarioHasta||(p.horarioEntrega?p.horarioEntrega+' hs':'');
   if(!desde){alert('No tiene horario asignado aún. Asignálo en CADETE o genéra la ruta en REPARTO.');return;}
