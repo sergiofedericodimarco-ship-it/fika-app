@@ -1259,9 +1259,16 @@ function enviarAlias(){
 }
 
 function enviarHorarioVisita(){
-  var _allP=pedidos.concat(pedidosImportados&&pedidosImportados.length>0?pedidosImportados:[]);
-  var p=_allP.find(function(x){return x.id===pedidoVerId;});
-  if(!p){var _nm=document.getElementById('dp-nombre').textContent.split(' ·')[0].trim();p=_allP.find(function(x){return x.nombre===_nm&&x.horarioEntrega;});}
+  // Buscar primero en pedidosImportados (donde viven los horarios), luego en pedidos
+  var _src=pedidosImportados&&pedidosImportados.length>0?pedidosImportados:pedidos;
+  var p=_src.find(function(x){return x.id===pedidoVerId;});
+  if(!p)p=pedidos.find(function(x){return x.id===pedidoVerId;});
+  // Si aun no encuentra, buscar por nombre en el modal
+  if(!p||!p.horarioEntrega){
+    var _nm=(document.getElementById('dp-nombre')||{textContent:''}).textContent.split(' ·')[0].trim();
+    var _p2=_src.find(function(x){return x.nombre===_nm;});
+    if(_p2&&_p2.horarioEntrega)p=_p2;
+  }
   if(!p)return;
   var desde=p.horarioDesde||p.horarioEntrega||'';
   var hasta=p.horarioHasta||(p.horarioEntrega?p.horarioEntrega+' hs':'');
