@@ -1261,9 +1261,10 @@ function enviarAlias(){
   if(!p){var _src=pedidosImportados&&pedidosImportados.length>0?pedidosImportados:pedidos;p=_src.find(function(x){return x.id===pedidoVerId;});}
   if(!p)return;
   var nombre=p.nombre.split(' ')[0];
-  var msg='Hola '+nombre+'! fika.pan es el alias para transferir cuando quieras '+String.fromCodePoint(127838);
+  var _emoji='%F0%9F%8D%9E';
+  var _txt=encodeURIComponent('Hola '+nombre+'! fika.pan es el alias para transferir cuando quieras ')+_emoji;
   var tel=(p.telefono||'').replace(/\D/g,'');
-  var url=tel?'https://wa.me/549'+tel+'?text='+encodeURIComponent(msg):'https://wa.me/?text='+encodeURIComponent(msg);
+  var url=tel?'https://wa.me/549'+tel+'?text='+_txt:'https://wa.me/?text='+_txt;
   window.open(url,'_blank');
 }
 
@@ -1289,9 +1290,10 @@ function enviarHorarioVisita(){
   var total=calcTotal(p.panes,p.nombre,p.tipoPrecio);
   var msg='Hola '+nombre+'! Tu pedido FIKA llega mañana entre las '+desde+' y las '+hasta+' hs.';
   if(detalle)msg+=' Pedido: '+detalle+'.';
-  msg+=' ¡Nos vemos mañana! '+String.fromCodePoint(127838);
+  msg+=' ¡Nos vemos mañana! 🍞';
   var tel=(p.telefono||'').replace(/\D/g,'');
-  var url=tel?'https://wa.me/549'+tel+'?text='+encodeURIComponent(msg):'https://wa.me/?text='+encodeURIComponent(msg);
+  var _enc=encodeURIComponent(msg).replace(/%EF%BF%BD/g,'').replace(/undefined/g,'')+'%F0%9F%8D%9E';
+  var url=tel?'https://wa.me/549'+tel+'?text='+_enc:'https://wa.me/?text='+_enc;
   window.open(url,'_blank');
 }
 
@@ -1526,10 +1528,10 @@ async function cerrarSemana(){
   var totalUn=Object.values(totProd).reduce(function(a,b){return a+b;},0);
 
   // Fecha de referencia: el sabado pasado
-  var fechaRef=sabPasado.toISOString().slice(0,10);
+  var fechaRef=sabPasado.getFullYear()+'-'+pad(sabPasado.getMonth()+1)+'-'+pad(sabPasado.getDate());
   var regHist={
     id:fechaRef,
-    fecha:sabPasado.toISOString(),
+    fecha:fechaRef+'T12:00:00.000Z',
     lactal:totProd.lactal||0,
     integral:totProd.integral||0,
     campo:totProd.campo||0,
@@ -2216,9 +2218,10 @@ function renderHistGraficosPC(lista){
     var tdLine=tots.map(function(_,i){var sl=tots.slice(Math.max(0,i-1),i+2);return Math.round(sl.reduce(function(a,b){return a+b;},0)/sl.length);});
     chartBarrasInst=new Chart(c2,{type:'bar',
       data:{labels:labels,datasets:[
-        {type:'bar',label:'Total',data:tots,backgroundColor:tots.map(function(v){return v===maxT?'#c9a34f':'rgba(201,163,79,0.35)';}),borderRadius:4,order:2,hoverBackgroundColor:'#e8b84b'},
-        {type:'line',label:'Tendencia',data:tdLine,borderColor:'rgba(90,184,138,0.9)',borderWidth:2,pointRadius:0,tension:0.4,borderDash:[5,3],fill:false,order:1}
-      ]},
+        {type:'bar',label:'Total',data:tots,backgroundColor:lista.map(function(h,i){return h.enCurso?'rgba(90,184,138,0.7)':tots[i]===maxT?'#c9a34f':'rgba(201,163,79,0.35)';}),borderRadius:4,order:3,hoverBackgroundColor:'#e8b84b'},
+        {type:'line',label:'Tendencia',data:tdLine,borderColor:'rgba(90,184,138,0.9)',borderWidth:2,pointRadius:0,tension:0.4,borderDash:[5,3],fill:false,order:2}
+      ].concat((function(){var od=lista.map(function(h){var m=(h.fecha||h.id||'').slice(0,7);return getObjetivoMes(m)||null;});return od.some(function(v){return v>0;})?[{type:'line',label:'Objetivo mensual',data:od,borderColor:'rgba(224,85,85,0.8)',borderWidth:2,pointRadius:3,pointBackgroundColor:'rgba(224,85,85,0.8)',borderDash:[8,4],fill:false,order:1,spanGaps:false}]:[];}()))
+      },
       options:{responsive:true,maintainAspectRatio:false,
         onClick:function(e){
           var pts=chartBarrasInst.getElementsAtEventForMode(e,'nearest',{intersect:true},true);
