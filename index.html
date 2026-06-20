@@ -969,7 +969,18 @@ async function cargarClientes(){
   else{try{preciosCliente=JSON.parse(localStorage.getItem('fika-precios-cli')||'[]');}catch(e){preciosCliente=[];}}
 }
 
-function cargarHistorialLocal(){try{historial=JSON.parse(localStorage.getItem('fika-historial')||'[]');}catch(e){historial=[];}}
+function cargarHistorialLocal(){
+  try{historial=JSON.parse(localStorage.getItem('fika-historial')||'[]');}catch(e){historial=[];}
+  // Siempre sincronizar con Supabase
+  sbGet('historial_produccion','&order=fecha.asc').then(function(rows){
+    if(rows&&rows.length>0){
+      historial=rows;
+      localStorage.setItem('fika-historial',JSON.stringify(historial));
+      if(document.getElementById('d-historial').classList.contains('active'))renderHistorial();
+      if(document.getElementById('ms-historial-mob').classList.contains('active'))renderHistorialMob();
+    }
+  });
+}
 
 // ── MAPEADORES ────────────────────────────────────────────────
 function pedidoToRow(p){return{id:p.id,fika_id:p.fikaId||null,cliente_id:p.clienteId||null,nombre:p.nombre,fecha:p.fecha||null,telefono:p.telefono||null,domicilio:p.domicilio||null,piso:p.piso||null,ciudad:p.ciudad||null,encargado:p.encargado||'Cadete',notas:p.notas||null,pago:p.pago||false,entregado:p.entregado||false,panes:p.panes||{},etiqueta:p._etiqueta||null,tipo_precio:p.tipoPrecio||'Minorista',horario_entrega:p.horarioEntrega||null,horario_desde:p.horarioDesde||null,horario_hasta:p.horarioHasta||null,creado_en:p.creadoEn||new Date().toISOString()};}
