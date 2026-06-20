@@ -437,6 +437,12 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">
         <div class="filtros" style="margin-bottom:0" id="filtros-enc"></div>
         <div class="filtros" style="margin-bottom:0" id="filtros-ciudad-cad"></div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:11px;color:var(--text3)">Fecha:</span>
+          <select class="f-in" id="cadete-filtro-fecha" style="padding:4px 8px;font-size:12px;width:auto" onchange="filtroCadeteFecha=this.value;renderCadete()">
+            <option value="">Todas</option>
+          </select>
+        </div>
         <div style="margin-left:auto;display:flex;gap:8px">
           <button class="btn-ol" style="margin-bottom:0" onclick="recalcularHorariosCadete()">Recalcular</button>
           <button class="btn-ok" style="margin-bottom:0" onclick="aplicarHorarios()">Aplicar horarios a pedidos</button>
@@ -760,7 +766,8 @@ var pQtys={};PRODUCTOS.forEach(function(k){pQtys[k]=0;});
 var semanaOffset=0;
 var filtroPedidosFechas=[],filtroEncCadete='Cadete',filtroCiudadCadete='Todos';
 var filtroRepCiudad='todos',inicioRuta='YB';
-var cadeteOrden=[],cadeteOrdenManual=false;
+var cadeteOrden=[],cadeteOrdenManual=false,filtroCadeteFecha='';
+
 var pedidosImportados=[];
 
 // ── SUPABASE ──────────────────────────────────────────────────
@@ -1270,17 +1277,17 @@ function enviarHorarioVisita(){
     if(_p2&&_p2.horarioEntrega)p=_p2;
   }
   if(!p)return;
-  var desde=p.horarioDesde||p.horarioEntrega||'';
-  var hasta=p.horarioHasta||(p.horarioEntrega?p.horarioEntrega+' hs':'');
+  var _banda=getBandaHoraria(p.horarioEntrega||p.horarioDesde||'');
+  var desde=_banda.desde||p.horarioDesde||p.horarioEntrega||'';
+  var hasta=_banda.hasta||p.horarioHasta||'';
   if(!desde){alert('No tiene horario asignado aún. Asignálo en CADETE o genéra la ruta en REPARTO.');return;}
   var nombre=p.nombre.split(' ')[0];
   var fecha=p.fecha?new Date(p.fecha+'T12:00').toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'}):'';
   var detalle=getPanesStr(p.panes,' + ');
   var total=calcTotal(p.panes,p.nombre,p.tipoPrecio);
-  var msg='Hola '+nombre+'! Tu pedido FIKA llega el '+fecha+(hasta?' entre las '+desde+' y las '+hasta:' a las '+desde)+'.';
+  var msg='Hola '+nombre+'! Tu pedido FIKA llega mañana entre las '+desde+' y las '+hasta+' hs.';
   if(detalle)msg+=' Pedido: '+detalle+'.';
-  if(total>0)msg+=' Total: '+fmtPeso(total)+'.';
-  msg+=' Gracias por elegirnos! 🍞';
+  msg+=' ¡Nos vemos mañana! 🍞';
   var tel=(p.telefono||'').replace(/\D/g,'');
   var url=tel?'https://wa.me/549'+tel+'?text='+encodeURIComponent(msg):'https://wa.me/?text='+encodeURIComponent(msg);
   window.open(url,'_blank');
@@ -1814,7 +1821,26 @@ function renderFiltrosCiudadCad(){var el=document.getElementById('filtros-ciudad
 function renderCadete(){
   renderFiltrosEnc();renderFiltrosCiudadCad();
   var todos=pedidosImportados.length>0?pedidosImportados:pedidos;
-  var filtrados=todos.filter(function(p){var encOk=filtroEncCadete==='Todos'||(p.encargado||'Cadete')===filtroEncCadete;var ciudad=(p.ciudad||'').toLowerCase();var ciudadOk=filtroCiudadCadete==='Todos'||(filtroCiudadCadete==='Yerba Buena'&&ciudad.includes('yerba'))||(filtroCiudadCadete==='SMT'&&!ciudad.includes('yerba'));return encOk&&ciudadOk;});
+  // Poblar select de fechas
+  var selF=document.getElementById('cadete-filtro-fecha');
+  if(selF){
+    var fechas={};todos.forEach(function(p){if(p.fecha)fechas[p.fecha]=1;});
+    var fechasArr=Object.keys(fechas).sort();
+    var cur=selF.value;
+    selF.innerHTML='<option value="">Todas</option>';
+    fechasArr.forEach(function(f){
+      var d=new Date(f+'T12:00').toLocaleDateString('es-AR',{weekday:'short',day:'numeric',month:'short'});
+      var o=document.createElement('option');o.value=f;o.textContent=d;if(f===cur)o.selected=true;
+      selF.appendChild(o);
+    });
+  }
+  var filtrados=todos.filter(function(p){
+    var encOk=filtroEncCadete==='Todos'||(p.encargado||'Cadete')===filtroEncCadete;
+    var ciudad=(p.ciudad||'').toLowerCase();
+    var ciudadOk=filtroCiudadCadete==='Todos'||(filtroCiudadCadete==='Yerba Buena'&&ciudad.includes('yerba'))||(filtroCiudadCadete==='SMT'&&!ciudad.includes('yerba'));
+    var fechaOk=!filtroCadeteFecha||p.fecha===filtroCadeteFecha;
+    return encOk&&ciudadOk&&fechaOk;
+  });
   var empty=document.getElementById('cadete-empty'),tabla=document.getElementById('cadete-tabla');if(!tabla)return;
   if(filtrados.length===0){tabla.innerHTML='';empty.style.display='block';cadeteOrden=[];return;}empty.style.display='none';
   var ids=filtrados.map(function(p){return p.id;});var ok=cadeteOrden.length===ids.length&&cadeteOrden.every(function(id){return ids.indexOf(id)>=0;})&&ids.every(function(id){return cadeteOrden.indexOf(id)>=0;});
@@ -2965,6 +2991,18 @@ function aplicarHorarios(){
   });
   guardar();
   alert(n+' pedidos actualizados. Ya podes enviar WhatsApp desde cada pedido.');
+}
+
+function getBandaHoraria(horario){
+  if(!horario)return {desde:'',hasta:''};
+  var parts=horario.split(':');
+  var h=parseInt(parts[0]);var m=parseInt(parts[1]);
+  var desde,hasta;
+  if(m<15){desde=pad(h)+':00';hasta=pad(h)+':15';}
+  else if(m<30){desde=pad(h)+':15';hasta=pad(h)+':30';}
+  else if(m<45){desde=pad(h)+':30';hasta=pad(h)+':45';}
+  else{desde=pad(h)+':45';hasta=pad(h+1)+':00';}
+  return {desde:desde,hasta:hasta};
 }
 </script>
   <div class="modal-ov" id="modal-editar-cliente">
