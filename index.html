@@ -679,7 +679,6 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
     </div>
     <button class="btn-s" style="margin-top:0;margin-bottom:6px" onclick="enviarHorarioVisita()">&#128241; Enviar horario por WhatsApp</button>
     <button class="btn-s" style="margin-top:0;margin-bottom:6px" onclick="enviarAlias()">Enviar alias de pago</button>
-    <button class="btn-s" style="margin-top:0;margin-bottom:6px" onclick="enviarHorarioVisita()">&#128241; Enviar horario WhatsApp</button>
     <div style="display:flex;gap:7px;margin-top:6px">
       <button class="btn-s" style="margin-top:0" onclick="editarPedido()">Editar</button>
       <button class="btn-s" style="margin-top:0;color:var(--text3);border-color:var(--border)" onclick="cerrarModal('modal-det-pedido')">Cerrar</button>
@@ -1258,11 +1257,14 @@ function toggleEntregado(){
 }
 
 function enviarAlias(){
-  var p=pedidos.find(function(x){return x.id===pedidoVerId;});if(!p)return;
+  var p=pedidos.find(function(x){return x.id===pedidoVerId;});
+  if(!p){var _src=pedidosImportados&&pedidosImportados.length>0?pedidosImportados:pedidos;p=_src.find(function(x){return x.id===pedidoVerId;});}
+  if(!p)return;
   var nombre=p.nombre.split(' ')[0];
-  var msg='Hola '+nombre+'! Si aún no pagaste, el alias es *'+ALIAS+'* :)';
+  var msg='Hola '+nombre+'! fika.pan es el alias para transferir cuando quieras '+String.fromCodePoint(127838);
   var tel=(p.telefono||'').replace(/\D/g,'');
-  window.open(tel?'https://wa.me/549'+tel+'?text='+encodeURIComponent(msg):'https://wa.me/?text='+encodeURIComponent(msg),'_blank');
+  var url=tel?'https://wa.me/549'+tel+'?text='+encodeURIComponent(msg):'https://wa.me/?text='+encodeURIComponent(msg);
+  window.open(url,'_blank');
 }
 
 function enviarHorarioVisita(){
@@ -1287,7 +1289,7 @@ function enviarHorarioVisita(){
   var total=calcTotal(p.panes,p.nombre,p.tipoPrecio);
   var msg='Hola '+nombre+'! Tu pedido FIKA llega mañana entre las '+desde+' y las '+hasta+' hs.';
   if(detalle)msg+=' Pedido: '+detalle+'.';
-  msg+=' ¡Nos vemos mañana! 🍞';
+  msg+=' ¡Nos vemos mañana! '+String.fromCodePoint(127838);
   var tel=(p.telefono||'').replace(/\D/g,'');
   var url=tel?'https://wa.me/549'+tel+'?text='+encodeURIComponent(msg):'https://wa.me/?text='+encodeURIComponent(msg);
   window.open(url,'_blank');
