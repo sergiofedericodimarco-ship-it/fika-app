@@ -2123,7 +2123,13 @@ var PROD_LABELS_H={lactal:'Lactal',integral:'Integral',campo:'Campo',focaccia_ch
 function getHistorialCompleto(){
   var ids=new Set(historial.map(function(h){return h.id;}));
   var base=HIST_PRELOAD.filter(function(h){return !ids.has(h.id);});
-  return base.concat(historial).sort(function(a,b){return (a.fecha||a.id).localeCompare(b.fecha||b.id);});
+  var lista=base.concat(historial).sort(function(a,b){return (a.fecha||a.id).localeCompare(b.fecha||b.id);});
+  var enCurso=getSemanaEnCurso();
+  if(enCurso&&enCurso.total>=0){
+    lista=lista.filter(function(h){return (h.id||'').slice(0,10)!==enCurso.id.slice(0,10);});
+    lista.push(enCurso);
+  }
+  return lista;
 }
 
 function getHistorialFiltrado(){
@@ -2227,12 +2233,38 @@ function renderHistGraficosPC(lista){
   if(c2){
     var tots=lista.map(function(h){return h.total;});var maxT=Math.max.apply(null,tots);
     var tdLine=tots.map(function(_,i){var sl=tots.slice(Math.max(0,i-1),i+2);return Math.round(sl.reduce(function(a,b){return a+b;},0)/sl.length);});
+    var _pluginCumpl={id:'cumplimiento',afterDatasetsDraw:function(chart){
+      var ctx2=chart.ctx;var meta=chart.getDatasetMeta(0);
+      meta.data.forEach(function(bar,i){
+        var val=tots[i];var m=(lista[i].fecha||lista[i].id||'').slice(0,7);
+        var obj=getObjetivoMes(m);if(!obj||obj<=0)return;
+        var pct=Math.round(val/obj*100);
+        var h=bar.base-bar.y;if(h<14)return;
+        ctx2.save();ctx2.fillStyle='rgba(255,255,255,0.9)';ctx2.font='bold 10px Jost,sans-serif';ctx2.textAlign='center';ctx2.textBaseline='middle';
+        ctx2.fillText(pct+'%',bar.x,bar.y+h/2);
+        ctx2.restore();
+      });
+    }};
     chartBarrasInst=new Chart(c2,{type:'bar',
+      plugins:[_pluginCumpl],
       data:{labels:labels,datasets:[
         {type:'bar',label:'Total',data:tots,backgroundColor:lista.map(function(h,i){return h.enCurso?'rgba(90,184,138,0.7)':tots[i]===maxT?'#c9a34f':'rgba(201,163,79,0.35)';}),borderRadius:4,order:3,hoverBackgroundColor:'#e8b84b'},
         {type:'line',label:'Tendencia',data:tdLine,borderColor:'rgba(90,184,138,0.9)',borderWidth:2,pointRadius:0,tension:0.4,borderDash:[5,3],fill:false,order:2}
       ].concat((function(){var od=lista.map(function(h){var m=(h.fecha||h.id||'').slice(0,7);return getObjetivoMes(m)||null;});return od.some(function(v){return v>0;})?[{type:'line',label:'Objetivo mensual',data:od,borderColor:'rgba(224,85,85,0.8)',borderWidth:2,pointRadius:3,pointBackgroundColor:'rgba(224,85,85,0.8)',borderDash:[8,4],fill:false,order:1,spanGaps:false}]:[];}()))
       },
+      plugins:[{id:'cumplimiento',afterDatasetsDraw:function(chart){
+        var ctx2=chart.ctx;var ds=chart.data.datasets[0];var meta=chart.getDatasetMeta(0);
+        meta.data.forEach(function(bar,i){
+          var val=ds.data[i];var m=(lista[i]&&lista[i].fecha||lista[i]&&lista[i].id||'').slice(0,7);
+          var obj=getObjetivoMes(m);if(!obj||obj<=0)return;
+          var pct=Math.round(val/obj*100);var txt=pct+'%';
+          var color=pct>=100?'rgba(90,184,138,0.95)':'rgba(224,85,85,0.9)';
+          ctx2.save();ctx2.fillStyle='white';ctx2.font='bold 10px Jost,sans-serif';ctx2.textAlign='center';ctx2.textBaseline='middle';
+          var x=bar.x;var y=bar.y+(bar.base-bar.y)/2;
+          if(bar.base-bar.y>16)ctx2.fillText(txt,x,y);
+          ctx2.restore();
+        });
+      }}],
       options:{responsive:true,maintainAspectRatio:false,
         onClick:function(e){
           var pts=chartBarrasInst.getElementsAtEventForMode(e,'nearest',{intersect:true},true);
