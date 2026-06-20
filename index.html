@@ -1513,8 +1513,8 @@ function importarHorarios(){
 async function cerrarSemana(){
   // Calcular el sabado pasado (ultimo sabado inclusive)
   var hoy=new Date();hoy.setHours(0,0,0,0);
-  var diaSem=hoy.getDay(); // 0=dom,1=lun,...,6=sab
-  // Semana dom-sab: el sabado pasado es el ultimo sabado (diaSem=0 dom -> 1 dia atras, diaSem=1 lun -> 2, ..., diaSem=6 sab -> 7)
+  var diaSem=hoy.getDay();
+  // Semana sab-vie: el sabado pasado (cierre) es el ultimo sabado
   var diasAtras=diaSem===6?7:diaSem+1;
   var sabPasado=new Date(hoy);sabPasado.setDate(hoy.getDate()-diasAtras);
   sabPasado.setHours(23,59,59,999);
@@ -2895,9 +2895,12 @@ function editarObjetivo(){
 // ── SEMANA EN CURSO ──────────────────────────────────────────────
 function getSemanaEnCurso(){
   var hoy=new Date();hoy.setHours(23,59,59,999);
-  var diaSem=hoy.getDay();
-  var dom=new Date(hoy);dom.setDate(hoy.getDate()-diaSem);dom.setHours(0,0,0,0);
-  var sab=new Date(dom);sab.setDate(dom.getDate()+6);
+  var diaSem=hoy.getDay(); // 0=dom,6=sab
+  // Semana sab-vie: el sabado de cierre es el proximo sabado (o hoy si es sabado)
+  var diffSab=diaSem===6?0:(6-diaSem);
+  var sab=new Date(hoy);sab.setDate(hoy.getDate()+diffSab);sab.setHours(23,59,59,999);
+  // Inicio de semana: sabado anterior (7 dias antes del sab de cierre)
+  var dom=new Date(sab);dom.setDate(sab.getDate()-6);dom.setHours(0,0,0,0);
   var sabStr=sab.getFullYear()+'-'+('0'+(sab.getMonth()+1)).slice(-2)+'-'+('0'+sab.getDate()).slice(-2);
   var yaExiste=(historial||[]).some(function(h){return (h.id||'').slice(0,10)===sabStr;});
   var yaEnPreload=(HIST_PRELOAD||[]).some(function(h){return (h.id||'').slice(0,10)===sabStr;});
