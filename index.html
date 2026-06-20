@@ -439,7 +439,7 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
         <div class="filtros" style="margin-bottom:0" id="filtros-ciudad-cad"></div>
         <div style="margin-left:auto;display:flex;gap:8px">
           <button class="btn-ol" style="margin-bottom:0" onclick="recalcularHorariosCadete()">Recalcular</button>
-          <button class="btn-ol" style="margin-bottom:0" onclick="exportarHorarios()">Exportar horarios</button>
+          <button class="btn-ok" style="margin-bottom:0" onclick="aplicarHorarios()">Aplicar horarios a pedidos</button>
           <button class="btn-ol" style="margin-bottom:0" onclick="imprimirTickets()">Imprimir tickets</button>
           <button class="btn-ol" style="margin-bottom:0" onclick="imprimirCadete()">Imprimir lista</button>
         </div>
@@ -2944,6 +2944,28 @@ function detectarCombo(panes){
   return null;
 }
 
+
+function aplicarHorarios(){
+  var todos=pedidosImportados.length>0?pedidosImportados:pedidos;
+  var conHorario=todos.filter(function(p){return p.horarioEntrega;});
+  if(conHorario.length===0){alert('No hay horarios calculados. Genera la ruta en REPARTO primero.');return;}
+  var n=0;
+  conHorario.forEach(function(ph){
+    var local=pedidos.find(function(x){return x.id===ph.id||x.nombre===ph.nombre;});
+    if(local){
+      local.horarioEntrega=ph.horarioEntrega;
+      local.horarioDesde=ph.horarioDesde||ph.horarioEntrega;
+      local.horarioHasta=ph.horarioHasta||'';
+      guardarPedidoSupa(local);
+      n++;
+    }
+    // Tambien actualizar en pedidosImportados para que se vea inmediatamente
+    var imp=pedidosImportados.find(function(x){return x.id===ph.id;});
+    if(imp){imp.horarioEntrega=ph.horarioEntrega;imp.horarioDesde=ph.horarioDesde||ph.horarioEntrega;imp.horarioHasta=ph.horarioHasta||'';}  
+  });
+  guardar();
+  alert(n+' pedidos actualizados. Ya podes enviar WhatsApp desde cada pedido.');
+}
 </script>
   <div class="modal-ov" id="modal-editar-cliente">
   <div class="modal" style="padding:20px;max-width:460px;border-radius:12px">
