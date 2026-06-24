@@ -1249,7 +1249,7 @@ function verPedido(id){
   var fs=p.fecha?new Date(p.fecha+'T12:00').toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long',year:'numeric'}):'No especificada';
   var cont=document.getElementById('dp-content');cont.innerHTML='';
   var c1=document.createElement('div');c1.className='card';c1.style.marginBottom='12px';
-  var total=calcTotal(p.panes);
+  var total=calcTotal(p.panes,p.nombre,p.tipoPrecio);
   function drow(lbl,val,color){var r=document.createElement('div');r.className='det-row';var l=document.createElement('span');l.className='det-lbl';l.textContent=lbl;var v=document.createElement('span');v.className='det-val';v.textContent=val;if(color)v.style.color=color;r.appendChild(l);r.appendChild(v);c1.appendChild(r);}
   drow('Fecha entrega',fs);drow('Teléfono',p.telefono||'--');drow('Domicilio',(p.domicilio||'--')+(p.piso?' - '+p.piso:''));drow('Ciudad',p.ciudad||'--');drow('Encargado',p.encargado||'Cadete');drow('Pago',p.pago?'Realizado':'Pendiente',p.pago?'var(--ok)':'var(--danger)');
   if(total>0)drow('Total',fmtPeso(total),'var(--accent)');
