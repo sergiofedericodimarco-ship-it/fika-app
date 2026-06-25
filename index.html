@@ -411,7 +411,11 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
         <div>
           <div class="sec-lbl">API Key Google Maps</div>
           <div style="display:flex;gap:8px;margin-bottom:12px"><input type="password" id="gmaps-key" placeholder="Pega tu API key" style="flex:1;background:var(--bg3);border:0.5px solid var(--border2);border-radius:6px;color:var(--text);font-family:'Raleway',sans-serif;font-size:13px;padding:7px 12px;color-scheme:dark"><button style="padding:7px 14px;background:var(--accent2);border:none;border-radius:6px;color:var(--bg);font-family:'Raleway',sans-serif;font-size:12px;cursor:pointer" onclick="guardarApiKey()">Guardar</button></div>
-          <div style="font-size:10px;color:var(--text3);margin-bottom:14px">Salida: 09:00 hs · Pedro de Villalba 400, Yerba Buena</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+            <span style="font-size:11px;color:var(--text3)">Hora de inicio:</span>
+            <input type="time" id="hora-inicio-reparto" value="09:00" style="background:var(--bg3);border:0.5px solid var(--border2);border-radius:6px;padding:4px 8px;color:var(--text);font-size:13px;font-family:Jost,sans-serif">
+            <span style="font-size:10px;color:var(--text3)">· Pedro de Villalba 400, Yerba Buena</span>
+          </div>
           <div class="sec-lbl">Empezar por</div>
           <div class="filtros" id="filtros-inicio-rep">
             <button class="fb active" onclick="setInicioRuta('YB')" id="ir-YB">Yerba Buena primero</button>
@@ -1823,7 +1827,9 @@ function _ejecutarRuta(lista,key,msg,optimizar){
   var waypoints=lista.slice(0,-1).map(function(p){return{location:(p.domicilio||'')+', '+(p.ciudad||'Tucuman')+', Argentina',stopover:true};});
   new google.maps.DirectionsService().route({origin:ORIGEN,destination:destino,waypoints:waypoints,optimizeWaypoints:optimizar,travelMode:google.maps.TravelMode.DRIVING},function(result,status){
     if(status!=='OK'){msg.style.cssText='border-radius:8px;padding:9px 13px;font-size:12px;margin-bottom:12px;background:rgba(224,85,85,0.1);border:0.5px solid rgba(224,85,85,0.3);color:var(--danger)';msg.textContent='Error Google Maps: '+status;return;}
-    var route=result.routes[0],order=route.waypoint_order,legs=route.legs,tAcum=INICIO_REP,distT=0,durT=0;
+    var _horaInput=document.getElementById('hora-inicio-reparto')?document.getElementById('hora-inicio-reparto').value:'09:00';
+    var _hp=_horaInput.split(':');var _inicioMin=parseInt(_hp[0])*60+(parseInt(_hp[1])||0);
+    var route=result.routes[0],order=route.waypoint_order,legs=route.legs,tAcum=_inicioMin,distT=0,durT=0;
     var med=lista.slice(0,-1);var ordenados=optimizar?order.map(function(i){return med[i];}).concat([lista[lista.length-1]]):lista;
     var conHorario=ordenados.map(function(p,i){var leg=legs[i]||{};tAcum+=Math.round((leg.duration?leg.duration.value:0)/60)+MIN_PARADA;distT+=(leg.distance?leg.distance.value:0);durT+=(leg.duration?leg.duration.value:0);return Object.assign({},p,{horarioEntrega:fromMin(tAcum),num:i+1});});
     conHorario.forEach(function(c){var idx=(pedidosImportados.length>0?pedidosImportados:pedidos).findIndex(function(x){return x.id===c.id;});if(idx>=0){(pedidosImportados.length>0?pedidosImportados:pedidos)[idx].horarioEntrega=c.horarioEntrega;(pedidosImportados.length>0?pedidosImportados:pedidos)[idx].num=c.num;}});
@@ -1838,7 +1844,8 @@ function _ejecutarRuta(lista,key,msg,optimizar){
     var map=new google.maps.Map(md,{zoom:12,center:{lat:-26.82,lng:-65.22},mapTypeId:'roadmap'});
     var renderer=new google.maps.DirectionsRenderer();renderer.setMap(map);renderer.setDirections(result);
     msg.style.cssText='border-radius:8px;padding:9px 13px;font-size:12px;margin-bottom:12px;background:rgba(90,184,138,0.1);border:0.5px solid rgba(90,184,138,0.3);color:var(--ok)';
-    msg.textContent='Ruta calculada. '+(optimizar?'Orden optimizado por Google Maps.':'Orden manual de Cadete.')+' Salida 09:00 hs.';
+    var horaIni=document.getElementById('hora-inicio-reparto')?document.getElementById('hora-inicio-reparto').value:'09:00';
+    msg.textContent='Ruta calculada. '+(optimizar?'Orden optimizado por Google Maps.':'Orden manual de Cadete.')+' Salida '+horaIni+' hs.';
   });
 }
 
