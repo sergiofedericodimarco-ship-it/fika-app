@@ -1812,10 +1812,14 @@ function getPedidosReparto(){
 function poblarFechasReparto(){
   var sel=document.getElementById('reparto-filtro-fecha');if(!sel)return;
   var base=pedidosImportados.length>0?pedidosImportados:pedidos;
-  var fechas={};base.forEach(function(p){if(p.fecha)fechas[p.fecha]=1;});
+  if(!base||base.length===0){setTimeout(poblarFechasReparto,500);return;}
+  var fechas={};
+  base.forEach(function(p){if(p.fecha)fechas[p.fecha]=1;});
+  var keys=Object.keys(fechas).sort();
+  if(keys.length===0)return;
   var cur=sel.value;
   sel.innerHTML='<option value="">Todas</option>';
-  Object.keys(fechas).sort().forEach(function(f){
+  keys.forEach(function(f){
     var d=new Date(f+'T12:00').toLocaleDateString('es-AR',{weekday:'short',day:'numeric',month:'short'});
     var o=document.createElement('option');o.value=f;o.textContent=d;if(f===cur)o.selected=true;
     sel.appendChild(o);
