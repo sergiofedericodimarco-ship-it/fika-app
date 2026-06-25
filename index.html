@@ -414,9 +414,7 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
           <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap">
             <div style="display:flex;align-items:center;gap:6px">
               <span style="font-size:11px;color:var(--text3)">Fecha:</span>
-              <select id="reparto-filtro-fecha" class="f-in" style="padding:4px 8px;font-size:12px;width:auto" onchange="renderRepClientes()">
-                <option value="">Todas</option>
-              </select>
+<div id="reparto-filtro-fecha-wrap" style="display:flex;gap:5px;flex-wrap:wrap"></div>
             </div>
             <div style="display:flex;align-items:center;gap:6px">
               <span style="font-size:11px;color:var(--text3)">Hora de inicio:</span>
@@ -782,7 +780,7 @@ var pQtys={};PRODUCTOS.forEach(function(k){pQtys[k]=0;});
 var semanaOffset=0;
 var filtroPedidosFechas=[],filtroEncCadete='Cadete',filtroCiudadCadete='Todos';
 var filtroRepCiudad='todos',inicioRuta='YB';
-var cadeteOrden=[],cadeteOrdenManual=false,filtroCadeteFecha='';
+var cadeteOrden=[],cadeteOrdenManual=false,filtroCadeteFecha='',filtroRepartofecha='';
 
 var pedidosImportados=[];
 
@@ -1801,28 +1799,32 @@ function planificar(){
 
 // ── REPARTO ───────────────────────────────────────────────────
 function getPedidosReparto(){
-  var sel=document.getElementById('reparto-filtro-fecha');
-  var fechaFiltro=sel?sel.value:'';
   var base=pedidosImportados.length>0?pedidosImportados:pedidos;
   var filtered=base.filter(function(p){return p.domicilio&&p.domicilio!=='Coordinar'&&(p.encargado||'Cadete')==='Cadete';});
-  if(fechaFiltro)filtered=filtered.filter(function(p){return p.fecha===fechaFiltro;});
+  if(filtroRepartofecha)filtered=filtered.filter(function(p){return p.fecha===filtroRepartofecha;});
   return filtered;
 }
 
 function poblarFechasReparto(){
-  var sel=document.getElementById('reparto-filtro-fecha');if(!sel)return;
+  var wrap=document.getElementById('reparto-filtro-fecha-wrap');
+  if(!wrap)return;
   var base=pedidosImportados.length>0?pedidosImportados:pedidos;
-  if(!base||base.length===0){setTimeout(poblarFechasReparto,500);return;}
   var fechas={};
   base.forEach(function(p){if(p.fecha)fechas[p.fecha]=1;});
   var keys=Object.keys(fechas).sort();
-  if(keys.length===0)return;
-  var cur=sel.value;
-  sel.innerHTML='<option value="">Todas</option>';
+  wrap.innerHTML='';
+  var bTodas=document.createElement('button');
+  bTodas.className='fb'+(filtroRepartofecha===''?' active':'');
+  bTodas.style.fontSize='11px';bTodas.textContent='Todas';
+  bTodas.onclick=function(){filtroRepartofecha='';poblarFechasReparto();renderRepClientes();};
+  wrap.appendChild(bTodas);
   keys.forEach(function(f){
     var d=new Date(f+'T12:00').toLocaleDateString('es-AR',{weekday:'short',day:'numeric',month:'short'});
-    var o=document.createElement('option');o.value=f;o.textContent=d;if(f===cur)o.selected=true;
-    sel.appendChild(o);
+    var b=document.createElement('button');
+    b.className='fb'+(filtroRepartofecha===f?' active':'');
+    b.style.fontSize='11px';b.textContent=d;
+    (function(ff){b.onclick=function(){filtroRepartofecha=ff;poblarFechasReparto();renderRepClientes();};})(f);
+    wrap.appendChild(b);
   });
 }
 function setInicioRuta(z){inicioRuta=z;['YB','SMT'].forEach(function(x){document.getElementById('ir-'+x).classList.toggle('active',x===z);});}
