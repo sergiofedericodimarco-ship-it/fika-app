@@ -167,7 +167,12 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
 
 /* IMPRESION TICKETS */
 @media print{
-  body,html{background:white!important;color:#000!important;overflow:visible!important;height:auto!important}
+  body,html{background:white!important;color:#000!important;overflow:visible!important;height:auto!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+  /* Textos y bordes oscuros para impresión */
+  *{color:#000!important;border-color:#333!important;background:white!important;-webkit-print-color-adjust:exact!important}
+  td,th,tr{border-color:#333!important;color:#000!important}
+  table{border-collapse:collapse!important}
+  td,th{border:0.5px solid #333!important;padding:4px 6px!important}
   /* Por defecto: imprimir tickets */
   #login-screen,#loading,#app,#desk,#fab-btn{display:none!important}
   #ticket-print-page{display:block!important}
@@ -1230,7 +1235,7 @@ function renderPedidosFiltrados(lista){
     var fd=document.createElement('div');fd.className='pedido-fecha';fd.textContent=fs;
     hdr.appendChild(nm);hdr.appendChild(fd);main.appendChild(hdr);
     var det=document.createElement('div');det.className='pedido-det';det.style.fontSize='11px';det.textContent=getPanesStr(p.panes,' · ');main.appendChild(det);
-    var total=calcTotal(p.panes);
+    var total=calcTotal(p.panes,p.nombre,p.tipoPrecio);
     if(p.horarioDesde){var hv=document.createElement('div');hv.style.cssText='font-size:11px;color:var(--accent);margin-top:2px';hv.textContent='Entrega entre '+p.horarioDesde+' y '+p.horarioHasta;main.appendChild(hv);}
     var bdg=document.createElement('div');bdg.className='badges';
     if(p.entregado){var be=document.createElement('span');be.className='badge bent';be.textContent='Entregado';bdg.appendChild(be);}
@@ -1371,7 +1376,7 @@ function verClienteMob(nombre){
   var cont=document.getElementById('mc-content');cont.innerHTML='';
   var totPanes=c.pedidos.reduce(function(a,p){return a+Object.values(p.panes||{}).reduce(function(x,y){return x+y;},0);},0);
   var pagados=c.pedidos.filter(function(p){return p.pago;}).length;
-  var totalFact=c.pedidos.reduce(function(a,p){return a+calcTotal(p.panes);},0);
+  var totalFact=c.pedidos.reduce(function(a,p){return a+calcTotal(p.panes,p.nombre,p.tipoPrecio);},0);
   var c1=document.createElement('div');c1.className='card';c1.style.marginBottom='12px';
   function drow(lbl,val){var r=document.createElement('div');r.className='det-row';var l=document.createElement('span');l.className='det-lbl';l.textContent=lbl;var v=document.createElement('span');v.className='det-val';v.textContent=val;r.appendChild(l);r.appendChild(v);c1.appendChild(r);}
   var cliRegD=clientes.find(function(x){return x.nombre.toLowerCase()===c.nombre.toLowerCase();});if(cliRegD)drow('ID cliente','C-'+cliRegD.id.replace('cli_',''));drow('Total pedidos',c.pedidos.length);drow('Total panes',totPanes);drow('Pagados',pagados+'/'+c.pedidos.length);if(totalFact>0)drow('Facturado',fmtPeso(totalFact));
@@ -1636,7 +1641,7 @@ function renderDeskPedidos(){
   var tdNomR=r.insertCell();tdNomR.style.cssText='font-weight:500;color:var(--text);cursor:pointer';tdNomR.textContent=p.nombre;tdNomR.onclick=(function(pid){return function(){verPedido(pid);};})(p.id);tdNomR.onmouseover=function(){this.style.color='var(--accent)';};tdNomR.onmouseout=function(){this.style.color='var(--text)';};
   var tdF=r.insertCell();tdF.style.cssText='font-size:11px;color:var(--text3)';if(p.fecha){var d=new Date(p.fecha+'T12:00');tdF.textContent=DIAS_C2[d.getDay()]+' '+d.getDate()+'/'+(d.getMonth()+1);}else tdF.textContent='--';
   PRODUCTOS.forEach(function(k){cel((p.panes&&p.panes[k])||0);});
-  var total=calcTotal(p.panes);var tdTot=r.insertCell();tdTot.textContent=total>0?fmtPeso(total):'--';tdTot.style.color='var(--accent)';
+  var total=calcTotal(p.panes,p.nombre,p.tipoPrecio);var tdTot=r.insertCell();tdTot.textContent=total>0?fmtPeso(total):'--';tdTot.style.color='var(--accent)';
   var tdE=r.insertCell();var btnE=document.createElement('button');btnE.className='btn-ol';btnE.style.cssText='margin:0;padding:3px 9px;font-size:11px';btnE.textContent='Editar';btnE.onclick=(function(pid){return function(){abrirEditarPanesPc(pid);};})(p.id);tdE.appendChild(btnE);});
   var tr=tbody.insertRow();tr.className='total-row';var tdl=tr.insertCell();tdl.textContent=filtroPedidosFechas.length===0?'TOTAL':'TOTAL FILTRO';tr.insertCell();
   PRODUCTOS.forEach(function(k){var td=tr.insertCell();td.textContent=tot[k]||'--';});tr.insertCell();tr.insertCell();
@@ -1666,7 +1671,7 @@ function _renderDeskTabla(lista){
     tdNom.onmouseover=function(){this.style.color='var(--accent)';};tdNom.onmouseout=function(){this.style.color='var(--text)';};
     var tdF=r.insertCell();tdF.style.cssText='font-size:11px;color:var(--text3)';if(p.fecha){var d=new Date(p.fecha+'T12:00');tdF.textContent=DIAS_C2[d.getDay()]+' '+d.getDate()+'/'+(d.getMonth()+1);}else tdF.textContent='--';
     PRODUCTOS.forEach(function(k){cel((p.panes&&p.panes[k])||0);});
-    var total=calcTotal(p.panes);var tdTot=r.insertCell();tdTot.textContent=total>0?fmtPeso(total):'--';tdTot.style.color='var(--accent)';
+    var total=calcTotal(p.panes,p.nombre,p.tipoPrecio);var tdTot=r.insertCell();tdTot.textContent=total>0?fmtPeso(total):'--';tdTot.style.color='var(--accent)';
     var tdE=r.insertCell();var btnE=document.createElement('button');btnE.className='btn-ol';btnE.style.cssText='margin:0;padding:3px 9px;font-size:11px';btnE.textContent='Editar';btnE.onclick=(function(pid){return function(){abrirEditarPanesPc(pid);};})(p.id);tdE.appendChild(btnE);
   });
   var tr=tbody.insertRow();tr.className='total-row';var tdl=tr.insertCell();tdl.textContent='TOTAL';tr.insertCell();
