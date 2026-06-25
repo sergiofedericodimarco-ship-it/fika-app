@@ -411,9 +411,17 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
         <div>
           <div class="sec-lbl">API Key Google Maps</div>
           <div style="display:flex;gap:8px;margin-bottom:12px"><input type="password" id="gmaps-key" placeholder="Pega tu API key" style="flex:1;background:var(--bg3);border:0.5px solid var(--border2);border-radius:6px;color:var(--text);font-family:'Raleway',sans-serif;font-size:13px;padding:7px 12px;color-scheme:dark"><button style="padding:7px 14px;background:var(--accent2);border:none;border-radius:6px;color:var(--bg);font-family:'Raleway',sans-serif;font-size:12px;cursor:pointer" onclick="guardarApiKey()">Guardar</button></div>
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap">
-            <span style="font-size:11px;color:var(--text3)">Hora de inicio:</span>
-            <input type="time" id="hora-inicio-reparto" value="09:00" style="background:var(--bg3);border:0.5px solid var(--border2);border-radius:6px;padding:4px 8px;color:var(--text);font-size:13px;font-family:Jost,sans-serif">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap">
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="font-size:11px;color:var(--text3)">Fecha:</span>
+              <select id="reparto-filtro-fecha" class="f-in" style="padding:4px 8px;font-size:12px;width:auto" onchange="renderRepClientes()">
+                <option value="">Todas</option>
+              </select>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="font-size:11px;color:var(--text3)">Hora de inicio:</span>
+              <input type="time" id="hora-inicio-reparto" value="09:00" style="background:var(--bg3);border:0.5px solid var(--border2);border-radius:6px;padding:4px 8px;color:var(--text);font-size:13px;font-family:Jost,sans-serif">
+            </div>
             <span style="font-size:10px;color:var(--text3)">· Pedro de Villalba 400, Yerba Buena</span>
           </div>
           <div class="sec-lbl">Empezar por</div>
@@ -1792,7 +1800,27 @@ function planificar(){
 }
 
 // ── REPARTO ───────────────────────────────────────────────────
-function getPedidosReparto(){return pedidosImportados.length>0?pedidosImportados.filter(function(p){return p.domicilio&&p.domicilio!=='Coordinar'&&(p.encargado||'Cadete')==='Cadete';}):pedidos.filter(function(p){return p.domicilio&&p.domicilio!=='Coordinar'&&(p.encargado||'Cadete')==='Cadete';});}
+function getPedidosReparto(){
+  var sel=document.getElementById('reparto-filtro-fecha');
+  var fechaFiltro=sel?sel.value:'';
+  var base=pedidosImportados.length>0?pedidosImportados:pedidos;
+  var filtered=base.filter(function(p){return p.domicilio&&p.domicilio!=='Coordinar'&&(p.encargado||'Cadete')==='Cadete';});
+  if(fechaFiltro)filtered=filtered.filter(function(p){return p.fecha===fechaFiltro;});
+  return filtered;
+}
+
+function poblarFechasReparto(){
+  var sel=document.getElementById('reparto-filtro-fecha');if(!sel)return;
+  var base=pedidosImportados.length>0?pedidosImportados:pedidos;
+  var fechas={};base.forEach(function(p){if(p.fecha&&p.domicilio&&p.domicilio!=='Coordinar')fechas[p.fecha]=1;});
+  var cur=sel.value;
+  sel.innerHTML='<option value="">Todas</option>';
+  Object.keys(fechas).sort().forEach(function(f){
+    var d=new Date(f+'T12:00').toLocaleDateString('es-AR',{weekday:'short',day:'numeric',month:'short'});
+    var o=document.createElement('option');o.value=f;o.textContent=d;if(f===cur)o.selected=true;
+    sel.appendChild(o);
+  });
+}
 function setInicioRuta(z){inicioRuta=z;['YB','SMT'].forEach(function(x){document.getElementById('ir-'+x).classList.toggle('active',x===z);});}
 function setFiltroRep(f){filtroRepCiudad=f;['todos','YB','SMT'].forEach(function(x){document.getElementById('fr-'+x).classList.toggle('active',x===f);});renderRepClientes();}
 function detectarCiudad(s){return(s||'').toLowerCase().includes('yerba')?'YB':'SMT';}
