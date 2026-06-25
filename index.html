@@ -1812,7 +1812,7 @@ function getPedidosReparto(){
 function poblarFechasReparto(){
   var sel=document.getElementById('reparto-filtro-fecha');if(!sel)return;
   var base=pedidosImportados.length>0?pedidosImportados:pedidos;
-  var fechas={};base.forEach(function(p){if(p.fecha&&p.domicilio&&p.domicilio!=='Coordinar')fechas[p.fecha]=1;});
+  var fechas={};base.forEach(function(p){if(p.fecha)fechas[p.fecha]=1;});
   var cur=sel.value;
   sel.innerHTML='<option value="">Todas</option>';
   Object.keys(fechas).sort().forEach(function(f){
