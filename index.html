@@ -800,6 +800,39 @@ function fromMin(m){return pad(Math.floor(m/60)%24)+':'+pad(m%60);}
 function toMin(t){var p=t.split(':').map(Number);return p[0]*60+p[1];}
 function ceil(n,d){return d===0?0:Math.ceil(n/d);}
 function getPanesStr(panes,sep){var it=[];if(panes){PRODUCTOS.forEach(function(k){if(panes[k])it.push(panes[k]+' '+PROD_NOMBRES[k].toLowerCase());});} return it.join(sep||' · ');}
+
+function calcTotalPedido(p){
+  if(p.tipoPrecio==='Combo'&&p.precioCombo>0){
+    var c=combos.find(function(x){return x.nombre===p.comboNombre;})||combos.find(function(x){return x.precio===p.precioCombo;});
+    if(c){
+      var extra=0;
+      if(c.focaccias_total>0){
+        var totalFoc=FOCACCIAS.reduce(function(a,k){return a+((p.panes&&p.panes[k])||0);},0);
+        var focExtra=Math.max(0,totalFoc-c.focaccias_total);
+        if(focExtra>0){
+          var precFoc=0,nFoc=0;
+          FOCACCIAS.forEach(function(k){var pr=productos.find(function(x){return x.id===k;});if(pr&&pr.precio>0){precFoc+=pr.precio;nFoc++;}});
+          extra+=focExtra*(nFoc>0?Math.round(precFoc/nFoc):0);
+        }
+        PRODUCTOS.forEach(function(k){
+          if(FOCACCIAS.indexOf(k)>=0)return;
+          var enCombo=c.panes[k]||0;var enPedido=(p.panes&&p.panes[k])||0;
+          var ex=Math.max(0,enPedido-enCombo);
+          if(ex>0){var prod=productos.find(function(pr){return pr.id===k;});if(prod)extra+=ex*(prod.precio||0);}
+        });
+      } else {
+        PRODUCTOS.forEach(function(k){
+          var enCombo=c.panes[k]||0;var enPedido=(p.panes&&p.panes[k])||0;
+          var ex=Math.max(0,enPedido-enCombo);
+          if(ex>0){var prod=productos.find(function(pr){return pr.id===k;});if(prod)extra+=ex*(prod.precio||0);}
+        });
+      }
+      return p.precioCombo+extra;
+    }
+    return p.precioCombo;
+  }
+  return calcTotalPedido(p);
+}
 function calcTotal(panes,nombreCliente,tipoPrecio){
   var t=0;if(!panes||productos.length===0)return 0;
   PRODUCTOS.forEach(function(k){
@@ -1245,7 +1278,7 @@ function renderPedidosFiltrados(lista){
     var fd=document.createElement('div');fd.className='pedido-fecha';fd.textContent=fs;
     hdr.appendChild(nm);hdr.appendChild(fd);main.appendChild(hdr);
     var det=document.createElement('div');det.className='pedido-det';det.style.fontSize='11px';det.textContent=getPanesStr(p.panes,' · ');main.appendChild(det);
-    var total=calcTotal(p.panes,p.nombre,p.tipoPrecio);
+    var total=calcTotalPedido(p);
     if(p.horarioDesde){var hv=document.createElement('div');hv.style.cssText='font-size:11px;color:var(--accent);margin-top:2px';hv.textContent='Entrega entre '+p.horarioDesde+' y '+p.horarioHasta;main.appendChild(hv);}
     var bdg=document.createElement('div');bdg.className='badges';
     if(p.entregado){var be=document.createElement('span');be.className='badge bent';be.textContent='Entregado';bdg.appendChild(be);}
@@ -1264,7 +1297,7 @@ function verPedido(id){
   var fs=p.fecha?new Date(p.fecha+'T12:00').toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long',year:'numeric'}):'No especificada';
   var cont=document.getElementById('dp-content');cont.innerHTML='';
   var c1=document.createElement('div');c1.className='card';c1.style.marginBottom='12px';
-  var total=calcTotal(p.panes,p.nombre,p.tipoPrecio);
+  var total=calcTotalPedido(p);
   function drow(lbl,val,color){var r=document.createElement('div');r.className='det-row';var l=document.createElement('span');l.className='det-lbl';l.textContent=lbl;var v=document.createElement('span');v.className='det-val';v.textContent=val;if(color)v.style.color=color;r.appendChild(l);r.appendChild(v);c1.appendChild(r);}
   drow('Fecha entrega',fs);drow('Teléfono',p.telefono||'--');drow('Domicilio',(p.domicilio||'--')+(p.piso?' - '+p.piso:''));drow('Ciudad',p.ciudad||'--');drow('Encargado',p.encargado||'Cadete');drow('Pago',p.pago?'Realizado':'Pendiente',p.pago?'var(--ok)':'var(--danger)');
   if(total>0)drow('Total',fmtPeso(total),'var(--accent)');
@@ -1332,7 +1365,7 @@ function enviarHorarioVisita(){
   var nombre=p.nombre.split(' ')[0];
   var fecha=p.fecha?new Date(p.fecha+'T12:00').toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'}):'';
   var detalle=getPanesStr(p.panes,' + ');
-  var total=calcTotal(p.panes,p.nombre,p.tipoPrecio);
+  var total=calcTotalPedido(p);
   var msg='Hola '+nombre+'! Tu pedido FIKA llega mañana entre las '+desde+' y las '+hasta+' hs.';
   if(detalle)msg+=' Pedido: '+detalle+'.';
   msg+=' ¡Nos vemos mañana! 🍞';
@@ -1386,7 +1419,7 @@ function verClienteMob(nombre){
   var cont=document.getElementById('mc-content');cont.innerHTML='';
   var totPanes=c.pedidos.reduce(function(a,p){return a+Object.values(p.panes||{}).reduce(function(x,y){return x+y;},0);},0);
   var pagados=c.pedidos.filter(function(p){return p.pago;}).length;
-  var totalFact=c.pedidos.reduce(function(a,p){return a+calcTotal(p.panes,p.nombre,p.tipoPrecio);},0);
+  var totalFact=c.pedidos.reduce(function(a,p){return a+calcTotalPedido(p);},0);
   var c1=document.createElement('div');c1.className='card';c1.style.marginBottom='12px';
   function drow(lbl,val){var r=document.createElement('div');r.className='det-row';var l=document.createElement('span');l.className='det-lbl';l.textContent=lbl;var v=document.createElement('span');v.className='det-val';v.textContent=val;r.appendChild(l);r.appendChild(v);c1.appendChild(r);}
   var cliRegD=clientes.find(function(x){return x.nombre.toLowerCase()===c.nombre.toLowerCase();});if(cliRegD)drow('ID cliente','C-'+cliRegD.id.replace('cli_',''));drow('Total pedidos',c.pedidos.length);drow('Total panes',totPanes);drow('Pagados',pagados+'/'+c.pedidos.length);if(totalFact>0)drow('Facturado',fmtPeso(totalFact));
@@ -1645,13 +1678,13 @@ function renderDeskPedidos(){
   var DIAS_C2=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
   var tbl=document.createElement('table');tbl.className='dtable';
   var thead=tbl.createTHead();var hr=thead.insertRow();
-  ['Nombre','Fecha','Lactal','Integral','Campo','F.Cherry','F.Cebolla','F.Morrón','Prepizza','Total',''].forEach(function(h){var th=document.createElement('th');th.textContent=h;hr.appendChild(th);});
+  ['Nombre','Fecha'].concat(PRODUCTOS.map(function(k){return PROD_NOMBRES[k];})).concat(['Total','']).forEach(function(h){var th=document.createElement('th');th.textContent=h;hr.appendChild(th);});
   var tbody=tbl.createTBody();
   ord.forEach(function(p){var r=tbody.insertRow();function cel(v,left){var td=r.insertCell();td.textContent=v||'--';if(!left&&(v===0||v==='0'))td.className='cero';}
   var tdNomR=r.insertCell();tdNomR.style.cssText='font-weight:500;color:var(--text);cursor:pointer';tdNomR.textContent=p.nombre;tdNomR.onclick=(function(pid){return function(){verPedido(pid);};})(p.id);tdNomR.onmouseover=function(){this.style.color='var(--accent)';};tdNomR.onmouseout=function(){this.style.color='var(--text)';};
   var tdF=r.insertCell();tdF.style.cssText='font-size:11px;color:var(--text3)';if(p.fecha){var d=new Date(p.fecha+'T12:00');tdF.textContent=DIAS_C2[d.getDay()]+' '+d.getDate()+'/'+(d.getMonth()+1);}else tdF.textContent='--';
   PRODUCTOS.forEach(function(k){cel((p.panes&&p.panes[k])||0);});
-  var total=calcTotal(p.panes,p.nombre,p.tipoPrecio);var tdTot=r.insertCell();tdTot.textContent=total>0?fmtPeso(total):'--';tdTot.style.color='var(--accent)';
+  var total=calcTotalPedido(p);var tdTot=r.insertCell();tdTot.textContent=total>0?fmtPeso(total):'--';tdTot.style.color='var(--accent)';
   var tdE=r.insertCell();var btnE=document.createElement('button');btnE.className='btn-ol';btnE.style.cssText='margin:0;padding:3px 9px;font-size:11px';btnE.textContent='Editar';btnE.onclick=(function(pid){return function(){abrirEditarPanesPc(pid);};})(p.id);tdE.appendChild(btnE);});
   var tr=tbody.insertRow();tr.className='total-row';var tdl=tr.insertCell();tdl.textContent=filtroPedidosFechas.length===0?'TOTAL':'TOTAL FILTRO';tr.insertCell();
   PRODUCTOS.forEach(function(k){var td=tr.insertCell();td.textContent=tot[k]||'--';});tr.insertCell();tr.insertCell();
@@ -1673,7 +1706,7 @@ function _renderDeskTabla(lista){
   var DIAS_C2=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
   var tbl=document.createElement('table');tbl.className='dtable';
   var thead=tbl.createTHead();var hr=thead.insertRow();
-  ['Nombre','Fecha','Lactal','Integral','Campo','F.Cherry','F.Cebolla','F.Morrón','Prepizza','Total',''].forEach(function(h){var th=document.createElement('th');th.textContent=h;hr.appendChild(th);});
+  ['Nombre','Fecha'].concat(PRODUCTOS.map(function(k){return PROD_NOMBRES[k];})).concat(['Total','']).forEach(function(h){var th=document.createElement('th');th.textContent=h;hr.appendChild(th);});
   var tbody=tbl.createTBody();
   ord.forEach(function(p){var r=tbody.insertRow();
     function cel(v,left){var td=r.insertCell();td.textContent=v||'--';if(!left&&(v===0||v==='0'))td.className='cero';}
@@ -1681,7 +1714,7 @@ function _renderDeskTabla(lista){
     tdNom.onmouseover=function(){this.style.color='var(--accent)';};tdNom.onmouseout=function(){this.style.color='var(--text)';};
     var tdF=r.insertCell();tdF.style.cssText='font-size:11px;color:var(--text3)';if(p.fecha){var d=new Date(p.fecha+'T12:00');tdF.textContent=DIAS_C2[d.getDay()]+' '+d.getDate()+'/'+(d.getMonth()+1);}else tdF.textContent='--';
     PRODUCTOS.forEach(function(k){cel((p.panes&&p.panes[k])||0);});
-    var total=calcTotal(p.panes,p.nombre,p.tipoPrecio);var tdTot=r.insertCell();tdTot.textContent=total>0?fmtPeso(total):'--';tdTot.style.color='var(--accent)';
+    var total=calcTotalPedido(p);var tdTot=r.insertCell();tdTot.textContent=total>0?fmtPeso(total):'--';tdTot.style.color='var(--accent)';
     var tdE=r.insertCell();var btnE=document.createElement('button');btnE.className='btn-ol';btnE.style.cssText='margin:0;padding:3px 9px;font-size:11px';btnE.textContent='Editar';btnE.onclick=(function(pid){return function(){abrirEditarPanesPc(pid);};})(p.id);tdE.appendChild(btnE);
   });
   var tr=tbody.insertRow();tr.className='total-row';var tdl=tr.insertCell();tdl.textContent='TOTAL';tr.insertCell();
@@ -2044,7 +2077,7 @@ function renderClientesDesk(){
     if(!mapa[p.nombre])mapa[p.nombre]={cli:null,pedidos:0,panes:{},total:0};
     mapa[p.nombre].pedidos++;
     if(p.panes)PRODUCTOS.forEach(function(k){mapa[p.nombre].panes[k]=(mapa[p.nombre].panes[k]||0)+(p.panes[k]||0);});
-    mapa[p.nombre].total+=calcTotal(p.panes,p.nombre,p.tipoPrecio);
+    mapa[p.nombre].total+=calcTotalPedido(p);
   });
   var lista=Object.values(mapa).sort(function(a,b){return b.pedidos-a.pedidos;});
   if(lista.length===0){el.innerHTML='';if(empty)empty.style.display='block';return;}
@@ -2576,7 +2609,7 @@ function exportarExcel(){
   var filas=[['Nombre','Fecha entrega','Ciudad','Domicilio','Piso','Encargado','Tipo precio','Lactal','Integral','Pan de campo','Focaccia cherry','Focaccia cebolla','Focaccia morron','Prepizza','Total','Pagado','Entregado','Notas','Cargado el']];
   var ord=pedidos.slice().sort(function(a,b){var ca=a.creadoEn||a.id||'';var cb=b.creadoEn||b.id||'';return ca.localeCompare(cb);});
   ord.forEach(function(p){
-    var total=calcTotal(p.panes,p.nombre,p.tipoPrecio);
+    var total=calcTotalPedido(p);
     filas.push([
       p.nombre||'',p.fecha||'',p.ciudad||'',p.domicilio||'',p.piso||'',p.encargado||'Cadete',p.tipoPrecio||'Minorista',
       (p.panes&&p.panes.lactal)||0,(p.panes&&p.panes.integral)||0,(p.panes&&p.panes.campo)||0,
@@ -2608,7 +2641,7 @@ function exportarExcel(){
   var filas=[['ID','Nombre','Fecha entrega','Ciudad','Domicilio','Piso','Encargado','Tipo precio','Lactal','Integral','Pan de campo','Foc.cherry','Foc.cebolla','Foc.morron','Prepizza','Total','Pagado','Entregado','Notas']];
   var ord=pedidos.slice().sort(function(a,b){var ca=a.creadoEn||a.id||'';var cb=b.creadoEn||b.id||'';return ca.localeCompare(cb);});
   ord.forEach(function(p){
-    var total=calcTotal(p.panes,p.nombre,p.tipoPrecio);
+    var total=calcTotalPedido(p);
     filas.push([p.nombre||'',p.fecha||'',p.ciudad||'',p.domicilio||'',p.piso||'',p.encargado||'Cadete',p.tipoPrecio||'Minorista',
       (p.panes&&p.panes.lactal)||0,(p.panes&&p.panes.integral)||0,(p.panes&&p.panes.campo)||0,
       (p.panes&&p.panes.focaccia_cherry)||0,(p.panes&&p.panes.focaccia_cebolla)||0,
