@@ -787,7 +787,25 @@ var pedidosImportados=[];
 // ── SUPABASE ──────────────────────────────────────────────────
 function sbH(e){var h={'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json'};if(e)Object.assign(h,e);return h;}
 async function sbGet(t,q){try{var r=await fetch(SUPA_URL+'/'+t+'?select=*'+(q||''),{headers:sbH()});if(!r.ok)return null;return await r.json();}catch(e){return null;}}
-async function sbUpsert(t,d){try{var r=await fetch(SUPA_URL+'/'+t,{method:'POST',headers:sbH({'Prefer':'resolution=merge-duplicates,return=minimal'}),body:JSON.stringify(Array.isArray(d)?d:[d])});return r.ok;}catch(e){return false;}}
+async function sbUpsert(t,d){
+  try{
+    var arr=Array.isArray(d)?d:[d];
+    // Si es un solo registro con id, intentar PATCH primero (más confiable que upsert)
+    if(arr.length===1&&arr[0].id){
+      var item=arr[0];
+      var r=await fetch(SUPA_URL+'/'+t+'?id=eq.'+encodeURIComponent(item.id),{method:'PATCH',headers:sbH({'Prefer':'return=minimal'}),body:JSON.stringify(item)});
+      if(r.ok){
+        // Verificar si actualizó algo (PATCH no falla si no hay match, solo no actualiza nada)
+        var checkR=await fetch(SUPA_URL+'/'+t+'?id=eq.'+encodeURIComponent(item.id)+'&select=id',{headers:sbH({})});
+        var checkD=await checkR.json();
+        if(checkD&&checkD.length>0)return true;
+      }
+    }
+    // Fallback: POST con upsert (para inserts nuevos o arrays)
+    var r2=await fetch(SUPA_URL+'/'+t,{method:'POST',headers:sbH({'Prefer':'resolution=merge-duplicates,return=minimal'}),body:JSON.stringify(arr)});
+    return r2.ok;
+  }catch(e){return false;}
+}
 async function sbDelete(t,f,v){try{var r=await fetch(SUPA_URL+'/'+t+'?'+f+'=eq.'+encodeURIComponent(v),{method:'DELETE',headers:sbH()});return r.ok;}catch(e){return false;}}
 
 // ── UI HELPERS ────────────────────────────────────────────────
@@ -1041,8 +1059,8 @@ function cargarHistorialLocal(){
 }
 
 // ── MAPEADORES ────────────────────────────────────────────────
-function pedidoToRow(p){return{id:p.id,fika_id:p.fikaId||null,cliente_id:p.clienteId||null,nombre:p.nombre,fecha:p.fecha||null,telefono:p.telefono||null,domicilio:p.domicilio||null,piso:p.piso||null,ciudad:p.ciudad||null,encargado:p.encargado||'Cadete',notas:p.notas||null,pago:p.pago||false,entregado:p.entregado||false,panes:p.panes||{},etiqueta:p._etiqueta||null,tipo_precio:p.tipoPrecio||'Minorista',horario_entrega:p.horarioEntrega||null,horario_desde:p.horarioDesde||null,horario_hasta:p.horarioHasta||null,creado_en:p.creadoEn||new Date().toISOString()};}
-function rowToPedido(r){return{id:r.id,fikaId:r.fika_id||null,clienteId:r.cliente_id,nombre:r.nombre,fecha:r.fecha,telefono:r.telefono,domicilio:r.domicilio,piso:r.piso,ciudad:r.ciudad,encargado:r.encargado||'Cadete',notas:r.notas,pago:r.pago||false,entregado:r.entregado||false,panes:r.panes||{},_etiqueta:r.etiqueta,tipoPrecio:r.tipo_precio||'Minorista',horarioEntrega:r.horario_entrega,horarioDesde:r.horario_desde,horarioHasta:r.horario_hasta,creadoEn:r.creado_en};}
+function pedidoToRow(p){return{id:p.id,fika_id:p.fikaId||null,cliente_id:p.clienteId||null,nombre:p.nombre,fecha:p.fecha||null,telefono:p.telefono||null,domicilio:p.domicilio||null,piso:p.piso||null,ciudad:p.ciudad||null,encargado:p.encargado||'Cadete',notas:p.notas||null,pago:p.pago||false,entregado:p.entregado||false,panes:p.panes||{},etiqueta:p._etiqueta||null,tipo_precio:p.tipoPrecio||'Minorista',precio_combo:p.precioCombo||null,combo_nombre:p.comboNombre||null,horario_entrega:p.horarioEntrega||null,horario_desde:p.horarioDesde||null,horario_hasta:p.horarioHasta||null,creado_en:p.creadoEn||new Date().toISOString()};}
+function rowToPedido(r){return{id:r.id,fikaId:r.fika_id||null,clienteId:r.cliente_id,nombre:r.nombre,fecha:r.fecha,telefono:r.telefono,domicilio:r.domicilio,piso:r.piso,ciudad:r.ciudad,encargado:r.encargado||'Cadete',notas:r.notas,pago:r.pago||false,entregado:r.entregado||false,panes:r.panes||{},_etiqueta:r.etiqueta,tipoPrecio:r.tipo_precio||'Minorista',precioCombo:r.precio_combo||null,comboNombre:r.combo_nombre||null,horarioEntrega:r.horario_entrega,horarioDesde:r.horario_desde,horarioHasta:r.horario_hasta,creadoEn:r.creado_en};}
 function cobroToRow(c){return{pedido_id:c.pedidoId,nombre:c.nombre,fecha:c.fecha,panes:c.panes||{},pagado:c.pagado||false,fecha_registro:c.fechaRegistro||new Date().toISOString(),fecha_pago:c.fechaPago||null};}
 function rowToCobro(r){return{pedidoId:r.pedido_id,nombre:r.nombre,fecha:r.fecha,panes:r.panes||{},pagado:r.pagado||false,fechaRegistro:r.fecha_registro,fechaPago:r.fecha_pago};}
 
@@ -1065,7 +1083,8 @@ async function guardarPedidoSupa(p){
     telefono:row.telefono,domicilio:row.domicilio,piso:row.piso,ciudad:row.ciudad,
     encargado:row.encargado,notas:row.notas,pago:row.pago,entregado:row.entregado,
     panes:row.panes,etiqueta:row.etiqueta,horario_entrega:row.horario_entrega,
-    horario_desde:row.horario_desde,horario_hasta:row.horario_hasta,creado_en:row.creado_en};
+    horario_desde:row.horario_desde,horario_hasta:row.horario_hasta,creado_en:row.creado_en,
+    fika_id:row.fika_id,tipo_precio:row.tipo_precio};
   return await sbUpsert('pedidos',rowSafe);
 }
 async function eliminarPedidoSupa(id){pedidos=pedidos.filter(function(x){return x.id!==id;});guardar();await sbDelete('pedidos','id',id);}
