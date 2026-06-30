@@ -831,7 +831,7 @@ function calcTotalPedido(p){
     }
     return p.precioCombo;
   }
-  return calcTotalPedido(p);
+  return calcTotal(p.panes,p.nombre,p.tipoPrecio);
 }
 function calcTotal(panes,nombreCliente,tipoPrecio){
   var t=0;if(!panes||productos.length===0)return 0;
