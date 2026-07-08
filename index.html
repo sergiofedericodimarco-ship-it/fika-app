@@ -761,9 +761,9 @@ var MI_WA='5493816317716';
 var ALIAS='fika.pan';
 var IG='@pan.artesanal.fika';
 var ENCARGADOS=['Cadete','Fede','Gi','Vilma','Otro'];
-var PRODUCTOS=['lactal','integral','campo','focaccia_cherry','focaccia_cebolla','focaccia_morron','prepizza','merm_frutilla','merm_arandanos'];
-var PROD_NOMBRES={lactal:'Lactal',integral:'Integral',campo:'Pan de campo',focaccia_cherry:'Focaccia cherry',focaccia_cebolla:'Focaccia cebolla',focaccia_morron:'Focaccia morrón',prepizza:'Prepizza',merm_frutilla:'Mermelada frutilla',merm_arandanos:'Mermelada arándanos'};
-var PROD_COLORES={lactal:'#6a9fd8',integral:'#5ab88a',campo:'#c9a34f',focaccia_cherry:'#d4607a',focaccia_cebolla:'#c0507a',focaccia_morron:'#e07040',prepizza:'#8b6fbe',merm_frutilla:'#e8507a',merm_arandanos:'#7b4fa6'};
+var PRODUCTOS=['lactal','integral','campo','focaccia_cherry','focaccia_cebolla','focaccia_morron','prepizza','merm_frutilla','merm_arandanos','merm_frutos_rojos'];
+var PROD_NOMBRES={lactal:'Lactal',integral:'Integral',campo:'Pan de campo',focaccia_cherry:'Focaccia cherry',focaccia_cebolla:'Focaccia cebolla',focaccia_morron:'Focaccia morrón',prepizza:'Prepizza',merm_frutilla:'Mermelada frutilla',merm_arandanos:'Mermelada arándanos',merm_frutos_rojos:'Mermelada frutos rojos'};
+var PROD_COLORES={lactal:'#6a9fd8',integral:'#5ab88a',campo:'#c9a34f',focaccia_cherry:'#d4607a',focaccia_cebolla:'#c0507a',focaccia_morron:'#e07040',prepizza:'#8b6fbe',merm_frutilla:'#e8507a',merm_arandanos:'#7b4fa6',merm_frutos_rojos:'#c0392b'};
 var DIAS=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 var DIAS_C=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 var MESES=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
@@ -1009,7 +1009,7 @@ async function cargarDesdeSupabase(){
 
   else{try{stock=JSON.parse(localStorage.getItem('fika-stock')||'[]');}catch(e){stock=[];}}
   if(stock.length===0)stock=PRODUCTOS.map(function(k){return{id:k,nombre:PROD_NOMBRES[k],cantidad:0};});
-  ['merm_frutilla','merm_arandanos'].forEach(function(k){if(!stock.find(function(s){return s.id===k;}))stock.push({id:k,nombre:PROD_NOMBRES[k],cantidad:0});});
+  ['merm_frutilla','merm_arandanos','merm_frutos_rojos'].forEach(function(k){if(!stock.find(function(s){return s.id===k;}))stock.push({id:k,nombre:PROD_NOMBRES[k],cantidad:0});});
   var comp=await sbGet('compras','&order=fecha_carga.desc');
   if(comp!==null){compras=comp;localStorage.setItem('fika-compras',JSON.stringify(compras));}
   else{try{compras=JSON.parse(localStorage.getItem('fika-compras')||'[]');}catch(e){compras=[];}}
@@ -1024,7 +1024,7 @@ async function cargarProductos(){
   if(rows&&rows.length>0){
     productos=rows;
     // Asegurar mermeladas con precios
-    ['merm_frutilla','merm_arandanos'].forEach(function(k){
+    ['merm_frutilla','merm_arandanos','merm_frutos_rojos'].forEach(function(k){
       var p=productos.find(function(x){return x.id===k;});
       var precio=k==='merm_frutilla'?7500:8000;
       if(!p){productos.push({id:k,nombre:PROD_NOMBRES[k],precio:precio,precio_mayorista:precio});sbUpsert('productos',[{id:k,nombre:PROD_NOMBRES[k],precio:precio,precio_mayorista:precio}]);}
@@ -2249,8 +2249,8 @@ var HIST_PRELOAD=[
 
 var histFiltroMes=null;
 var chartLineasInst=null,chartBarrasInst=null,chartTortaInst=null,chartMobInst=null;
-var PROD_COLORES_H={lactal:'#6a9fd8',integral:'#5ab88a',campo:'#c9a34f',focaccia_cherry:'#d4607a',focaccia_cebolla:'#c0507a',focaccia_morron:'#e07040',prepizza:'#8b6fbe',merm_frutilla:'#e8507a',merm_arandanos:'#7b4fa6'};
-var PROD_LABELS_H={lactal:'Lactal',integral:'Integral',campo:'Campo',focaccia_cherry:'Cherry',focaccia_cebolla:'Cebolla',focaccia_morron:'Morrón',prepizza:'Prepizza',merm_frutilla:'Merm. Frutilla',merm_arandanos:'Merm. Arándanos'};
+var PROD_COLORES_H={lactal:'#6a9fd8',integral:'#5ab88a',campo:'#c9a34f',focaccia_cherry:'#d4607a',focaccia_cebolla:'#c0507a',focaccia_morron:'#e07040',prepizza:'#8b6fbe',merm_frutilla:'#e8507a',merm_arandanos:'#7b4fa6',merm_frutos_rojos:'#c0392b'};
+var PROD_LABELS_H={lactal:'Lactal',integral:'Integral',campo:'Campo',focaccia_cherry:'Cherry',focaccia_cebolla:'Cebolla',focaccia_morron:'Morrón',prepizza:'Prepizza',merm_frutilla:'Merm. Frutilla',merm_arandanos:'Merm. Arándanos',merm_frutos_rojos:'Merm. Frutos rojos'};
 
 function getHistorialCompleto(){
   var ids=new Set(historial.map(function(h){return h.id;}));
