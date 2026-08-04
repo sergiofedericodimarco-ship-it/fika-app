@@ -694,8 +694,6 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
     </div>
     <button class="btn-s" style="margin-top:0;margin-bottom:6px" onclick="enviarHorarioVisita()">&#128241; Enviar horario por WhatsApp</button>
     <button class="btn-s" style="margin-top:0;margin-bottom:6px" onclick="enviarAlias()">Enviar alias de pago</button>
-    <button class="btn-s" style="margin-top:0;margin-bottom:6px" onclick="generarLinkPago(pedidoVerId)">Link de pago</button>
-    <button class="btn-s" style="margin-top:0;margin-bottom:6px" onclick="generarLinkPago(pedidoVerId)">Link de pago</button>
     <div style="display:flex;gap:7px;margin-top:6px">
       <button class="btn-s" style="margin-top:0" onclick="editarPedido()">Editar</button>
       <button class="btn-s" style="margin-top:0;color:var(--text3);border-color:var(--border)" onclick="cerrarModal('modal-det-pedido')">Cerrar</button>
@@ -3188,22 +3186,6 @@ function getBandaHoraria(horario){
   else if(m<45){desde=pad(h)+':30';hasta=pad(h)+':45';}
   else{desde=pad(h)+':45';hasta=pad(h+1)+':00';}
   return {desde:desde,hasta:hasta};
-}
-
-function generarLinkPago(pedidoId){
-  var p=pedidos.find(function(x){return x.id===pedidoId;});if(!p)return;
-  var items=[];
-  PRODUCTOS.forEach(function(k){
-    if(p.panes&&p.panes[k]>0){
-      var prod=productos.find(function(x){return x.id===k;});
-      if(prod)items.push({id:k,nombre:PROD_NOMBRES[k],qty:p.panes[k],precio:prod.precio||0});
-    }
-  });
-  var total=calcTotalPedido(p);
-  var link='https://fika-tienda.vercel.app/?nombre='+encodeURIComponent(p.nombre.split(' ')[0])+'&total='+total+'&items='+encodeURIComponent(JSON.stringify(items));
-  navigator.clipboard.writeText(link).then(function(){
-    alert('Link copiado. Pegalo en WhatsApp para mandarselo a '+p.nombre.split(' ')[0]+'.');
-  }).catch(function(){prompt('Copia este link:',link);});
 }
 </script>
   <div class="modal-ov" id="modal-editar-cliente">
