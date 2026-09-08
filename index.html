@@ -921,7 +921,7 @@ async function doLogin(){
   if(!pwd)return;
   document.getElementById('lerr').style.display='none';
   showLoad('Verificando...');
-  var data=await sbGet('config','&key=eq.password');
+  var data=await sbGet('config','&clave=eq.password');
   hideLoad();
   if(data&&data.length>0&&data[0].value===pwd){
     sessionStorage.setItem('fika-auth','1');
