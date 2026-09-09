@@ -923,6 +923,7 @@ async function doLogin(){
   showLoad('Verificando...');
   var data=await sbGet('config','&clave=eq.password');
   hideLoad();
+  alert('DEBUG - guardado en Supabase: ['+(data&&data[0]?data[0].valor:'NO SE ENCONTRO NINGUNA FILA')+']\nDEBUG - lo que escribiste: ['+pwd+']\nDEBUG - cantidad de filas encontradas: '+(data?data.length:0));
   if(data&&data.length>0&&data[0].valor===pwd){
     sessionStorage.setItem('fika-auth','1');
     document.getElementById('login-screen').style.display='none';
