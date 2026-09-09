@@ -921,16 +921,9 @@ async function doLogin(){
   if(!pwd)return;
   document.getElementById('lerr').style.display='none';
   showLoad('Verificando...');
-  var data=await sbGet('config','&llave=eq.'+encodeURIComponent('contraseña'));
+  var data=await sbGet('config','&key=eq.'+'password');
   hideLoad();
-  try{
-    var rawR=await fetch(SUPA_URL+'/config?select=*&limit=3',{headers:sbH()});
-    var rawText=await rawR.text();
-    alert('DEBUG status HTTP: '+rawR.status+'\nDEBUG columnas y filas reales: '+rawText);
-  }catch(errDebug){
-    alert('DEBUG excepcion de red: '+errDebug.message);
-  }
-  if(data&&data.length>0&&data[0].valor===pwd){
+  if(data&&data.length>0&&data[0].value===pwd){
     sessionStorage.setItem('fika-auth','1');
     document.getElementById('login-screen').style.display='none';
     await iniciarApp();
@@ -5739,8 +5732,8 @@ function getBandaHoraria(horario){
 var recorridoPublicado=[];
 
 async function cargarEstadoCadete(){
-  var cfg=await sbGet('config','select=*&llave=eq.cadete_recorrido_activo');
-  var activo=cfg&&cfg[0]&&cfg[0].valor==='true';
+  var cfg=await sbGet('config','select=*&key=eq.cadete_recorrido_activo');
+  var activo=cfg&&cfg[0]&&cfg[0].value==='true';
   var btn=document.getElementById('btn-toggle-cadete');
   var est=document.getElementById('hoja-ruta-estado');
   if(btn){btn.textContent=activo?'Deshabilitar':'Habilitar';btn.style.color=activo?'var(--danger)':'var(--ok)';}
@@ -5748,9 +5741,9 @@ async function cargarEstadoCadete(){
 }
 
 async function toggleRecorridoCadete(){
-  var cfg=await sbGet('config','select=*&llave=eq.cadete_recorrido_activo');
-  var activo=cfg&&cfg[0]&&cfg[0].valor==='true';
-  await sbUpsert('config',{llave:'cadete_recorrido_activo',valor:activo?'false':'true'});
+  var cfg=await sbGet('config','select=*&key=eq.cadete_recorrido_activo');
+  var activo=cfg&&cfg[0]&&cfg[0].value==='true';
+  await sbUpsert('config',{key:'cadete_recorrido_activo',value:activo?'false':'true'});
   cargarEstadoCadete();
 }
 
@@ -5760,7 +5753,7 @@ async function publicarRecorrido(){
   var lista=todos.filter(function(p){return (p.encargado||'Cadete')==='Cadete'&&(!filFecha||p.fecha===filFecha);});
   if(lista.length===0){alert('No hay pedidos del cadete para publicar. Filtra por fecha en REPARTO primero.');return;}
   var ids=lista.map(function(p){return p.id;});
-  await sbUpsert('config',{llave:'cadete_recorrido_ids',valor:JSON.stringify(ids)});
+  await sbUpsert('config',{key:'cadete_recorrido_ids',value:JSON.stringify(ids)});
   alert(ids.length+' pedidos publicados en la hoja de ruta del cadete.');
   renderHojaRuta();
 }
@@ -5771,8 +5764,8 @@ async function renderHojaRuta(){
   var el2=document.getElementById('hoja-ruta-estados');
   if(!el)return;
 
-  var cfg=await sbGet('config','select=valor&llave=eq.cadete_recorrido_ids');
-  var ids=[];try{ids=JSON.parse(cfg&&cfg[0]?cfg[0].valor:'[]');}catch(e){}
+  var cfg=await sbGet('config','select=value&key=eq.cadete_recorrido_ids');
+  var ids=[];try{ids=JSON.parse(cfg&&cfg[0]?cfg[0].value:'[]');}catch(e){}
   if(ids.length===0){el.innerHTML='<div style="color:var(--text3);font-size:13px;padding:20px 0">No hay recorrido publicado aun.</div>';return;}
 
   var rows=await sbGet('pedidos','select=*&id=in.('+ids.join(',')+')'  );
