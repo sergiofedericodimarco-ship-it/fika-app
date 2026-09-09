@@ -924,9 +924,9 @@ async function doLogin(){
   var data=await sbGet('config','&llave=eq.'+encodeURIComponent('contraseña'));
   hideLoad();
   try{
-    var rawR=await fetch(SUPA_URL+'/config?select=*&llave=eq.'+encodeURIComponent('contraseña'),{headers:sbH()});
+    var rawR=await fetch(SUPA_URL+'/config?select=*&limit=3',{headers:sbH()});
     var rawText=await rawR.text();
-    alert('DEBUG status HTTP: '+rawR.status+'\nDEBUG respuesta cruda: '+rawText);
+    alert('DEBUG status HTTP: '+rawR.status+'\nDEBUG columnas y filas reales: '+rawText);
   }catch(errDebug){
     alert('DEBUG excepcion de red: '+errDebug.message);
   }
