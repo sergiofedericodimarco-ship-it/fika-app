@@ -923,6 +923,7 @@ async function doLogin(){
   showLoad('Verificando...');
   var data=await sbGet('config','&llave=eq.'+encodeURIComponent('contraseña'));
   hideLoad();
+  alert('DEBUG datos crudos: '+JSON.stringify(data)+'\nDEBUG lo que escribiste: ['+pwd+']');
   if(data&&data.length>0&&data[0].valor===pwd){
     sessionStorage.setItem('fika-auth','1');
     document.getElementById('login-screen').style.display='none';
