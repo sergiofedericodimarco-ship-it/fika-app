@@ -1867,12 +1867,20 @@ function _ejecutarRuta(lista,key,msg,optimizar){
       else{cb(null);}
     }).catch(function(){cb(null);});
   }
+  // Validar que la coordenada resuelta quede dentro de la provincia de Tucumán
+  function coordEnTucuman(c){
+    if(!c)return false;
+    var lon=c[0],lat=c[1];
+    return lat>=-28.5&&lat<=-25.5&&lon>=-66.5&&lon<=-64.0;
+  }
 
   // Geocodificar todos los domicilios
   var dirs=lista.map(function(p){return (p.domicilio||'')+', '+(p.ciudad||'Tucuman');});
-  var coords=[];var pending=dirs.length;
+  var coords=[];var pending=dirs.length;var direccionesFallidas=[];
   dirs.forEach(function(dir,i){
     geocodificar(dir,function(c){
+      if(c&&!coordEnTucuman(c))c=null;
+      if(!c)direccionesFallidas.push((lista[i].nombre||'Pedido')+' - '+(lista[i].domicilio||'sin domicilio cargado'));
       coords[i]=c;
       pending--;
       if(pending===0)calcularRutaORS();
@@ -1881,7 +1889,7 @@ function _ejecutarRuta(lista,key,msg,optimizar){
 
   function calcularRutaORS(){
     var nulls=coords.filter(function(c){return !c;});
-    if(nulls.length>0){msg.textContent='No se pudo geocodificar '+nulls.length+' dirección(es).';return;}
+    if(nulls.length>0){msg.textContent='No se pudo ubicar la dirección de: '+direccionesFallidas.join(' | ')+'. Revisá esos domicilios y volvé a intentar.';return;}
 
     var allCoords=[ORIGEN_COORDS].concat(coords);
 
@@ -1966,7 +1974,7 @@ function _ejecutarRuta(lista,key,msg,optimizar){
         headers:{'Content-Type':'application/json','Authorization':ORS_KEY},
         body:JSON.stringify({jobs:jobs,vehicles:vehicles})
       }).then(function(r){return r.json();}).then(function(optData){
-        if(!optData.routes||optData.routes.length===0){msg.textContent='Error al optimizar orden de entregas.';alert('DEBUG respuesta de optimization: '+JSON.stringify(optData));return;}
+        if(!optData.routes||optData.routes.length===0){msg.textContent='Error al optimizar orden de entregas.';return;}
         var steps=optData.routes[0].steps.filter(function(s){return s.type==='job';});
         var ordenIdx=steps.map(function(s){return s.job-1;});
         var coordsOrden=[ORIGEN_COORDS].concat(ordenIdx.map(function(i){return coords[i];}));
@@ -4354,12 +4362,20 @@ function _ejecutarRuta(lista,key,msg,optimizar){
       else{cb(null);}
     }).catch(function(){cb(null);});
   }
+  // Validar que la coordenada resuelta quede dentro de la provincia de Tucumán
+  function coordEnTucuman(c){
+    if(!c)return false;
+    var lon=c[0],lat=c[1];
+    return lat>=-28.5&&lat<=-25.5&&lon>=-66.5&&lon<=-64.0;
+  }
 
   // Geocodificar todos los domicilios
   var dirs=lista.map(function(p){return (p.domicilio||'')+', '+(p.ciudad||'Tucuman');});
-  var coords=[];var pending=dirs.length;
+  var coords=[];var pending=dirs.length;var direccionesFallidas=[];
   dirs.forEach(function(dir,i){
     geocodificar(dir,function(c){
+      if(c&&!coordEnTucuman(c))c=null;
+      if(!c)direccionesFallidas.push((lista[i].nombre||'Pedido')+' - '+(lista[i].domicilio||'sin domicilio cargado'));
       coords[i]=c;
       pending--;
       if(pending===0)calcularRutaORS();
@@ -4368,7 +4384,7 @@ function _ejecutarRuta(lista,key,msg,optimizar){
 
   function calcularRutaORS(){
     var nulls=coords.filter(function(c){return !c;});
-    if(nulls.length>0){msg.textContent='No se pudo geocodificar '+nulls.length+' dirección(es).';return;}
+    if(nulls.length>0){msg.textContent='No se pudo ubicar la dirección de: '+direccionesFallidas.join(' | ')+'. Revisá esos domicilios y volvé a intentar.';return;}
 
     var allCoords=[ORIGEN_COORDS].concat(coords);
 
@@ -4453,7 +4469,7 @@ function _ejecutarRuta(lista,key,msg,optimizar){
         headers:{'Content-Type':'application/json','Authorization':ORS_KEY},
         body:JSON.stringify({jobs:jobs,vehicles:vehicles})
       }).then(function(r){return r.json();}).then(function(optData){
-        if(!optData.routes||optData.routes.length===0){msg.textContent='Error al optimizar orden de entregas.';alert('DEBUG respuesta de optimization: '+JSON.stringify(optData));return;}
+        if(!optData.routes||optData.routes.length===0){msg.textContent='Error al optimizar orden de entregas.';return;}
         var steps=optData.routes[0].steps.filter(function(s){return s.type==='job';});
         var ordenIdx=steps.map(function(s){return s.job-1;});
         var coordsOrden=[ORIGEN_COORDS].concat(ordenIdx.map(function(i){return coords[i];}));
