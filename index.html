@@ -1861,7 +1861,7 @@ function _ejecutarRuta(lista,key,msg,optimizar){
   var ORIGEN_COORDS=[-65.2144,-26.8121]; // Pedro de Villalba 400, Yerba Buena
 
   function geocodificar(dir,cb){
-    var url='https://api.openrouteservice.org/geocode/search?api_key='+ORS_KEY+'&text='+encodeURIComponent(dir+', Tucuman, Argentina')+'&size=1';
+    var url='https://api.openrouteservice.org/geocode/search?api_key='+ORS_KEY+'&text='+encodeURIComponent(dir+', Tucuman, Argentina')+'&boundary.circle.lat=-26.82&boundary.circle.lon=-65.22&boundary.circle.radius=45&focus.point.lat=-26.82&focus.point.lon=-65.22&size=1';
     fetch(url).then(function(r){return r.json();}).then(function(d){
       if(d.features&&d.features.length>0){cb(d.features[0].geometry.coordinates);}
       else{cb(null);}
@@ -4356,7 +4356,7 @@ function _ejecutarRuta(lista,key,msg,optimizar){
   var ORIGEN_COORDS=[-65.2144,-26.8121]; // Pedro de Villalba 400, Yerba Buena
 
   function geocodificar(dir,cb){
-    var url='https://api.openrouteservice.org/geocode/search?api_key='+ORS_KEY+'&text='+encodeURIComponent(dir+', Tucuman, Argentina')+'&size=1';
+    var url='https://api.openrouteservice.org/geocode/search?api_key='+ORS_KEY+'&text='+encodeURIComponent(dir+', Tucuman, Argentina')+'&boundary.circle.lat=-26.82&boundary.circle.lon=-65.22&boundary.circle.radius=45&focus.point.lat=-26.82&focus.point.lon=-65.22&size=1';
     fetch(url).then(function(r){return r.json();}).then(function(d){
       if(d.features&&d.features.length>0){cb(d.features[0].geometry.coordinates);}
       else{cb(null);}
