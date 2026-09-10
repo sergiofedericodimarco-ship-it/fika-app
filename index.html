@@ -1903,7 +1903,7 @@ function _ejecutarRuta(lista,key,msg,optimizar){
         if(!data.routes||data.routes.length===0){msg.textContent='Error al calcular ruta.';return;}
 
         var route=data.routes[0];
-        var segments=route.segments;
+        var segments=route.segments||[];
         var _horaInput=document.getElementById('hora-inicio-reparto')?document.getElementById('hora-inicio-reparto').value:'09:00';
         var _hp=_horaInput.split(':');var _inicioMin=parseInt(_hp[0])*60+(parseInt(_hp[1])||0);
         var tAcum=_inicioMin;var distT=0;var durT=0;
@@ -1911,7 +1911,7 @@ function _ejecutarRuta(lista,key,msg,optimizar){
         var ordenados=ordenIdx.map(function(i){return lista[i];});
 
         var conHorario=ordenados.map(function(p,i){
-          var seg=segments[i]||{};
+          var seg=(segments&&segments[i])||{};
           var durSeg=Math.round((seg.duration||0)/60)+MIN_PARADA;
           tAcum+=durSeg;
           distT+=(seg.distance||0);
@@ -4398,7 +4398,7 @@ function _ejecutarRuta(lista,key,msg,optimizar){
         if(!data.routes||data.routes.length===0){msg.textContent='Error al calcular ruta.';return;}
 
         var route=data.routes[0];
-        var segments=route.segments;
+        var segments=route.segments||[];
         var _horaInput=document.getElementById('hora-inicio-reparto')?document.getElementById('hora-inicio-reparto').value:'09:00';
         var _hp=_horaInput.split(':');var _inicioMin=parseInt(_hp[0])*60+(parseInt(_hp[1])||0);
         var tAcum=_inicioMin;var distT=0;var durT=0;
@@ -4406,7 +4406,7 @@ function _ejecutarRuta(lista,key,msg,optimizar){
         var ordenados=ordenIdx.map(function(i){return lista[i];});
 
         var conHorario=ordenados.map(function(p,i){
-          var seg=segments[i]||{};
+          var seg=(segments&&segments[i])||{};
           var durSeg=Math.round((seg.duration||0)/60)+MIN_PARADA;
           tAcum+=durSeg;
           distT+=(seg.distance||0);
