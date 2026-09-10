@@ -1892,7 +1892,7 @@ function _ejecutarRuta(lista,key,msg,optimizar){
       headers:{'Content-Type':'application/json','Authorization':ORS_KEY},
       body:JSON.stringify(body)
     }).then(function(r){return r.json();}).then(function(data){
-      if(!data.routes||data.routes.length===0){msg.textContent='Error al calcular ruta.';return;}
+      if(!data.routes||data.routes.length===0){msg.textContent='Error al calcular ruta.';alert('DEBUG respuesta de OpenRouteService: '+JSON.stringify(data));return;}
       
       var route=data.routes[0];
       var segments=route.segments;
@@ -4359,7 +4359,7 @@ function _ejecutarRuta(lista,key,msg,optimizar){
       headers:{'Content-Type':'application/json','Authorization':ORS_KEY},
       body:JSON.stringify(body)
     }).then(function(r){return r.json();}).then(function(data){
-      if(!data.routes||data.routes.length===0){msg.textContent='Error al calcular ruta.';return;}
+      if(!data.routes||data.routes.length===0){msg.textContent='Error al calcular ruta.';alert('DEBUG respuesta de OpenRouteService: '+JSON.stringify(data));return;}
       
       var route=data.routes[0];
       var segments=route.segments;
