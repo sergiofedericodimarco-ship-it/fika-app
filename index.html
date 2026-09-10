@@ -11,6 +11,8 @@
 <title>FIKA</title>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&family=Raleway:wght@300;400;500;700&family=Jost:wght@300;400;500&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 :root{
   --bg:#1a2744;--bg2:#1f2f50;--bg3:#243659;
@@ -1849,9 +1851,8 @@ function calcularRuta(){
   var zonaA=lista.filter(function(p){return detectarCiudad(p.ciudad)===inicioRuta;});
   var zonaB=lista.filter(function(p){return detectarCiudad(p.ciudad)!==inicioRuta;});
   var listaOrd=zonaA.concat(zonaB);
-  var msg=document.getElementById('rep-msg');msg.className='';msg.style.cssText='border-radius:8px;padding:9px 13px;font-size:12px;margin-bottom:12px;background:rgba(201,163,79,0.08);border:0.5px solid rgba(201,163,79,0.2);color:var(--accent)';msg.textContent='Cargando Google Maps...';msg.style.display='block';
-  if(window.google&&window.google.maps){_ejecutarRuta(listaOrd,key,msg);}
-  else{window._mRL=listaOrd;window._mRK=key;window._mRM=msg;window._mapsReady=function(){_ejecutarRuta(window._mRL,window._mRK,window._mRM);};var sc=document.createElement('script');sc.src='https://maps.googleapis.com/maps/api/js?key='+key+'&callback=_mapsReady&language=es';sc.onerror=function(){msg.style.cssText='border-radius:8px;padding:9px 13px;font-size:12px;margin-bottom:12px;background:rgba(224,85,85,0.1);border:0.5px solid rgba(224,85,85,0.3);color:var(--danger)';msg.textContent='Error al cargar Google Maps.';};document.head.appendChild(sc);}
+  var msg=document.getElementById('rep-msg');msg.className='';msg.style.cssText='border-radius:8px;padding:9px 13px;font-size:12px;margin-bottom:12px;background:rgba(201,163,79,0.08);border:0.5px solid rgba(201,163,79,0.2);color:var(--accent)';msg.textContent='Calculando ruta...';msg.style.display='block';
+  _ejecutarRuta(listaOrd,null,msg);
 }
 
 function _ejecutarRuta(lista,key,msg,optimizar){
@@ -1960,14 +1961,12 @@ function _ejecutarRuta(lista,key,msg,optimizar){
 }
 
 function calcularRutaDesdeCadete(){
-  var key=loadApiKey();if(!key){alert('Guardá tu API key en Reparto.');return;}
   if(cadeteOrden.length===0){alert('Primero editá el orden en Cadete.');return;}
   var todos=pedidosImportados.length>0?pedidosImportados:pedidos;
   var lista=cadeteOrden.map(function(id){return todos.find(function(x){return x.id===id;});}).filter(function(p){return p&&p.domicilio&&p.domicilio!=='Coordinar';});
   if(lista.length===0){alert('Sin pedidos con domicilio en el orden de Cadete.');return;}
   var msg=document.getElementById('rep-msg');msg.style.cssText='border-radius:8px;padding:9px 13px;font-size:12px;margin-bottom:12px;background:rgba(201,163,79,0.08);border:0.5px solid rgba(201,163,79,0.2);color:var(--accent)';msg.textContent='Calculando con orden de Cadete...';msg.style.display='block';
-  if(window.google&&window.google.maps)_ejecutarRuta(lista,key,msg,false);
-  else{window._mRL=lista;window._mRK=key;window._mRM=msg;window._mRO=false;window._mapsReady=function(){_ejecutarRuta(window._mRL,window._mRK,window._mRM,window._mRO);};var sc=document.createElement('script');sc.src='https://maps.googleapis.com/maps/api/js?key='+key+'&callback=_mapsReady&language=es';document.head.appendChild(sc);}
+  _ejecutarRuta(lista,null,msg,false);
 }
 
 // ── CADETE ────────────────────────────────────────────────────
@@ -4319,9 +4318,8 @@ function calcularRuta(){
   var zonaA=lista.filter(function(p){return detectarCiudad(p.ciudad)===inicioRuta;});
   var zonaB=lista.filter(function(p){return detectarCiudad(p.ciudad)!==inicioRuta;});
   var listaOrd=zonaA.concat(zonaB);
-  var msg=document.getElementById('rep-msg');msg.className='';msg.style.cssText='border-radius:8px;padding:9px 13px;font-size:12px;margin-bottom:12px;background:rgba(201,163,79,0.08);border:0.5px solid rgba(201,163,79,0.2);color:var(--accent)';msg.textContent='Cargando Google Maps...';msg.style.display='block';
-  if(window.google&&window.google.maps){_ejecutarRuta(listaOrd,key,msg);}
-  else{window._mRL=listaOrd;window._mRK=key;window._mRM=msg;window._mapsReady=function(){_ejecutarRuta(window._mRL,window._mRK,window._mRM);};var sc=document.createElement('script');sc.src='https://maps.googleapis.com/maps/api/js?key='+key+'&callback=_mapsReady&language=es';sc.onerror=function(){msg.style.cssText='border-radius:8px;padding:9px 13px;font-size:12px;margin-bottom:12px;background:rgba(224,85,85,0.1);border:0.5px solid rgba(224,85,85,0.3);color:var(--danger)';msg.textContent='Error al cargar Google Maps.';};document.head.appendChild(sc);}
+  var msg=document.getElementById('rep-msg');msg.className='';msg.style.cssText='border-radius:8px;padding:9px 13px;font-size:12px;margin-bottom:12px;background:rgba(201,163,79,0.08);border:0.5px solid rgba(201,163,79,0.2);color:var(--accent)';msg.textContent='Calculando ruta...';msg.style.display='block';
+  _ejecutarRuta(listaOrd,null,msg);
 }
 
 function _ejecutarRuta(lista,key,msg,optimizar){
@@ -4430,14 +4428,12 @@ function _ejecutarRuta(lista,key,msg,optimizar){
 }
 
 function calcularRutaDesdeCadete(){
-  var key=loadApiKey();if(!key){alert('Guardá tu API key en Reparto.');return;}
   if(cadeteOrden.length===0){alert('Primero editá el orden en Cadete.');return;}
   var todos=pedidosImportados.length>0?pedidosImportados:pedidos;
   var lista=cadeteOrden.map(function(id){return todos.find(function(x){return x.id===id;});}).filter(function(p){return p&&p.domicilio&&p.domicilio!=='Coordinar';});
   if(lista.length===0){alert('Sin pedidos con domicilio en el orden de Cadete.');return;}
   var msg=document.getElementById('rep-msg');msg.style.cssText='border-radius:8px;padding:9px 13px;font-size:12px;margin-bottom:12px;background:rgba(201,163,79,0.08);border:0.5px solid rgba(201,163,79,0.2);color:var(--accent)';msg.textContent='Calculando con orden de Cadete...';msg.style.display='block';
-  if(window.google&&window.google.maps)_ejecutarRuta(lista,key,msg,false);
-  else{window._mRL=lista;window._mRK=key;window._mRM=msg;window._mRO=false;window._mapsReady=function(){_ejecutarRuta(window._mRL,window._mRK,window._mRM,window._mRO);};var sc=document.createElement('script');sc.src='https://maps.googleapis.com/maps/api/js?key='+key+'&callback=_mapsReady&language=es';document.head.appendChild(sc);}
+  _ejecutarRuta(lista,null,msg,false);
 }
 
 // ── CADETE ────────────────────────────────────────────────────
