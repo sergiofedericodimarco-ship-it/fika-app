@@ -1966,7 +1966,7 @@ function _ejecutarRuta(lista,key,msg,optimizar){
         headers:{'Content-Type':'application/json','Authorization':ORS_KEY},
         body:JSON.stringify({jobs:jobs,vehicles:vehicles})
       }).then(function(r){return r.json();}).then(function(optData){
-        if(!optData.routes||optData.routes.length===0){msg.textContent='Error al optimizar orden de entregas.';return;}
+        if(!optData.routes||optData.routes.length===0){msg.textContent='Error al optimizar orden de entregas.';alert('DEBUG respuesta de optimization: '+JSON.stringify(optData));return;}
         var steps=optData.routes[0].steps.filter(function(s){return s.type==='job';});
         var ordenIdx=steps.map(function(s){return s.job-1;});
         var coordsOrden=[ORIGEN_COORDS].concat(ordenIdx.map(function(i){return coords[i];}));
@@ -4453,7 +4453,7 @@ function _ejecutarRuta(lista,key,msg,optimizar){
         headers:{'Content-Type':'application/json','Authorization':ORS_KEY},
         body:JSON.stringify({jobs:jobs,vehicles:vehicles})
       }).then(function(r){return r.json();}).then(function(optData){
-        if(!optData.routes||optData.routes.length===0){msg.textContent='Error al optimizar orden de entregas.';return;}
+        if(!optData.routes||optData.routes.length===0){msg.textContent='Error al optimizar orden de entregas.';alert('DEBUG respuesta de optimization: '+JSON.stringify(optData));return;}
         var steps=optData.routes[0].steps.filter(function(s){return s.type==='job';});
         var ordenIdx=steps.map(function(s){return s.job-1;});
         var coordsOrden=[ORIGEN_COORDS].concat(ordenIdx.map(function(i){return coords[i];}));
