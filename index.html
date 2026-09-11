@@ -1862,7 +1862,9 @@ function _ejecutarRuta(lista,key,msg,optimizar){
   var ORIGEN_COORDS=[-65.2144,-26.8121]; // Pedro de Villalba 400, Yerba Buena
 
   function geocodificar(dir,ciudad,cb){
-    var url='https://api.openrouteservice.org/geocode/search/structured?api_key='+ORS_KEY+'&address='+encodeURIComponent(dir)+'&locality='+encodeURIComponent(ciudad||'San Miguel de Tucumán')+'&region=Tucuman&country=Argentina&boundary.circle.lat=-26.82&boundary.circle.lon=-65.22&boundary.circle.radius=45&size=1';
+    var esYB=/yerba\s*buena/i.test(ciudad||'');
+    var focoLat=esYB?-26.8083:-26.8241, focoLon=esYB?-65.2938:-65.2226;
+    var url='https://api.openrouteservice.org/geocode/search?api_key='+ORS_KEY+'&text='+encodeURIComponent(dir+', '+(ciudad||'Tucuman')+', Tucuman, Argentina')+'&boundary.circle.lat=-26.82&boundary.circle.lon=-65.22&boundary.circle.radius=45&focus.point.lat='+focoLat+'&focus.point.lon='+focoLon+'&size=1';
     fetch(url).then(function(r){return r.json();}).then(function(d){
       if(d.features&&d.features.length>0){cb(d.features[0].geometry.coordinates);}
       else{cb(null);}
@@ -1875,7 +1877,7 @@ function _ejecutarRuta(lista,key,msg,optimizar){
     return lat>=-28.5&&lat<=-25.5&&lon>=-66.5&&lon<=-64.0;
   }
 
-  // Geocodificar todos los domicilios (con localidad explícita, para no confundir calles repetidas entre ciudades)
+  // Geocodificar todos los domicilios (con foco en la localidad exacta, para no confundir calles repetidas entre ciudades)
   var coords=[];var pending=lista.length;var direccionesFallidas=[];
   lista.forEach(function(p,i){
     geocodificar(p.domicilio||'',p.ciudad||'San Miguel de Tucumán',function(c){
@@ -4360,7 +4362,9 @@ function _ejecutarRuta(lista,key,msg,optimizar){
   var ORIGEN_COORDS=[-65.2144,-26.8121]; // Pedro de Villalba 400, Yerba Buena
 
   function geocodificar(dir,ciudad,cb){
-    var url='https://api.openrouteservice.org/geocode/search/structured?api_key='+ORS_KEY+'&address='+encodeURIComponent(dir)+'&locality='+encodeURIComponent(ciudad||'San Miguel de Tucumán')+'&region=Tucuman&country=Argentina&boundary.circle.lat=-26.82&boundary.circle.lon=-65.22&boundary.circle.radius=45&size=1';
+    var esYB=/yerba\s*buena/i.test(ciudad||'');
+    var focoLat=esYB?-26.8083:-26.8241, focoLon=esYB?-65.2938:-65.2226;
+    var url='https://api.openrouteservice.org/geocode/search?api_key='+ORS_KEY+'&text='+encodeURIComponent(dir+', '+(ciudad||'Tucuman')+', Tucuman, Argentina')+'&boundary.circle.lat=-26.82&boundary.circle.lon=-65.22&boundary.circle.radius=45&focus.point.lat='+focoLat+'&focus.point.lon='+focoLon+'&size=1';
     fetch(url).then(function(r){return r.json();}).then(function(d){
       if(d.features&&d.features.length>0){cb(d.features[0].geometry.coordinates);}
       else{cb(null);}
@@ -4373,7 +4377,7 @@ function _ejecutarRuta(lista,key,msg,optimizar){
     return lat>=-28.5&&lat<=-25.5&&lon>=-66.5&&lon<=-64.0;
   }
 
-  // Geocodificar todos los domicilios (con localidad explícita, para no confundir calles repetidas entre ciudades)
+  // Geocodificar todos los domicilios (con foco en la localidad exacta, para no confundir calles repetidas entre ciudades)
   var coords=[];var pending=lista.length;var direccionesFallidas=[];
   lista.forEach(function(p,i){
     geocodificar(p.domicilio||'',p.ciudad||'San Miguel de Tucumán',function(c){
