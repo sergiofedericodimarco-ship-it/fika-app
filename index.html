@@ -1865,10 +1865,19 @@ function _ejecutarRuta(lista,key,msg,optimizar){
     var esYB=/yerba\s*buena/i.test(ciudad||'');
     var focoLat=esYB?-26.8083:-26.8241, focoLon=esYB?-65.2938:-65.2226;
     var url='https://api.openrouteservice.org/geocode/search?api_key='+ORS_KEY+'&text='+encodeURIComponent(dir+', '+(ciudad||'Tucuman')+', Tucuman, Argentina')+'&boundary.circle.lat=-26.82&boundary.circle.lon=-65.22&boundary.circle.radius=45&focus.point.lat='+focoLat+'&focus.point.lon='+focoLon+'&size=1';
-    fetch(url).then(function(r){return r.json();}).then(function(d){
-      if(d.features&&d.features.length>0){cb(d.features[0].geometry.coordinates);}
-      else{cb(null);}
-    }).catch(function(){cb(null);});
+    fetch(url).then(function(r){return r.text().then(function(t){return {status:r.status,body:t};});}).then(function(res){
+      if(window.__debugGeoShown){cb(tryParseGeo(res.body));return;}
+      window.__debugGeoShown=true;
+      alert('DEBUG geocode ['+dir+']\nHTTP status: '+res.status+'\nRespuesta: '+res.body.substring(0,500));
+      cb(tryParseGeo(res.body));
+    }).catch(function(e){
+      if(!window.__debugGeoShown){window.__debugGeoShown=true;alert('DEBUG geocode EXCEPCION para ['+dir+']: '+e.message);}
+      cb(null);
+    });
+  }
+  function tryParseGeo(text){
+    try{var d=JSON.parse(text);if(d.features&&d.features.length>0)return d.features[0].geometry.coordinates;}catch(e){}
+    return null;
   }
   // Validar que la coordenada resuelta quede dentro de la provincia de Tucumán
   function coordEnTucuman(c){
@@ -4365,10 +4374,19 @@ function _ejecutarRuta(lista,key,msg,optimizar){
     var esYB=/yerba\s*buena/i.test(ciudad||'');
     var focoLat=esYB?-26.8083:-26.8241, focoLon=esYB?-65.2938:-65.2226;
     var url='https://api.openrouteservice.org/geocode/search?api_key='+ORS_KEY+'&text='+encodeURIComponent(dir+', '+(ciudad||'Tucuman')+', Tucuman, Argentina')+'&boundary.circle.lat=-26.82&boundary.circle.lon=-65.22&boundary.circle.radius=45&focus.point.lat='+focoLat+'&focus.point.lon='+focoLon+'&size=1';
-    fetch(url).then(function(r){return r.json();}).then(function(d){
-      if(d.features&&d.features.length>0){cb(d.features[0].geometry.coordinates);}
-      else{cb(null);}
-    }).catch(function(){cb(null);});
+    fetch(url).then(function(r){return r.text().then(function(t){return {status:r.status,body:t};});}).then(function(res){
+      if(window.__debugGeoShown){cb(tryParseGeo(res.body));return;}
+      window.__debugGeoShown=true;
+      alert('DEBUG geocode ['+dir+']\nHTTP status: '+res.status+'\nRespuesta: '+res.body.substring(0,500));
+      cb(tryParseGeo(res.body));
+    }).catch(function(e){
+      if(!window.__debugGeoShown){window.__debugGeoShown=true;alert('DEBUG geocode EXCEPCION para ['+dir+']: '+e.message);}
+      cb(null);
+    });
+  }
+  function tryParseGeo(text){
+    try{var d=JSON.parse(text);if(d.features&&d.features.length>0)return d.features[0].geometry.coordinates;}catch(e){}
+    return null;
   }
   // Validar que la coordenada resuelta quede dentro de la provincia de Tucumán
   function coordEnTucuman(c){
