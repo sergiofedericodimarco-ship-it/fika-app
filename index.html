@@ -1865,19 +1865,17 @@ function _ejecutarRuta(lista,key,msg,optimizar){
     var esYB=/yerba\s*buena/i.test(ciudad||'');
     var focoLat=esYB?-26.8083:-26.8241, focoLon=esYB?-65.2938:-65.2226;
     var url='https://api.openrouteservice.org/geocode/search?api_key='+ORS_KEY+'&text='+encodeURIComponent(dir+', '+(ciudad||'Tucuman')+', Tucuman, Argentina')+'&boundary.circle.lat=-26.82&boundary.circle.lon=-65.22&boundary.circle.radius=45&focus.point.lat='+focoLat+'&focus.point.lon='+focoLon+'&size=1';
-    fetch(url).then(function(r){return r.text().then(function(t){return {status:r.status,body:t};});}).then(function(res){
-      if(window.__debugGeoShown){cb(tryParseGeo(res.body));return;}
-      window.__debugGeoShown=true;
-      alert('DEBUG geocode ['+dir+']\nHTTP status: '+res.status+'\nRespuesta: '+res.body.substring(0,500));
-      cb(tryParseGeo(res.body));
-    }).catch(function(e){
-      if(!window.__debugGeoShown){window.__debugGeoShown=true;alert('DEBUG geocode EXCEPCION para ['+dir+']: '+e.message);}
-      cb(null);
-    });
+    fetch(url).then(function(r){return r.json();}).then(function(d){
+      if(d.features&&d.features.length>0){cb(d.features[0].geometry.coordinates);}
+      else{cb(null);}
+    }).catch(function(){cb(null);});
   }
-  function tryParseGeo(text){
-    try{var d=JSON.parse(text);if(d.features&&d.features.length>0)return d.features[0].geometry.coordinates;}catch(e){}
-    return null;
+  // Reintenta hasta 'intentos' veces si la consulta falla por red (ej: muchas consultas juntas)
+  function geocodificarConReintento(dir,ciudad,intentos,cb){
+    geocodificar(dir,ciudad,function(c){
+      if(c||intentos<=0){cb(c);return;}
+      setTimeout(function(){geocodificarConReintento(dir,ciudad,intentos-1,cb);},500);
+    });
   }
   // Validar que la coordenada resuelta quede dentro de la provincia de Tucumán
   function coordEnTucuman(c){
@@ -1886,17 +1884,20 @@ function _ejecutarRuta(lista,key,msg,optimizar){
     return lat>=-28.5&&lat<=-25.5&&lon>=-66.5&&lon<=-64.0;
   }
 
-  // Geocodificar todos los domicilios (con foco en la localidad exacta, para no confundir calles repetidas entre ciudades)
-  var coords=[];var pending=lista.length;var direccionesFallidas=[];
-  lista.forEach(function(p,i){
-    geocodificar(p.domicilio||'',p.ciudad||'San Miguel de Tucumán',function(c){
+  // Geocodificar los domicilios de a uno por vez (no todos juntos), para no saturar la conexión
+  var coords=[];var direccionesFallidas=[];
+  function geocodificarSecuencial(idx){
+    if(idx>=lista.length){calcularRutaORS();return;}
+    var p=lista[idx];
+    msg.textContent='Ubicando direcciones... ('+(idx+1)+'/'+lista.length+')';
+    geocodificarConReintento(p.domicilio||'',p.ciudad||'San Miguel de Tucumán',2,function(c){
       if(c&&!coordEnTucuman(c))c=null;
       if(!c)direccionesFallidas.push((p.nombre||'Pedido')+' - '+(p.domicilio||'sin domicilio cargado')+' ('+(p.ciudad||'sin ciudad')+')');
-      coords[i]=c;
-      pending--;
-      if(pending===0)calcularRutaORS();
+      coords[idx]=c;
+      setTimeout(function(){geocodificarSecuencial(idx+1);},200);
     });
-  });
+  }
+  geocodificarSecuencial(0);
 
   function calcularRutaORS(){
     var nulls=coords.filter(function(c){return !c;});
@@ -1910,9 +1911,7 @@ function _ejecutarRuta(lista,key,msg,optimizar){
         method:'POST',
         headers:{'Content-Type':'application/json','Authorization':ORS_KEY},
         body:JSON.stringify(body)
-      }).then(function(r){return r.text().then(function(t){return{status:r.status,body:t};});}).then(function(res){
-        alert('DEBUG directions HTTP '+res.status+': '+res.body.substring(0,600));
-        var data={};try{data=JSON.parse(res.body);}catch(e){}
+      }).then(function(r){return r.json();}).then(function(data){
         if(!data.routes||data.routes.length===0){msg.textContent='Error al calcular ruta.';return;}
 
         var route=data.routes[0];
@@ -1975,7 +1974,7 @@ function _ejecutarRuta(lista,key,msg,optimizar){
         var horaIni=document.getElementById('hora-inicio-reparto')?document.getElementById('hora-inicio-reparto').value:'09:00';
         msg.style.cssText='border-radius:8px;padding:9px 13px;font-size:12px;margin-bottom:12px;background:rgba(90,184,138,0.1);border:0.5px solid rgba(90,184,138,0.3);color:var(--ok)';
         msg.textContent='Ruta calculada con '+conHorario.length+' paradas. Salida '+horaIni+' hs.';
-      }).catch(function(e){alert('DEBUG directions EXCEPCION: '+e.message);msg.textContent='Error al calcular ruta: '+e.message;});
+      }).catch(function(e){msg.textContent='Error al calcular ruta: '+e.message;});
     }
 
     if(optimizar&&coords.length>1){
@@ -1986,16 +1985,14 @@ function _ejecutarRuta(lista,key,msg,optimizar){
         method:'POST',
         headers:{'Content-Type':'application/json','Authorization':ORS_KEY},
         body:JSON.stringify({jobs:jobs,vehicles:vehicles})
-      }).then(function(r){return r.text().then(function(t){return{status:r.status,body:t};});}).then(function(res){
-        alert('DEBUG optimization HTTP '+res.status+': '+res.body.substring(0,600));
-        var optData={};try{optData=JSON.parse(res.body);}catch(e){}
+      }).then(function(r){return r.json();}).then(function(optData){
         if(!optData.routes||optData.routes.length===0){msg.textContent='Error al optimizar orden de entregas.';return;}
         var steps=optData.routes[0].steps.filter(function(s){return s.type==='job';});
         var ordenIdx=steps.map(function(s){return s.job-1;});
         var coordsOrden=[ORIGEN_COORDS].concat(ordenIdx.map(function(i){return coords[i];}));
         msg.textContent='Calculando ruta...';
         pedirDirections(coordsOrden,ordenIdx);
-      }).catch(function(e){alert('DEBUG optimization EXCEPCION: '+e.message);msg.textContent='Error al optimizar ruta: '+e.message;});
+      }).catch(function(e){msg.textContent='Error al optimizar ruta: '+e.message;});
     } else {
       var ordenIdx=lista.map(function(_,i){return i;});
       pedirDirections(allCoords,ordenIdx);
@@ -4378,19 +4375,17 @@ function _ejecutarRuta(lista,key,msg,optimizar){
     var esYB=/yerba\s*buena/i.test(ciudad||'');
     var focoLat=esYB?-26.8083:-26.8241, focoLon=esYB?-65.2938:-65.2226;
     var url='https://api.openrouteservice.org/geocode/search?api_key='+ORS_KEY+'&text='+encodeURIComponent(dir+', '+(ciudad||'Tucuman')+', Tucuman, Argentina')+'&boundary.circle.lat=-26.82&boundary.circle.lon=-65.22&boundary.circle.radius=45&focus.point.lat='+focoLat+'&focus.point.lon='+focoLon+'&size=1';
-    fetch(url).then(function(r){return r.text().then(function(t){return {status:r.status,body:t};});}).then(function(res){
-      if(window.__debugGeoShown){cb(tryParseGeo(res.body));return;}
-      window.__debugGeoShown=true;
-      alert('DEBUG geocode ['+dir+']\nHTTP status: '+res.status+'\nRespuesta: '+res.body.substring(0,500));
-      cb(tryParseGeo(res.body));
-    }).catch(function(e){
-      if(!window.__debugGeoShown){window.__debugGeoShown=true;alert('DEBUG geocode EXCEPCION para ['+dir+']: '+e.message);}
-      cb(null);
-    });
+    fetch(url).then(function(r){return r.json();}).then(function(d){
+      if(d.features&&d.features.length>0){cb(d.features[0].geometry.coordinates);}
+      else{cb(null);}
+    }).catch(function(){cb(null);});
   }
-  function tryParseGeo(text){
-    try{var d=JSON.parse(text);if(d.features&&d.features.length>0)return d.features[0].geometry.coordinates;}catch(e){}
-    return null;
+  // Reintenta hasta 'intentos' veces si la consulta falla por red (ej: muchas consultas juntas)
+  function geocodificarConReintento(dir,ciudad,intentos,cb){
+    geocodificar(dir,ciudad,function(c){
+      if(c||intentos<=0){cb(c);return;}
+      setTimeout(function(){geocodificarConReintento(dir,ciudad,intentos-1,cb);},500);
+    });
   }
   // Validar que la coordenada resuelta quede dentro de la provincia de Tucumán
   function coordEnTucuman(c){
@@ -4399,17 +4394,20 @@ function _ejecutarRuta(lista,key,msg,optimizar){
     return lat>=-28.5&&lat<=-25.5&&lon>=-66.5&&lon<=-64.0;
   }
 
-  // Geocodificar todos los domicilios (con foco en la localidad exacta, para no confundir calles repetidas entre ciudades)
-  var coords=[];var pending=lista.length;var direccionesFallidas=[];
-  lista.forEach(function(p,i){
-    geocodificar(p.domicilio||'',p.ciudad||'San Miguel de Tucumán',function(c){
+  // Geocodificar los domicilios de a uno por vez (no todos juntos), para no saturar la conexión
+  var coords=[];var direccionesFallidas=[];
+  function geocodificarSecuencial(idx){
+    if(idx>=lista.length){calcularRutaORS();return;}
+    var p=lista[idx];
+    msg.textContent='Ubicando direcciones... ('+(idx+1)+'/'+lista.length+')';
+    geocodificarConReintento(p.domicilio||'',p.ciudad||'San Miguel de Tucumán',2,function(c){
       if(c&&!coordEnTucuman(c))c=null;
       if(!c)direccionesFallidas.push((p.nombre||'Pedido')+' - '+(p.domicilio||'sin domicilio cargado')+' ('+(p.ciudad||'sin ciudad')+')');
-      coords[i]=c;
-      pending--;
-      if(pending===0)calcularRutaORS();
+      coords[idx]=c;
+      setTimeout(function(){geocodificarSecuencial(idx+1);},200);
     });
-  });
+  }
+  geocodificarSecuencial(0);
 
   function calcularRutaORS(){
     var nulls=coords.filter(function(c){return !c;});
@@ -4423,9 +4421,7 @@ function _ejecutarRuta(lista,key,msg,optimizar){
         method:'POST',
         headers:{'Content-Type':'application/json','Authorization':ORS_KEY},
         body:JSON.stringify(body)
-      }).then(function(r){return r.text().then(function(t){return{status:r.status,body:t};});}).then(function(res){
-        alert('DEBUG directions HTTP '+res.status+': '+res.body.substring(0,600));
-        var data={};try{data=JSON.parse(res.body);}catch(e){}
+      }).then(function(r){return r.json();}).then(function(data){
         if(!data.routes||data.routes.length===0){msg.textContent='Error al calcular ruta.';return;}
 
         var route=data.routes[0];
@@ -4488,7 +4484,7 @@ function _ejecutarRuta(lista,key,msg,optimizar){
         var horaIni=document.getElementById('hora-inicio-reparto')?document.getElementById('hora-inicio-reparto').value:'09:00';
         msg.style.cssText='border-radius:8px;padding:9px 13px;font-size:12px;margin-bottom:12px;background:rgba(90,184,138,0.1);border:0.5px solid rgba(90,184,138,0.3);color:var(--ok)';
         msg.textContent='Ruta calculada con '+conHorario.length+' paradas. Salida '+horaIni+' hs.';
-      }).catch(function(e){alert('DEBUG directions EXCEPCION: '+e.message);msg.textContent='Error al calcular ruta: '+e.message;});
+      }).catch(function(e){msg.textContent='Error al calcular ruta: '+e.message;});
     }
 
     if(optimizar&&coords.length>1){
@@ -4499,16 +4495,14 @@ function _ejecutarRuta(lista,key,msg,optimizar){
         method:'POST',
         headers:{'Content-Type':'application/json','Authorization':ORS_KEY},
         body:JSON.stringify({jobs:jobs,vehicles:vehicles})
-      }).then(function(r){return r.text().then(function(t){return{status:r.status,body:t};});}).then(function(res){
-        alert('DEBUG optimization HTTP '+res.status+': '+res.body.substring(0,600));
-        var optData={};try{optData=JSON.parse(res.body);}catch(e){}
+      }).then(function(r){return r.json();}).then(function(optData){
         if(!optData.routes||optData.routes.length===0){msg.textContent='Error al optimizar orden de entregas.';return;}
         var steps=optData.routes[0].steps.filter(function(s){return s.type==='job';});
         var ordenIdx=steps.map(function(s){return s.job-1;});
         var coordsOrden=[ORIGEN_COORDS].concat(ordenIdx.map(function(i){return coords[i];}));
         msg.textContent='Calculando ruta...';
         pedirDirections(coordsOrden,ordenIdx);
-      }).catch(function(e){alert('DEBUG optimization EXCEPCION: '+e.message);msg.textContent='Error al optimizar ruta: '+e.message;});
+      }).catch(function(e){msg.textContent='Error al optimizar ruta: '+e.message;});
     } else {
       var ordenIdx=lista.map(function(_,i){return i;});
       pedirDirections(allCoords,ordenIdx);
