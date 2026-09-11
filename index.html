@@ -596,6 +596,7 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
             <div class="sec-lbl" style="margin:0">Hoja de ruta del cadete</div>
             <div style="display:flex;gap:8px">
+              <button class="btn-ol" style="margin:0" onclick="renderHojaRuta()">&#8635; Actualizar</button>
               <button class="btn-p" style="margin:0" onclick="publicarRecorrido()">Publicar recorrido</button>
               <button id="btn-toggle-cadete" class="btn-ol" style="margin:0" onclick="toggleRecorridoCadete()">Habilitar</button>
             </div>
@@ -923,7 +924,7 @@ initLayout();
   cargarCongelados();
   cargarComprasRealizadas();
   cargarObjetivo();
-  cargarCombos();
+  await cargarCombos();
   asignarIdsPedidos();
   renderPedidos();
   renderDeskPedidos();
@@ -1860,8 +1861,8 @@ function _ejecutarRuta(lista,key,msg,optimizar){
   msg.textContent='Calculando ruta...';
   var ORIGEN_COORDS=[-65.2144,-26.8121]; // Pedro de Villalba 400, Yerba Buena
 
-  function geocodificar(dir,cb){
-    var url='https://api.openrouteservice.org/geocode/search?api_key='+ORS_KEY+'&text='+encodeURIComponent(dir+', Tucuman, Argentina')+'&boundary.circle.lat=-26.82&boundary.circle.lon=-65.22&boundary.circle.radius=45&focus.point.lat=-26.82&focus.point.lon=-65.22&size=1';
+  function geocodificar(dir,ciudad,cb){
+    var url='https://api.openrouteservice.org/geocode/search/structured?api_key='+ORS_KEY+'&address='+encodeURIComponent(dir)+'&locality='+encodeURIComponent(ciudad||'San Miguel de Tucumán')+'&region=Tucuman&country=Argentina&boundary.circle.lat=-26.82&boundary.circle.lon=-65.22&boundary.circle.radius=45&size=1';
     fetch(url).then(function(r){return r.json();}).then(function(d){
       if(d.features&&d.features.length>0){cb(d.features[0].geometry.coordinates);}
       else{cb(null);}
@@ -1874,13 +1875,12 @@ function _ejecutarRuta(lista,key,msg,optimizar){
     return lat>=-28.5&&lat<=-25.5&&lon>=-66.5&&lon<=-64.0;
   }
 
-  // Geocodificar todos los domicilios
-  var dirs=lista.map(function(p){return (p.domicilio||'')+', '+(p.ciudad||'Tucuman');});
-  var coords=[];var pending=dirs.length;var direccionesFallidas=[];
-  dirs.forEach(function(dir,i){
-    geocodificar(dir,function(c){
+  // Geocodificar todos los domicilios (con localidad explícita, para no confundir calles repetidas entre ciudades)
+  var coords=[];var pending=lista.length;var direccionesFallidas=[];
+  lista.forEach(function(p,i){
+    geocodificar(p.domicilio||'',p.ciudad||'San Miguel de Tucumán',function(c){
       if(c&&!coordEnTucuman(c))c=null;
-      if(!c)direccionesFallidas.push((lista[i].nombre||'Pedido')+' - '+(lista[i].domicilio||'sin domicilio cargado'));
+      if(!c)direccionesFallidas.push((p.nombre||'Pedido')+' - '+(p.domicilio||'sin domicilio cargado')+' ('+(p.ciudad||'sin ciudad')+')');
       coords[i]=c;
       pending--;
       if(pending===0)calcularRutaORS();
@@ -1903,7 +1903,7 @@ function _ejecutarRuta(lista,key,msg,optimizar){
         if(!data.routes||data.routes.length===0){msg.textContent='Error al calcular ruta.';return;}
 
         var route=data.routes[0];
-        var segments=route.segments||[];
+        var segments=route.segments;
         var _horaInput=document.getElementById('hora-inicio-reparto')?document.getElementById('hora-inicio-reparto').value:'09:00';
         var _hp=_horaInput.split(':');var _inicioMin=parseInt(_hp[0])*60+(parseInt(_hp[1])||0);
         var tAcum=_inicioMin;var distT=0;var durT=0;
@@ -1911,7 +1911,7 @@ function _ejecutarRuta(lista,key,msg,optimizar){
         var ordenados=ordenIdx.map(function(i){return lista[i];});
 
         var conHorario=ordenados.map(function(p,i){
-          var seg=(segments&&segments[i])||{};
+          var seg=segments[i]||{};
           var durSeg=Math.round((seg.duration||0)/60)+MIN_PARADA;
           tAcum+=durSeg;
           distT+=(seg.distance||0);
@@ -3094,7 +3094,11 @@ var comboFocTotal=0;
 var comboEditId=null;
 var FOCACCIAS=['focaccia_cherry','focaccia_cebolla','focaccia_morron'];
 
-function cargarCombos(){
+async function cargarCombos(){
+  try{
+    var data=await sbGet('combos_precios','');
+    if(data){combos=data;localStorage.setItem('fika-combos',JSON.stringify(combos));return;}
+  }catch(e){}
   try{combos=JSON.parse(localStorage.getItem('fika-combos')||'[]');}catch(e){combos=[];}
 }
 
@@ -4355,8 +4359,8 @@ function _ejecutarRuta(lista,key,msg,optimizar){
   msg.textContent='Calculando ruta...';
   var ORIGEN_COORDS=[-65.2144,-26.8121]; // Pedro de Villalba 400, Yerba Buena
 
-  function geocodificar(dir,cb){
-    var url='https://api.openrouteservice.org/geocode/search?api_key='+ORS_KEY+'&text='+encodeURIComponent(dir+', Tucuman, Argentina')+'&boundary.circle.lat=-26.82&boundary.circle.lon=-65.22&boundary.circle.radius=45&focus.point.lat=-26.82&focus.point.lon=-65.22&size=1';
+  function geocodificar(dir,ciudad,cb){
+    var url='https://api.openrouteservice.org/geocode/search/structured?api_key='+ORS_KEY+'&address='+encodeURIComponent(dir)+'&locality='+encodeURIComponent(ciudad||'San Miguel de Tucumán')+'&region=Tucuman&country=Argentina&boundary.circle.lat=-26.82&boundary.circle.lon=-65.22&boundary.circle.radius=45&size=1';
     fetch(url).then(function(r){return r.json();}).then(function(d){
       if(d.features&&d.features.length>0){cb(d.features[0].geometry.coordinates);}
       else{cb(null);}
@@ -4369,13 +4373,12 @@ function _ejecutarRuta(lista,key,msg,optimizar){
     return lat>=-28.5&&lat<=-25.5&&lon>=-66.5&&lon<=-64.0;
   }
 
-  // Geocodificar todos los domicilios
-  var dirs=lista.map(function(p){return (p.domicilio||'')+', '+(p.ciudad||'Tucuman');});
-  var coords=[];var pending=dirs.length;var direccionesFallidas=[];
-  dirs.forEach(function(dir,i){
-    geocodificar(dir,function(c){
+  // Geocodificar todos los domicilios (con localidad explícita, para no confundir calles repetidas entre ciudades)
+  var coords=[];var pending=lista.length;var direccionesFallidas=[];
+  lista.forEach(function(p,i){
+    geocodificar(p.domicilio||'',p.ciudad||'San Miguel de Tucumán',function(c){
       if(c&&!coordEnTucuman(c))c=null;
-      if(!c)direccionesFallidas.push((lista[i].nombre||'Pedido')+' - '+(lista[i].domicilio||'sin domicilio cargado'));
+      if(!c)direccionesFallidas.push((p.nombre||'Pedido')+' - '+(p.domicilio||'sin domicilio cargado')+' ('+(p.ciudad||'sin ciudad')+')');
       coords[i]=c;
       pending--;
       if(pending===0)calcularRutaORS();
@@ -4398,7 +4401,7 @@ function _ejecutarRuta(lista,key,msg,optimizar){
         if(!data.routes||data.routes.length===0){msg.textContent='Error al calcular ruta.';return;}
 
         var route=data.routes[0];
-        var segments=route.segments||[];
+        var segments=route.segments;
         var _horaInput=document.getElementById('hora-inicio-reparto')?document.getElementById('hora-inicio-reparto').value:'09:00';
         var _hp=_horaInput.split(':');var _inicioMin=parseInt(_hp[0])*60+(parseInt(_hp[1])||0);
         var tAcum=_inicioMin;var distT=0;var durT=0;
@@ -4406,7 +4409,7 @@ function _ejecutarRuta(lista,key,msg,optimizar){
         var ordenados=ordenIdx.map(function(i){return lista[i];});
 
         var conHorario=ordenados.map(function(p,i){
-          var seg=(segments&&segments[i])||{};
+          var seg=segments[i]||{};
           var durSeg=Math.round((seg.duration||0)/60)+MIN_PARADA;
           tAcum+=durSeg;
           distT+=(seg.distance||0);
@@ -5589,7 +5592,11 @@ var comboFocTotal=0;
 var comboEditId=null;
 var FOCACCIAS=['focaccia_cherry','focaccia_cebolla','focaccia_morron'];
 
-function cargarCombos(){
+async function cargarCombos(){
+  try{
+    var data=await sbGet('combos_precios','');
+    if(data){combos=data;localStorage.setItem('fika-combos',JSON.stringify(combos));return;}
+  }catch(e){}
   try{combos=JSON.parse(localStorage.getItem('fika-combos')||'[]');}catch(e){combos=[];}
 }
 
