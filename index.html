@@ -1910,7 +1910,9 @@ function _ejecutarRuta(lista,key,msg,optimizar){
         method:'POST',
         headers:{'Content-Type':'application/json','Authorization':ORS_KEY},
         body:JSON.stringify(body)
-      }).then(function(r){return r.json();}).then(function(data){
+      }).then(function(r){return r.text().then(function(t){return{status:r.status,body:t};});}).then(function(res){
+        alert('DEBUG directions HTTP '+res.status+': '+res.body.substring(0,600));
+        var data={};try{data=JSON.parse(res.body);}catch(e){}
         if(!data.routes||data.routes.length===0){msg.textContent='Error al calcular ruta.';return;}
 
         var route=data.routes[0];
@@ -1973,7 +1975,7 @@ function _ejecutarRuta(lista,key,msg,optimizar){
         var horaIni=document.getElementById('hora-inicio-reparto')?document.getElementById('hora-inicio-reparto').value:'09:00';
         msg.style.cssText='border-radius:8px;padding:9px 13px;font-size:12px;margin-bottom:12px;background:rgba(90,184,138,0.1);border:0.5px solid rgba(90,184,138,0.3);color:var(--ok)';
         msg.textContent='Ruta calculada con '+conHorario.length+' paradas. Salida '+horaIni+' hs.';
-      }).catch(function(e){msg.textContent='Error al calcular ruta: '+e.message;});
+      }).catch(function(e){alert('DEBUG directions EXCEPCION: '+e.message);msg.textContent='Error al calcular ruta: '+e.message;});
     }
 
     if(optimizar&&coords.length>1){
@@ -1984,14 +1986,16 @@ function _ejecutarRuta(lista,key,msg,optimizar){
         method:'POST',
         headers:{'Content-Type':'application/json','Authorization':ORS_KEY},
         body:JSON.stringify({jobs:jobs,vehicles:vehicles})
-      }).then(function(r){return r.json();}).then(function(optData){
+      }).then(function(r){return r.text().then(function(t){return{status:r.status,body:t};});}).then(function(res){
+        alert('DEBUG optimization HTTP '+res.status+': '+res.body.substring(0,600));
+        var optData={};try{optData=JSON.parse(res.body);}catch(e){}
         if(!optData.routes||optData.routes.length===0){msg.textContent='Error al optimizar orden de entregas.';return;}
         var steps=optData.routes[0].steps.filter(function(s){return s.type==='job';});
         var ordenIdx=steps.map(function(s){return s.job-1;});
         var coordsOrden=[ORIGEN_COORDS].concat(ordenIdx.map(function(i){return coords[i];}));
         msg.textContent='Calculando ruta...';
         pedirDirections(coordsOrden,ordenIdx);
-      }).catch(function(e){msg.textContent='Error al optimizar ruta: '+e.message;});
+      }).catch(function(e){alert('DEBUG optimization EXCEPCION: '+e.message);msg.textContent='Error al optimizar ruta: '+e.message;});
     } else {
       var ordenIdx=lista.map(function(_,i){return i;});
       pedirDirections(allCoords,ordenIdx);
@@ -4419,7 +4423,9 @@ function _ejecutarRuta(lista,key,msg,optimizar){
         method:'POST',
         headers:{'Content-Type':'application/json','Authorization':ORS_KEY},
         body:JSON.stringify(body)
-      }).then(function(r){return r.json();}).then(function(data){
+      }).then(function(r){return r.text().then(function(t){return{status:r.status,body:t};});}).then(function(res){
+        alert('DEBUG directions HTTP '+res.status+': '+res.body.substring(0,600));
+        var data={};try{data=JSON.parse(res.body);}catch(e){}
         if(!data.routes||data.routes.length===0){msg.textContent='Error al calcular ruta.';return;}
 
         var route=data.routes[0];
@@ -4482,7 +4488,7 @@ function _ejecutarRuta(lista,key,msg,optimizar){
         var horaIni=document.getElementById('hora-inicio-reparto')?document.getElementById('hora-inicio-reparto').value:'09:00';
         msg.style.cssText='border-radius:8px;padding:9px 13px;font-size:12px;margin-bottom:12px;background:rgba(90,184,138,0.1);border:0.5px solid rgba(90,184,138,0.3);color:var(--ok)';
         msg.textContent='Ruta calculada con '+conHorario.length+' paradas. Salida '+horaIni+' hs.';
-      }).catch(function(e){msg.textContent='Error al calcular ruta: '+e.message;});
+      }).catch(function(e){alert('DEBUG directions EXCEPCION: '+e.message);msg.textContent='Error al calcular ruta: '+e.message;});
     }
 
     if(optimizar&&coords.length>1){
@@ -4493,14 +4499,16 @@ function _ejecutarRuta(lista,key,msg,optimizar){
         method:'POST',
         headers:{'Content-Type':'application/json','Authorization':ORS_KEY},
         body:JSON.stringify({jobs:jobs,vehicles:vehicles})
-      }).then(function(r){return r.json();}).then(function(optData){
+      }).then(function(r){return r.text().then(function(t){return{status:r.status,body:t};});}).then(function(res){
+        alert('DEBUG optimization HTTP '+res.status+': '+res.body.substring(0,600));
+        var optData={};try{optData=JSON.parse(res.body);}catch(e){}
         if(!optData.routes||optData.routes.length===0){msg.textContent='Error al optimizar orden de entregas.';return;}
         var steps=optData.routes[0].steps.filter(function(s){return s.type==='job';});
         var ordenIdx=steps.map(function(s){return s.job-1;});
         var coordsOrden=[ORIGEN_COORDS].concat(ordenIdx.map(function(i){return coords[i];}));
         msg.textContent='Calculando ruta...';
         pedirDirections(coordsOrden,ordenIdx);
-      }).catch(function(e){msg.textContent='Error al optimizar ruta: '+e.message;});
+      }).catch(function(e){alert('DEBUG optimization EXCEPCION: '+e.message);msg.textContent='Error al optimizar ruta: '+e.message;});
     } else {
       var ordenIdx=lista.map(function(_,i){return i;});
       pedirDirections(allCoords,ordenIdx);
