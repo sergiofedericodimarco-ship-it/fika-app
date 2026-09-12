@@ -11,8 +11,6 @@
 <title>FIKA</title>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&family=Raleway:wght@300;400;500;700&family=Jost:wght@300;400;500&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 :root{
   --bg:#1a2744;--bg2:#1f2f50;--bg3:#243659;
@@ -21,6 +19,7 @@
   --accent:#c9a34f;--accent2:#b8903a;
   --ok:#5ab88a;--danger:#e05555;
 }
+body.light-theme #app{--bg:#f7f3e8;--bg2:#ffffff;--bg3:#efe8d4;--border:rgba(120,90,30,0.15);--border2:rgba(120,90,30,0.35);--text:#2a2015;--text2:rgba(42,32,21,0.72);--text3:rgba(42,32,21,0.45);--accent:#9a7218;--accent2:#87640f;--ok:#2f8f5c;--danger:#c23d3d}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Jost',sans-serif;overflow:hidden}
 @media(max-width:767px){#app,#app .pedido-nombre,#app .pedido-det,#app .pedido-fecha,#app .mnav,#app .badge,#app .sec-lbl,#app .card,#app .btn-p,#app .btn-s,#app .btn-d,#app .btn-ok{font-family:'Jost',sans-serif!important}}
@@ -216,6 +215,7 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
 .btn-del-pedido{width:30px;height:30px;border-radius:50%;background:rgba(224,85,85,0.1);border:0.5px solid rgba(224,85,85,0.3);color:var(--danger);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}</style>
 </head>
 <body>
+<div id="toast-notif-wrap" style="position:fixed;top:12px;right:12px;z-index:9999;display:flex;flex-direction:column;gap:8px;max-width:320px"></div>
 
 <!-- LOGIN -->
 <div id="login-screen">
@@ -257,6 +257,7 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
     <button class="mnav" onclick="showMob('stock')" id="mn-stock">Stock</button>
     <button class="mnav" onclick="showMob('compras')" id="mn-compras">Compras</button>
     <button class="mnav" onclick="showMob('historial-mob')" id="mn-historial-mob">Historial</button>
+    <button class="mnav" onclick="showMob('hoja-ruta-mob')" id="mn-hoja-ruta-mob">Hoja ruta</button>
   </div>
   <div id="mob-screens">
     <div class="mscreen active" id="ms-pedidos">
@@ -337,7 +338,23 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
       <button class="btn-ok" onclick="exportarHistorialExcel()">Exportar Excel</button>
       <div id="hist-mob-empty" class="empty" style="display:none"><div class="empty-icon">&#128202;</div>Sin datos históricos aún.</div>
     </div>
+    <div class="mscreen" id="ms-hoja-ruta-mob">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px">
+        <div class="sec-lbl" style="margin:0">Hoja de ruta del cadete</div>
+        <div style="display:flex;gap:6px">
+          <button class="btn-ol" style="margin:0;padding:6px 10px;font-size:11px" onclick="renderHojaRuta()">&#8635; Actualizar</button>
+          <button class="btn-p" style="margin:0;padding:6px 10px;font-size:11px" onclick="publicarRecorrido()">Publicar</button>
+          <button id="btn-toggle-cadete-mob" class="btn-ol" style="margin:0;padding:6px 10px;font-size:11px" onclick="toggleRecorridoCadete()">Habilitar</button>
+        </div>
+      </div>
+      <div id="hoja-ruta-estado-mob" style="font-size:11px;color:var(--text3);margin-bottom:12px"></div>
+      <div class="sec-lbl">Recorrido</div>
+      <div id="hoja-ruta-lista-mob"></div>
+      <div class="sec-lbl" style="margin-top:16px">Estado en tiempo real</div>
+      <div id="hoja-ruta-estados-mob"></div>
+    </div>
   <button class="fab" id="fab-btn" onclick="abrirFab()">+</button>
+  <button id="btn-tema-mob" onclick="toggleTemaMobile()" style="position:fixed;left:16px;bottom:78px;z-index:50;width:40px;height:40px;border-radius:50%;background:var(--bg2);border:0.5px solid var(--border2);color:var(--accent);font-size:16px;cursor:pointer">&#9788;</button>
 </div>
 
 <!-- DESKTOP APP -->
@@ -841,6 +858,7 @@ async function doLogin(){
     sessionStorage.setItem('fika-auth','1');
     document.getElementById('login-screen').style.display='none';
     await iniciarApp();
+    setInterval(chequearNotificacionesCadete,20000);
   } else {
     document.getElementById('lerr').style.display='block';
   }
@@ -1852,152 +1870,116 @@ function calcularRuta(){
   var zonaA=lista.filter(function(p){return detectarCiudad(p.ciudad)===inicioRuta;});
   var zonaB=lista.filter(function(p){return detectarCiudad(p.ciudad)!==inicioRuta;});
   var listaOrd=zonaA.concat(zonaB);
+  var key=loadApiKey();
   var msg=document.getElementById('rep-msg');msg.className='';msg.style.cssText='border-radius:8px;padding:9px 13px;font-size:12px;margin-bottom:12px;background:rgba(201,163,79,0.08);border:0.5px solid rgba(201,163,79,0.2);color:var(--accent)';msg.textContent='Calculando ruta...';msg.style.display='block';
-  _ejecutarRuta(listaOrd,null,msg);
+  _ejecutarRuta(listaOrd,key,msg);
 }
 
 function _ejecutarRuta(lista,key,msg,optimizar){
   if(optimizar===undefined)optimizar=true;
-  msg.textContent='Calculando ruta...';
-  var ORIGEN_COORDS=[-65.2144,-26.8121]; // Pedro de Villalba 400, Yerba Buena
+  var ORIGEN_DIR='Pedro de Villalba 400, Yerba Buena, Tucuman, Argentina';
+  var ORIGEN_LATLNG={lat:-26.8121,lng:-65.2144};
 
-  function geocodificar(dir,ciudad,cb){
-    var esYB=/yerba\s*buena/i.test(ciudad||'');
-    var focoLat=esYB?-26.8083:-26.8241, focoLon=esYB?-65.2938:-65.2226;
-    var url='https://api.openrouteservice.org/geocode/search?api_key='+ORS_KEY+'&text='+encodeURIComponent(dir+', '+(ciudad||'Tucuman')+', Tucuman, Argentina')+'&boundary.circle.lat=-26.82&boundary.circle.lon=-65.22&boundary.circle.radius=45&focus.point.lat='+focoLat+'&focus.point.lon='+focoLon+'&size=1';
-    fetch(url).then(function(r){return r.json();}).then(function(d){
-      if(d.features&&d.features.length>0){cb(d.features[0].geometry.coordinates);}
-      else{cb(null);}
-    }).catch(function(){cb(null);});
-  }
-  // Reintenta hasta 'intentos' veces si la consulta falla por red (ej: muchas consultas juntas)
-  function geocodificarConReintento(dir,ciudad,intentos,cb){
-    geocodificar(dir,ciudad,function(c){
-      if(c||intentos<=0){cb(c);return;}
-      setTimeout(function(){geocodificarConReintento(dir,ciudad,intentos-1,cb);},500);
+  function construirYRenderizar(response,ordenados){
+    var route=response.routes[0];
+    var _horaInput=document.getElementById('hora-inicio-reparto')?document.getElementById('hora-inicio-reparto').value:'09:00';
+    var _hp=_horaInput.split(':');var _inicioMin=parseInt(_hp[0])*60+(parseInt(_hp[1])||0);
+    var tAcum=_inicioMin;var distT=0;var durT=0;
+
+    var conHorario=ordenados.map(function(p,i){
+      var leg=route.legs[i]||{};
+      var durSeg=Math.round((leg.duration?leg.duration.value:0)/60)+MIN_PARADA;
+      tAcum+=durSeg;
+      distT+=(leg.distance?leg.distance.value:0);
+      durT+=(leg.duration?leg.duration.value:0);
+      return Object.assign({},p,{horarioEntrega:fromMin(tAcum),num:i+1});
     });
-  }
-  // Validar que la coordenada resuelta quede dentro de la provincia de Tucumán
-  function coordEnTucuman(c){
-    if(!c)return false;
-    var lon=c[0],lat=c[1];
-    return lat>=-28.5&&lat<=-25.5&&lon>=-66.5&&lon<=-64.0;
-  }
 
-  // Geocodificar los domicilios de a uno por vez (no todos juntos), para no saturar la conexión
-  var coords=[];var direccionesFallidas=[];
-  function geocodificarSecuencial(idx){
-    if(idx>=lista.length){calcularRutaORS();return;}
-    var p=lista[idx];
-    msg.textContent='Ubicando direcciones... ('+(idx+1)+'/'+lista.length+')';
-    geocodificarConReintento(p.domicilio||'',p.ciudad||'San Miguel de Tucumán',2,function(c){
-      if(c&&!coordEnTucuman(c))c=null;
-      if(!c)direccionesFallidas.push((p.nombre||'Pedido')+' - '+(p.domicilio||'sin domicilio cargado')+' ('+(p.ciudad||'sin ciudad')+')');
-      coords[idx]=c;
-      setTimeout(function(){geocodificarSecuencial(idx+1);},200);
+    conHorario.forEach(function(c){
+      var arr=pedidosImportados.length>0?pedidosImportados:pedidos;
+      var idx=arr.findIndex(function(x){return x.id===c.id;});
+      if(idx>=0){arr[idx].horarioEntrega=c.horarioEntrega;arr[idx].num=c.num;}
     });
+    cadeteOrden=conHorario.map(function(c){return c.id;});cadeteOrdenManual=false;
+    renderRepClientes(conHorario);
+
+    var dkm=(distT/1000).toFixed(1);var dmin=Math.round(durT/60)+conHorario.length*MIN_PARADA;
+    var rc=document.getElementById('rep-resumen-rows');rc.innerHTML='';
+    var zl=inicioRuta==='YB'?'Yerba Buena primero':'San Miguel primero';
+    [['Zona inicio',zl],['Paradas',conHorario.length+' clientes'],['Distancia',dkm+' km'],['Duración estimada',dmin+' min'],['Fin estimado',fromMin(_inicioMin+dmin)]].forEach(function(r){
+      var row=document.createElement('div');row.style.cssText='display:flex;justify-content:space-between;padding:6px 0;border-bottom:0.5px solid var(--border);font-size:13px';
+      var l=document.createElement('span');l.style.color='var(--text2)';l.textContent=r[0];
+      var v=document.createElement('span');v.textContent=r[1];
+      row.appendChild(l);row.appendChild(v);rc.appendChild(row);
+    });
+    document.getElementById('rep-resumen').style.display='block';
+
+    // Mapa con Google Maps
+    var mb=document.getElementById('rep-map');mb.innerHTML='';mb.style.padding='0';
+    var md=document.createElement('div');md.style.cssText='width:100%;height:100%';mb.appendChild(md);
+    var map=new google.maps.Map(md,{center:ORIGEN_LATLNG,zoom:12});
+    var renderer=new google.maps.DirectionsRenderer({map:map,directions:response,suppressMarkers:true,polylineOptions:{strokeColor:'#c9a34f',strokeWeight:4,strokeOpacity:0.8}});
+
+    var iconOrigen={path:google.maps.SymbolPath.CIRCLE,scale:7,fillColor:'#5ab88a',fillOpacity:1,strokeColor:'#fff',strokeWeight:2};
+    new google.maps.Marker({position:ORIGEN_LATLNG,map:map,icon:iconOrigen,title:'Origen'});
+    conHorario.forEach(function(p,i){
+      var leg=route.legs[i];if(!leg)return;
+      var pos=leg.end_location;
+      var marker=new google.maps.Marker({
+        position:pos,map:map,
+        label:{text:String(i+1),color:'#0f1923',fontSize:'11px',fontWeight:'700'},
+        icon:{path:google.maps.SymbolPath.CIRCLE,scale:11,fillColor:'#c9a34f',fillOpacity:1,strokeColor:'#fff',strokeWeight:2}
+      });
+      var info=new google.maps.InfoWindow({content:'<div style="color:#0f1923"><b>'+(i+1)+'. '+p.nombre+'</b><br>'+p.domicilio+'<br>'+p.horarioEntrega+'</div>'});
+      marker.addListener('click',function(){info.open(map,marker);});
+    });
+
+    var horaIni=document.getElementById('hora-inicio-reparto')?document.getElementById('hora-inicio-reparto').value:'09:00';
+    msg.style.cssText='border-radius:8px;padding:9px 13px;font-size:12px;margin-bottom:12px;background:rgba(90,184,138,0.1);border:0.5px solid rgba(90,184,138,0.3);color:var(--ok)';
+    msg.textContent='Ruta calculada con '+conHorario.length+' paradas. Salida '+horaIni+' hs.';
   }
-  geocodificarSecuencial(0);
 
-  function calcularRutaORS(){
-    var nulls=coords.filter(function(c){return !c;});
-    if(nulls.length>0){msg.textContent='No se pudo ubicar la dirección de: '+direccionesFallidas.join(' | ')+'. Revisá esos domicilios y volvé a intentar.';return;}
-
-    var allCoords=[ORIGEN_COORDS].concat(coords);
-
-    function pedirDirections(coordsOrden,ordenIdx){
-      var body={coordinates:coordsOrden,instructions:false};
-      fetch('https://api.openrouteservice.org/v2/directions/driving-car/json',{
-        method:'POST',
-        headers:{'Content-Type':'application/json','Authorization':ORS_KEY},
-        body:JSON.stringify(body)
-      }).then(function(r){return r.json();}).then(function(data){
-        if(!data.routes||data.routes.length===0){msg.textContent='Error al calcular ruta.';return;}
-
-        var route=data.routes[0];
-        var segments=route.segments;
-        var _horaInput=document.getElementById('hora-inicio-reparto')?document.getElementById('hora-inicio-reparto').value:'09:00';
-        var _hp=_horaInput.split(':');var _inicioMin=parseInt(_hp[0])*60+(parseInt(_hp[1])||0);
-        var tAcum=_inicioMin;var distT=0;var durT=0;
-
-        var ordenados=ordenIdx.map(function(i){return lista[i];});
-
-        var conHorario=ordenados.map(function(p,i){
-          var seg=segments[i]||{};
-          var durSeg=Math.round((seg.duration||0)/60)+MIN_PARADA;
-          tAcum+=durSeg;
-          distT+=(seg.distance||0);
-          durT+=(seg.duration||0);
-          return Object.assign({},p,{horarioEntrega:fromMin(tAcum),num:i+1});
-        });
-
-        conHorario.forEach(function(c){
-          var arr=pedidosImportados.length>0?pedidosImportados:pedidos;
-          var idx=arr.findIndex(function(x){return x.id===c.id;});
-          if(idx>=0){arr[idx].horarioEntrega=c.horarioEntrega;arr[idx].num=c.num;}
-        });
-        cadeteOrden=conHorario.map(function(c){return c.id;});cadeteOrdenManual=false;
-        renderRepClientes(conHorario);
-
-        var dkm=(distT/1000).toFixed(1);var dmin=Math.round(durT/60)+conHorario.length*MIN_PARADA;
-        var rc=document.getElementById('rep-resumen-rows');rc.innerHTML='';
-        var zl=inicioRuta==='YB'?'Yerba Buena primero':'San Miguel primero';
-        [['Zona inicio',zl],['Paradas',conHorario.length+' clientes'],['Distancia',dkm+' km'],['Duración estimada',dmin+' min'],['Fin estimado',fromMin(_inicioMin+dmin)]].forEach(function(r){
-          var row=document.createElement('div');row.style.cssText='display:flex;justify-content:space-between;padding:6px 0;border-bottom:0.5px solid var(--border);font-size:13px';
-          var l=document.createElement('span');l.style.color='var(--text2)';l.textContent=r[0];
-          var v=document.createElement('span');v.textContent=r[1];
-          row.appendChild(l);row.appendChild(v);rc.appendChild(row);
-        });
-        document.getElementById('rep-resumen').style.display='block';
-
-        // Mapa con Leaflet
-        var mb=document.getElementById('rep-map');mb.innerHTML='';mb.style.padding='0';
-        var md=document.createElement('div');md.style.cssText='width:100%;height:100%';mb.appendChild(md);
-        var map=L.map(md).setView([-26.82,-65.22],12);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(map);
-
-        // Dibujar ruta
-        if(route.geometry&&route.geometry.coordinates){
-          var latlngs=route.geometry.coordinates.map(function(c){return[c[1],c[0]];});
-          L.polyline(latlngs,{color:'#c9a34f',weight:4,opacity:0.8}).addTo(map);
+  function calcularConGoogle(){
+    var direccionesTexto=lista.map(function(p){return (p.domicilio||'')+', '+(p.ciudad||'San Miguel de Tucumán')+', Tucuman, Argentina';});
+    var waypoints=direccionesTexto.map(function(d){return{location:d,stopover:true};});
+    var directionsService=new google.maps.DirectionsService();
+    msg.textContent='Calculando ruta con Google Maps...';
+    directionsService.route({
+      origin:ORIGEN_DIR,
+      destination:ORIGEN_DIR,
+      waypoints:waypoints,
+      optimizeWaypoints:!!optimizar,
+      travelMode:google.maps.TravelMode.DRIVING
+    },function(response,status){
+      if(status!=='OK'){
+        if(status==='NOT_FOUND'||status==='ZERO_RESULTS'){
+          msg.textContent='No se pudo calcular la ruta: alguna dirección no se encontró. Revisá los domicilios cargados.';
+        } else {
+          msg.textContent='Error al calcular ruta con Google Maps: '+status;
         }
-
-        // Marcadores
-        var iconOrigen=L.divIcon({className:'',html:'<div style="background:#5ab88a;border:2px solid white;border-radius:50%;width:14px;height:14px"></div>'});
-        L.marker([ORIGEN_COORDS[1],ORIGEN_COORDS[0]],{icon:iconOrigen}).addTo(map).bindPopup('Origen');
-        conHorario.forEach(function(p,i){
-          var c=coords[ordenIdx[i]];if(!c)return;
-          var icon=L.divIcon({className:'',html:'<div style="background:#c9a34f;border:2px solid white;border-radius:50%;width:14px;height:14px;display:flex;align-items:center;justify-content:center;font-size:8px;color:#0f1923;font-weight:700">'+(i+1)+'</div>'});
-          L.marker([c[1],c[0]],{icon:icon}).addTo(map).bindPopup('<b>'+(i+1)+'. '+p.nombre+'</b><br>'+p.domicilio+'<br>'+p.horarioEntrega);
-        });
-
-        var horaIni=document.getElementById('hora-inicio-reparto')?document.getElementById('hora-inicio-reparto').value:'09:00';
-        msg.style.cssText='border-radius:8px;padding:9px 13px;font-size:12px;margin-bottom:12px;background:rgba(90,184,138,0.1);border:0.5px solid rgba(90,184,138,0.3);color:var(--ok)';
-        msg.textContent='Ruta calculada con '+conHorario.length+' paradas. Salida '+horaIni+' hs.';
-      }).catch(function(e){msg.textContent='Error al calcular ruta: '+e.message;});
-    }
-
-    if(optimizar&&coords.length>1){
-      msg.textContent='Optimizando orden de entregas...';
-      var jobs=coords.map(function(c,i){return{id:i+1,location:c};});
-      var vehicles=[{id:1,profile:'driving-car',start:ORIGEN_COORDS,end:ORIGEN_COORDS}];
-      fetch('https://api.openrouteservice.org/optimization',{
-        method:'POST',
-        headers:{'Content-Type':'application/json','Authorization':ORS_KEY},
-        body:JSON.stringify({jobs:jobs,vehicles:vehicles})
-      }).then(function(r){return r.json();}).then(function(optData){
-        if(!optData.routes||optData.routes.length===0){msg.textContent='Error al optimizar orden de entregas.';return;}
-        var steps=optData.routes[0].steps.filter(function(s){return s.type==='job';});
-        var ordenIdx=steps.map(function(s){return s.job-1;});
-        var coordsOrden=[ORIGEN_COORDS].concat(ordenIdx.map(function(i){return coords[i];}));
-        msg.textContent='Calculando ruta...';
-        pedirDirections(coordsOrden,ordenIdx);
-      }).catch(function(e){msg.textContent='Error al optimizar ruta: '+e.message;});
-    } else {
-      var ordenIdx=lista.map(function(_,i){return i;});
-      pedirDirections(allCoords,ordenIdx);
-    }
+        return;
+      }
+      var route=response.routes[0];
+      var ordenados=lista;
+      if(optimizar&&route.waypoint_order){
+        ordenados=route.waypoint_order.map(function(i){return lista[i];});
+      }
+      construirYRenderizar(response,ordenados);
+    });
   }
+
+  function cargarGoogleMapsYCalcular(){
+    if(window.google&&window.google.maps){calcularConGoogle();return;}
+    if(!key){msg.textContent='Guardá tu API Key de Google Maps arriba, en Reparto, antes de calcular.';return;}
+    msg.textContent='Cargando Google Maps...';
+    window._mapsReadyReparto=function(){calcularConGoogle();};
+    var sc=document.createElement('script');
+    sc.src='https://maps.googleapis.com/maps/api/js?key='+key+'&callback=_mapsReadyReparto&language=es&region=AR';
+    sc.onerror=function(){msg.textContent='Error al cargar Google Maps. Revisá que la API Key sea correcta y tenga habilitadas las APIs de Directions y Maps JavaScript.';};
+    document.head.appendChild(sc);
+  }
+
+  cargarGoogleMapsYCalcular();
 }
 
 function calcularRutaDesdeCadete(){
@@ -2005,8 +1987,9 @@ function calcularRutaDesdeCadete(){
   var todos=pedidosImportados.length>0?pedidosImportados:pedidos;
   var lista=cadeteOrden.map(function(id){return todos.find(function(x){return x.id===id;});}).filter(function(p){return p&&p.domicilio&&p.domicilio!=='Coordinar';});
   if(lista.length===0){alert('Sin pedidos con domicilio en el orden de Cadete.');return;}
+  var key=loadApiKey();
   var msg=document.getElementById('rep-msg');msg.style.cssText='border-radius:8px;padding:9px 13px;font-size:12px;margin-bottom:12px;background:rgba(201,163,79,0.08);border:0.5px solid rgba(201,163,79,0.2);color:var(--accent)';msg.textContent='Calculando con orden de Cadete...';msg.style.display='block';
-  _ejecutarRuta(lista,null,msg,false);
+  _ejecutarRuta(lista,key,msg,false);
 }
 
 // ── CADETE ────────────────────────────────────────────────────
@@ -3399,7 +3382,7 @@ function initLayout(){
 window.addEventListener('resize',function(){initLayout();});
 
 // ── NAVEGACION ────────────────────────────────────────────────
-function showMob(id){document.querySelectorAll('.mscreen').forEach(function(s){s.classList.remove('active');});document.querySelectorAll('.mnav').forEach(function(b){b.classList.remove('active');});document.getElementById('ms-'+id).classList.add('active');document.getElementById('mn-'+id).classList.add('active');if(id==='pedidos')renderPedidos();if(id==='semana')renderSemana();if(id==='clientes')renderClientesMob();if(id==='cadete-mob')renderCadeteMob();if(id==='historial-mob')renderHistorialMob();if(id==='cobros')renderCobros();if(id==='stock'){renderStock();renderCongelados();}if(id==='compras')renderCompras();}
+function showMob(id){document.querySelectorAll('.mscreen').forEach(function(s){s.classList.remove('active');});document.querySelectorAll('.mnav').forEach(function(b){b.classList.remove('active');});document.getElementById('ms-'+id).classList.add('active');document.getElementById('mn-'+id).classList.add('active');if(id==='pedidos')renderPedidos();if(id==='semana')renderSemana();if(id==='clientes')renderClientesMob();if(id==='cadete-mob')renderCadeteMob();if(id==='historial-mob')renderHistorialMob();if(id==='cobros')renderCobros();if(id==='stock'){renderStock();renderCongelados();}if(id==='compras')renderCompras();if(id==='hoja-ruta-mob')renderHojaRuta();}
 function showDesk(id){document.querySelectorAll('.dscreen').forEach(function(s){s.classList.remove('active');});document.querySelectorAll('.dtab').forEach(function(t){t.classList.remove('active');});document.getElementById(id).classList.add('active');document.getElementById('dt-'+id).classList.add('active');if(id==='d-pedidos')renderDeskPedidos();if(id==='d-produccion')renderProdItems();if(id==='d-reparto'){loadApiKey();poblarFechasReparto();renderRepClientes();}if(id==='d-cadete')renderCadete();if(id==='d-stock'){renderDeskStock();renderCongeladosDesk();}if(id==='d-clientes')renderClientesDesk();if(id==='d-cobros')renderCobrosDesk();if(id==='d-precios')renderPrecios();if(id==='d-historial')renderHistorial();if(id==='d-compras'){renderComprasDesk();renderComprasRealizadasDesk();}if(id==='d-hoja-ruta'){renderHojaRuta();}}
 function abrirFab(){var s=document.querySelector('.mscreen.active').id.replace('ms-','');if(['pedidos','semana','clientes'].includes(s))abrirModalPedido(null);if(s==='compras')abrirModal('modal-compra');}
 
@@ -4362,152 +4345,116 @@ function calcularRuta(){
   var zonaA=lista.filter(function(p){return detectarCiudad(p.ciudad)===inicioRuta;});
   var zonaB=lista.filter(function(p){return detectarCiudad(p.ciudad)!==inicioRuta;});
   var listaOrd=zonaA.concat(zonaB);
+  var key=loadApiKey();
   var msg=document.getElementById('rep-msg');msg.className='';msg.style.cssText='border-radius:8px;padding:9px 13px;font-size:12px;margin-bottom:12px;background:rgba(201,163,79,0.08);border:0.5px solid rgba(201,163,79,0.2);color:var(--accent)';msg.textContent='Calculando ruta...';msg.style.display='block';
-  _ejecutarRuta(listaOrd,null,msg);
+  _ejecutarRuta(listaOrd,key,msg);
 }
 
 function _ejecutarRuta(lista,key,msg,optimizar){
   if(optimizar===undefined)optimizar=true;
-  msg.textContent='Calculando ruta...';
-  var ORIGEN_COORDS=[-65.2144,-26.8121]; // Pedro de Villalba 400, Yerba Buena
+  var ORIGEN_DIR='Pedro de Villalba 400, Yerba Buena, Tucuman, Argentina';
+  var ORIGEN_LATLNG={lat:-26.8121,lng:-65.2144};
 
-  function geocodificar(dir,ciudad,cb){
-    var esYB=/yerba\s*buena/i.test(ciudad||'');
-    var focoLat=esYB?-26.8083:-26.8241, focoLon=esYB?-65.2938:-65.2226;
-    var url='https://api.openrouteservice.org/geocode/search?api_key='+ORS_KEY+'&text='+encodeURIComponent(dir+', '+(ciudad||'Tucuman')+', Tucuman, Argentina')+'&boundary.circle.lat=-26.82&boundary.circle.lon=-65.22&boundary.circle.radius=45&focus.point.lat='+focoLat+'&focus.point.lon='+focoLon+'&size=1';
-    fetch(url).then(function(r){return r.json();}).then(function(d){
-      if(d.features&&d.features.length>0){cb(d.features[0].geometry.coordinates);}
-      else{cb(null);}
-    }).catch(function(){cb(null);});
-  }
-  // Reintenta hasta 'intentos' veces si la consulta falla por red (ej: muchas consultas juntas)
-  function geocodificarConReintento(dir,ciudad,intentos,cb){
-    geocodificar(dir,ciudad,function(c){
-      if(c||intentos<=0){cb(c);return;}
-      setTimeout(function(){geocodificarConReintento(dir,ciudad,intentos-1,cb);},500);
+  function construirYRenderizar(response,ordenados){
+    var route=response.routes[0];
+    var _horaInput=document.getElementById('hora-inicio-reparto')?document.getElementById('hora-inicio-reparto').value:'09:00';
+    var _hp=_horaInput.split(':');var _inicioMin=parseInt(_hp[0])*60+(parseInt(_hp[1])||0);
+    var tAcum=_inicioMin;var distT=0;var durT=0;
+
+    var conHorario=ordenados.map(function(p,i){
+      var leg=route.legs[i]||{};
+      var durSeg=Math.round((leg.duration?leg.duration.value:0)/60)+MIN_PARADA;
+      tAcum+=durSeg;
+      distT+=(leg.distance?leg.distance.value:0);
+      durT+=(leg.duration?leg.duration.value:0);
+      return Object.assign({},p,{horarioEntrega:fromMin(tAcum),num:i+1});
     });
-  }
-  // Validar que la coordenada resuelta quede dentro de la provincia de Tucumán
-  function coordEnTucuman(c){
-    if(!c)return false;
-    var lon=c[0],lat=c[1];
-    return lat>=-28.5&&lat<=-25.5&&lon>=-66.5&&lon<=-64.0;
-  }
 
-  // Geocodificar los domicilios de a uno por vez (no todos juntos), para no saturar la conexión
-  var coords=[];var direccionesFallidas=[];
-  function geocodificarSecuencial(idx){
-    if(idx>=lista.length){calcularRutaORS();return;}
-    var p=lista[idx];
-    msg.textContent='Ubicando direcciones... ('+(idx+1)+'/'+lista.length+')';
-    geocodificarConReintento(p.domicilio||'',p.ciudad||'San Miguel de Tucumán',2,function(c){
-      if(c&&!coordEnTucuman(c))c=null;
-      if(!c)direccionesFallidas.push((p.nombre||'Pedido')+' - '+(p.domicilio||'sin domicilio cargado')+' ('+(p.ciudad||'sin ciudad')+')');
-      coords[idx]=c;
-      setTimeout(function(){geocodificarSecuencial(idx+1);},200);
+    conHorario.forEach(function(c){
+      var arr=pedidosImportados.length>0?pedidosImportados:pedidos;
+      var idx=arr.findIndex(function(x){return x.id===c.id;});
+      if(idx>=0){arr[idx].horarioEntrega=c.horarioEntrega;arr[idx].num=c.num;}
     });
+    cadeteOrden=conHorario.map(function(c){return c.id;});cadeteOrdenManual=false;
+    renderRepClientes(conHorario);
+
+    var dkm=(distT/1000).toFixed(1);var dmin=Math.round(durT/60)+conHorario.length*MIN_PARADA;
+    var rc=document.getElementById('rep-resumen-rows');rc.innerHTML='';
+    var zl=inicioRuta==='YB'?'Yerba Buena primero':'San Miguel primero';
+    [['Zona inicio',zl],['Paradas',conHorario.length+' clientes'],['Distancia',dkm+' km'],['Duración estimada',dmin+' min'],['Fin estimado',fromMin(_inicioMin+dmin)]].forEach(function(r){
+      var row=document.createElement('div');row.style.cssText='display:flex;justify-content:space-between;padding:6px 0;border-bottom:0.5px solid var(--border);font-size:13px';
+      var l=document.createElement('span');l.style.color='var(--text2)';l.textContent=r[0];
+      var v=document.createElement('span');v.textContent=r[1];
+      row.appendChild(l);row.appendChild(v);rc.appendChild(row);
+    });
+    document.getElementById('rep-resumen').style.display='block';
+
+    // Mapa con Google Maps
+    var mb=document.getElementById('rep-map');mb.innerHTML='';mb.style.padding='0';
+    var md=document.createElement('div');md.style.cssText='width:100%;height:100%';mb.appendChild(md);
+    var map=new google.maps.Map(md,{center:ORIGEN_LATLNG,zoom:12});
+    var renderer=new google.maps.DirectionsRenderer({map:map,directions:response,suppressMarkers:true,polylineOptions:{strokeColor:'#c9a34f',strokeWeight:4,strokeOpacity:0.8}});
+
+    var iconOrigen={path:google.maps.SymbolPath.CIRCLE,scale:7,fillColor:'#5ab88a',fillOpacity:1,strokeColor:'#fff',strokeWeight:2};
+    new google.maps.Marker({position:ORIGEN_LATLNG,map:map,icon:iconOrigen,title:'Origen'});
+    conHorario.forEach(function(p,i){
+      var leg=route.legs[i];if(!leg)return;
+      var pos=leg.end_location;
+      var marker=new google.maps.Marker({
+        position:pos,map:map,
+        label:{text:String(i+1),color:'#0f1923',fontSize:'11px',fontWeight:'700'},
+        icon:{path:google.maps.SymbolPath.CIRCLE,scale:11,fillColor:'#c9a34f',fillOpacity:1,strokeColor:'#fff',strokeWeight:2}
+      });
+      var info=new google.maps.InfoWindow({content:'<div style="color:#0f1923"><b>'+(i+1)+'. '+p.nombre+'</b><br>'+p.domicilio+'<br>'+p.horarioEntrega+'</div>'});
+      marker.addListener('click',function(){info.open(map,marker);});
+    });
+
+    var horaIni=document.getElementById('hora-inicio-reparto')?document.getElementById('hora-inicio-reparto').value:'09:00';
+    msg.style.cssText='border-radius:8px;padding:9px 13px;font-size:12px;margin-bottom:12px;background:rgba(90,184,138,0.1);border:0.5px solid rgba(90,184,138,0.3);color:var(--ok)';
+    msg.textContent='Ruta calculada con '+conHorario.length+' paradas. Salida '+horaIni+' hs.';
   }
-  geocodificarSecuencial(0);
 
-  function calcularRutaORS(){
-    var nulls=coords.filter(function(c){return !c;});
-    if(nulls.length>0){msg.textContent='No se pudo ubicar la dirección de: '+direccionesFallidas.join(' | ')+'. Revisá esos domicilios y volvé a intentar.';return;}
-
-    var allCoords=[ORIGEN_COORDS].concat(coords);
-
-    function pedirDirections(coordsOrden,ordenIdx){
-      var body={coordinates:coordsOrden,instructions:false};
-      fetch('https://api.openrouteservice.org/v2/directions/driving-car/json',{
-        method:'POST',
-        headers:{'Content-Type':'application/json','Authorization':ORS_KEY},
-        body:JSON.stringify(body)
-      }).then(function(r){return r.json();}).then(function(data){
-        if(!data.routes||data.routes.length===0){msg.textContent='Error al calcular ruta.';return;}
-
-        var route=data.routes[0];
-        var segments=route.segments;
-        var _horaInput=document.getElementById('hora-inicio-reparto')?document.getElementById('hora-inicio-reparto').value:'09:00';
-        var _hp=_horaInput.split(':');var _inicioMin=parseInt(_hp[0])*60+(parseInt(_hp[1])||0);
-        var tAcum=_inicioMin;var distT=0;var durT=0;
-
-        var ordenados=ordenIdx.map(function(i){return lista[i];});
-
-        var conHorario=ordenados.map(function(p,i){
-          var seg=segments[i]||{};
-          var durSeg=Math.round((seg.duration||0)/60)+MIN_PARADA;
-          tAcum+=durSeg;
-          distT+=(seg.distance||0);
-          durT+=(seg.duration||0);
-          return Object.assign({},p,{horarioEntrega:fromMin(tAcum),num:i+1});
-        });
-
-        conHorario.forEach(function(c){
-          var arr=pedidosImportados.length>0?pedidosImportados:pedidos;
-          var idx=arr.findIndex(function(x){return x.id===c.id;});
-          if(idx>=0){arr[idx].horarioEntrega=c.horarioEntrega;arr[idx].num=c.num;}
-        });
-        cadeteOrden=conHorario.map(function(c){return c.id;});cadeteOrdenManual=false;
-        renderRepClientes(conHorario);
-
-        var dkm=(distT/1000).toFixed(1);var dmin=Math.round(durT/60)+conHorario.length*MIN_PARADA;
-        var rc=document.getElementById('rep-resumen-rows');rc.innerHTML='';
-        var zl=inicioRuta==='YB'?'Yerba Buena primero':'San Miguel primero';
-        [['Zona inicio',zl],['Paradas',conHorario.length+' clientes'],['Distancia',dkm+' km'],['Duración estimada',dmin+' min'],['Fin estimado',fromMin(_inicioMin+dmin)]].forEach(function(r){
-          var row=document.createElement('div');row.style.cssText='display:flex;justify-content:space-between;padding:6px 0;border-bottom:0.5px solid var(--border);font-size:13px';
-          var l=document.createElement('span');l.style.color='var(--text2)';l.textContent=r[0];
-          var v=document.createElement('span');v.textContent=r[1];
-          row.appendChild(l);row.appendChild(v);rc.appendChild(row);
-        });
-        document.getElementById('rep-resumen').style.display='block';
-
-        // Mapa con Leaflet
-        var mb=document.getElementById('rep-map');mb.innerHTML='';mb.style.padding='0';
-        var md=document.createElement('div');md.style.cssText='width:100%;height:100%';mb.appendChild(md);
-        var map=L.map(md).setView([-26.82,-65.22],12);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(map);
-
-        // Dibujar ruta
-        if(route.geometry&&route.geometry.coordinates){
-          var latlngs=route.geometry.coordinates.map(function(c){return[c[1],c[0]];});
-          L.polyline(latlngs,{color:'#c9a34f',weight:4,opacity:0.8}).addTo(map);
+  function calcularConGoogle(){
+    var direccionesTexto=lista.map(function(p){return (p.domicilio||'')+', '+(p.ciudad||'San Miguel de Tucumán')+', Tucuman, Argentina';});
+    var waypoints=direccionesTexto.map(function(d){return{location:d,stopover:true};});
+    var directionsService=new google.maps.DirectionsService();
+    msg.textContent='Calculando ruta con Google Maps...';
+    directionsService.route({
+      origin:ORIGEN_DIR,
+      destination:ORIGEN_DIR,
+      waypoints:waypoints,
+      optimizeWaypoints:!!optimizar,
+      travelMode:google.maps.TravelMode.DRIVING
+    },function(response,status){
+      if(status!=='OK'){
+        if(status==='NOT_FOUND'||status==='ZERO_RESULTS'){
+          msg.textContent='No se pudo calcular la ruta: alguna dirección no se encontró. Revisá los domicilios cargados.';
+        } else {
+          msg.textContent='Error al calcular ruta con Google Maps: '+status;
         }
-
-        // Marcadores
-        var iconOrigen=L.divIcon({className:'',html:'<div style="background:#5ab88a;border:2px solid white;border-radius:50%;width:14px;height:14px"></div>'});
-        L.marker([ORIGEN_COORDS[1],ORIGEN_COORDS[0]],{icon:iconOrigen}).addTo(map).bindPopup('Origen');
-        conHorario.forEach(function(p,i){
-          var c=coords[ordenIdx[i]];if(!c)return;
-          var icon=L.divIcon({className:'',html:'<div style="background:#c9a34f;border:2px solid white;border-radius:50%;width:14px;height:14px;display:flex;align-items:center;justify-content:center;font-size:8px;color:#0f1923;font-weight:700">'+(i+1)+'</div>'});
-          L.marker([c[1],c[0]],{icon:icon}).addTo(map).bindPopup('<b>'+(i+1)+'. '+p.nombre+'</b><br>'+p.domicilio+'<br>'+p.horarioEntrega);
-        });
-
-        var horaIni=document.getElementById('hora-inicio-reparto')?document.getElementById('hora-inicio-reparto').value:'09:00';
-        msg.style.cssText='border-radius:8px;padding:9px 13px;font-size:12px;margin-bottom:12px;background:rgba(90,184,138,0.1);border:0.5px solid rgba(90,184,138,0.3);color:var(--ok)';
-        msg.textContent='Ruta calculada con '+conHorario.length+' paradas. Salida '+horaIni+' hs.';
-      }).catch(function(e){msg.textContent='Error al calcular ruta: '+e.message;});
-    }
-
-    if(optimizar&&coords.length>1){
-      msg.textContent='Optimizando orden de entregas...';
-      var jobs=coords.map(function(c,i){return{id:i+1,location:c};});
-      var vehicles=[{id:1,profile:'driving-car',start:ORIGEN_COORDS,end:ORIGEN_COORDS}];
-      fetch('https://api.openrouteservice.org/optimization',{
-        method:'POST',
-        headers:{'Content-Type':'application/json','Authorization':ORS_KEY},
-        body:JSON.stringify({jobs:jobs,vehicles:vehicles})
-      }).then(function(r){return r.json();}).then(function(optData){
-        if(!optData.routes||optData.routes.length===0){msg.textContent='Error al optimizar orden de entregas.';return;}
-        var steps=optData.routes[0].steps.filter(function(s){return s.type==='job';});
-        var ordenIdx=steps.map(function(s){return s.job-1;});
-        var coordsOrden=[ORIGEN_COORDS].concat(ordenIdx.map(function(i){return coords[i];}));
-        msg.textContent='Calculando ruta...';
-        pedirDirections(coordsOrden,ordenIdx);
-      }).catch(function(e){msg.textContent='Error al optimizar ruta: '+e.message;});
-    } else {
-      var ordenIdx=lista.map(function(_,i){return i;});
-      pedirDirections(allCoords,ordenIdx);
-    }
+        return;
+      }
+      var route=response.routes[0];
+      var ordenados=lista;
+      if(optimizar&&route.waypoint_order){
+        ordenados=route.waypoint_order.map(function(i){return lista[i];});
+      }
+      construirYRenderizar(response,ordenados);
+    });
   }
+
+  function cargarGoogleMapsYCalcular(){
+    if(window.google&&window.google.maps){calcularConGoogle();return;}
+    if(!key){msg.textContent='Guardá tu API Key de Google Maps arriba, en Reparto, antes de calcular.';return;}
+    msg.textContent='Cargando Google Maps...';
+    window._mapsReadyReparto=function(){calcularConGoogle();};
+    var sc=document.createElement('script');
+    sc.src='https://maps.googleapis.com/maps/api/js?key='+key+'&callback=_mapsReadyReparto&language=es&region=AR';
+    sc.onerror=function(){msg.textContent='Error al cargar Google Maps. Revisá que la API Key sea correcta y tenga habilitadas las APIs de Directions y Maps JavaScript.';};
+    document.head.appendChild(sc);
+  }
+
+  cargarGoogleMapsYCalcular();
 }
 
 function calcularRutaDesdeCadete(){
@@ -4515,8 +4462,9 @@ function calcularRutaDesdeCadete(){
   var todos=pedidosImportados.length>0?pedidosImportados:pedidos;
   var lista=cadeteOrden.map(function(id){return todos.find(function(x){return x.id===id;});}).filter(function(p){return p&&p.domicilio&&p.domicilio!=='Coordinar';});
   if(lista.length===0){alert('Sin pedidos con domicilio en el orden de Cadete.');return;}
+  var key=loadApiKey();
   var msg=document.getElementById('rep-msg');msg.style.cssText='border-radius:8px;padding:9px 13px;font-size:12px;margin-bottom:12px;background:rgba(201,163,79,0.08);border:0.5px solid rgba(201,163,79,0.2);color:var(--accent)';msg.textContent='Calculando con orden de Cadete...';msg.style.display='block';
-  _ejecutarRuta(lista,null,msg,false);
+  _ejecutarRuta(lista,key,msg,false);
 }
 
 // ── CADETE ────────────────────────────────────────────────────
@@ -5752,13 +5700,52 @@ function getBandaHoraria(horario){
 
 var recorridoPublicado=[];
 
+function toggleTemaMobile(){
+  var claro=document.body.classList.toggle('light-theme');
+  localStorage.setItem('fika-tema-mobile',claro?'claro':'oscuro');
+  var b=document.getElementById('btn-tema-mob');if(b)b.innerHTML=claro?'&#9789;':'&#9788;';
+}
+(function(){
+  if(localStorage.getItem('fika-tema-mobile')==='claro'){
+    document.addEventListener('DOMContentLoaded',function(){
+      document.body.classList.add('light-theme');
+      var b=document.getElementById('btn-tema-mob');if(b)b.innerHTML='&#9789;';
+    });
+  }
+})();
+
+// ── NOTIFICACIONES DE ENTREGAS/NO ENTREGAS DEL CADETE ────────────
+function mostrarToastNotif(texto,color){
+  var wrap=document.getElementById('toast-notif-wrap');if(!wrap)return;
+  var t=document.createElement('div');
+  t.style.cssText='background:var(--bg2);border:0.5px solid '+color+';border-left:4px solid '+color+';border-radius:8px;padding:10px 14px;font-size:13px;color:var(--text);box-shadow:0 4px 14px rgba(0,0,0,0.3);cursor:pointer';
+  t.textContent=texto;
+  t.onclick=function(){t.remove();};
+  wrap.appendChild(t);
+  setTimeout(function(){if(t.parentNode)t.remove();},8000);
+}
+async function chequearNotificacionesCadete(){
+  var data=await sbGet('notificaciones_cadete','&vista=eq.false&order=hora.asc');
+  if(!data||data.length===0)return;
+  data.forEach(function(n){
+    if(n.estado==='entregado'){mostrarToastNotif('✅ '+(n.nombre||'Pedido')+' - Entregado','var(--ok)');}
+    else if(n.estado==='no_entregado'){mostrarToastNotif('⚠️ '+(n.nombre||'Pedido')+' - No entregado: '+(n.motivo||'sin motivo'),'var(--danger)');}
+    sbUpsert('notificaciones_cadete',{id:n.id,vista:true});
+  });
+  if(document.getElementById('d-hoja-ruta')&&document.getElementById('d-hoja-ruta').classList.contains('active'))renderHojaRuta();
+  if(document.getElementById('ms-hoja-ruta-mob')&&document.getElementById('ms-hoja-ruta-mob').classList.contains('active'))renderHojaRuta();
+}
 async function cargarEstadoCadete(){
   var cfg=await sbGet('config','select=*&key=eq.cadete_recorrido_activo');
   var activo=cfg&&cfg[0]&&cfg[0].value==='true';
   var btn=document.getElementById('btn-toggle-cadete');
+  var btnMob=document.getElementById('btn-toggle-cadete-mob');
   var est=document.getElementById('hoja-ruta-estado');
+  var estMob=document.getElementById('hoja-ruta-estado-mob');
   if(btn){btn.textContent=activo?'Deshabilitar':'Habilitar';btn.style.color=activo?'var(--danger)':'var(--ok)';}
+  if(btnMob){btnMob.textContent=activo?'Deshabilitar':'Habilitar';btnMob.style.color=activo?'var(--danger)':'var(--ok)';}
   if(est){est.textContent=activo?'Recorrido ACTIVO — el cadete puede verlo':'Recorrido deshabilitado';est.style.color=activo?'var(--ok)':'var(--text3)';}
+  if(estMob){estMob.textContent=activo?'Recorrido ACTIVO — el cadete puede verlo':'Recorrido deshabilitado';estMob.style.color=activo?'var(--ok)':'var(--text3)';}
 }
 
 async function toggleRecorridoCadete(){
@@ -5775,6 +5762,8 @@ async function publicarRecorrido(){
   if(lista.length===0){alert('No hay pedidos del cadete para publicar. Filtra por fecha en REPARTO primero.');return;}
   var ids=lista.map(function(p){return p.id;});
   await sbUpsert('config',{key:'cadete_recorrido_ids',value:JSON.stringify(ids)});
+  await sbUpsert('config',{key:'cadete_recorrido_finalizado',value:'false'});
+  await Promise.all(ids.map(function(id){return sbUpsert('pedidos',{id:id,edicion_habilitada:false});}));
   alert(ids.length+' pedidos publicados en la hoja de ruta del cadete.');
   renderHojaRuta();
 }
@@ -5782,55 +5771,84 @@ async function publicarRecorrido(){
 async function renderHojaRuta(){
   cargarEstadoCadete();
   var el=document.getElementById('hoja-ruta-lista');
+  var elMob=document.getElementById('hoja-ruta-lista-mob');
   var el2=document.getElementById('hoja-ruta-estados');
-  if(!el)return;
+  var el2Mob=document.getElementById('hoja-ruta-estados-mob');
+  if(!el&&!elMob)return;
 
   var cfg=await sbGet('config','select=value&key=eq.cadete_recorrido_ids');
   var ids=[];try{ids=JSON.parse(cfg&&cfg[0]?cfg[0].value:'[]');}catch(e){}
-  if(ids.length===0){el.innerHTML='<div style="color:var(--text3);font-size:13px;padding:20px 0">No hay recorrido publicado aun.</div>';return;}
+  var cfgFin=await sbGet('config','select=value&key=eq.cadete_recorrido_finalizado');
+  var finalizado=!!(cfgFin&&cfgFin[0]&&cfgFin[0].value==='true');
+  if(ids.length===0){
+    var vacio='<div style="color:var(--text3);font-size:13px;padding:20px 0">No hay recorrido publicado aun.</div>';
+    if(el)el.innerHTML=vacio;if(elMob)elMob.innerHTML=vacio;
+    return;
+  }
 
   var rows=await sbGet('pedidos','select=*&id=in.('+ids.join(',')+')'  );
   if(!rows)return;
   var ordenados=ids.map(function(id){return rows.find(function(r){return r.id===id;});}).filter(Boolean);
 
-  el.innerHTML='';
-  ordenados.forEach(function(p,i){
-    var row=document.createElement('div');row.style.cssText='padding:10px 0;border-bottom:0.5px solid var(--border);display:flex;align-items:center;gap:10px';
-    var num=document.createElement('div');num.style.cssText='width:24px;height:24px;border-radius:50%;background:var(--accent);color:#0f1923;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0';num.textContent=i+1;
-    var info=document.createElement('div');info.style.flex='1';
-    info.innerHTML='<div style="font-size:13px;font-weight:500;color:var(--text)">'+p.nombre+'</div><div style="font-size:11px;color:var(--text3)">'+(p.domicilio||'Sin domicilio')+(p.horario_entrega?' - '+p.horario_entrega:'')+'</div>';
-    row.appendChild(num);row.appendChild(info);el.appendChild(row);
-  });
+  function pintarLista(cont){
+    if(!cont)return;
+    cont.innerHTML='';
+    ordenados.forEach(function(p,i){
+      var row=document.createElement('div');row.style.cssText='padding:10px 0;border-bottom:0.5px solid var(--border);display:flex;align-items:center;gap:10px';
+      var num=document.createElement('div');num.style.cssText='width:24px;height:24px;border-radius:50%;background:var(--accent);color:#0f1923;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0';num.textContent=i+1;
+      var info=document.createElement('div');info.style.flex='1';
+      info.innerHTML='<div style="font-size:13px;font-weight:500;color:var(--text)">'+p.nombre+'</div><div style="font-size:11px;color:var(--text3)">'+(p.domicilio||'Sin domicilio')+(p.horario_entrega?' - '+p.horario_entrega:'')+'</div>';
+      row.appendChild(num);row.appendChild(info);cont.appendChild(row);
+    });
+  }
+  pintarLista(el);pintarLista(elMob);
 
-  if(el2){
-    el2.innerHTML='';
+  function pintarEstados(cont){
+    if(!cont)return;
+    cont.innerHTML='';
     var efectivoTotal=0;var entregados=0;
     ordenados.forEach(function(p,i){
       var est=p.cadete_status||'pendiente';
       var pago=null;try{pago=p.cadete_pago?JSON.parse(p.cadete_pago):null;}catch(e){}
       if(est==='entregado')entregados++;
       if(pago&&pago.tipo==='efectivo'&&pago.monto)efectivoTotal+=parseInt(pago.monto)||0;
-      var color=est==='entregado'?'var(--ok)':est==='en_camino'?'var(--accent)':'var(--text3)';
-      var row=document.createElement('div');row.style.cssText='padding:10px 0;border-bottom:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between';
+      var color=est==='entregado'?'var(--ok)':est==='no_entregado'?'var(--danger)':est==='en_camino'?'var(--accent)':'var(--text3)';
+      var row=document.createElement('div');row.style.cssText='padding:10px 0;border-bottom:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px';
       var left=document.createElement('div');
-      left.innerHTML='<div style="font-size:13px;color:var(--text);font-weight:500">'+(i+1)+'. '+p.nombre+'</div>'+(pago&&pago.comentario?'<div style="font-size:11px;color:var(--text3);margin-top:2px">'+pago.comentario+'</div>':'');
+      var motivoHtml=est==='no_entregado'&&p.motivo_no_entrega?'<div style="font-size:11px;color:var(--danger);margin-top:2px">Motivo: '+p.motivo_no_entrega+'</div>':'';
+      left.innerHTML='<div style="font-size:13px;color:var(--text);font-weight:500">'+(i+1)+'. '+p.nombre+'</div>'+(pago&&pago.comentario?'<div style="font-size:11px;color:var(--text3);margin-top:2px">'+pago.comentario+'</div>':'')+motivoHtml;
       var right=document.createElement('div');right.style.cssText='text-align:right;flex-shrink:0';
       var estEl=document.createElement('div');estEl.style.cssText='font-size:12px;font-weight:500;color:'+color;
-      estEl.textContent=est==='entregado'?'Entregado':est==='en_camino'?'En camino':'Pendiente';
+      estEl.textContent=est==='entregado'?'Entregado':est==='no_entregado'?'No entregado':est==='en_camino'?'En camino':'Pendiente';
       var pagoEl=document.createElement('div');pagoEl.style.cssText='font-size:11px;color:var(--text3);margin-top:2px';
       pagoEl.textContent=pago?pago.tipo+(pago.monto?' $'+parseInt(pago.monto).toLocaleString('es-AR'):''):'';
       right.appendChild(estEl);right.appendChild(pagoEl);
       var _punt=calcPuntualidad({horaEntregado:p.hora_entregado,horarioDesde:p.horario_desde,horarioHasta:p.horario_hasta});
       if(_punt){var puntEl=document.createElement('div');puntEl.style.cssText='display:inline-block;margin-top:3px;padding:1px 7px;border-radius:20px;font-size:10px;font-weight:600;color:#0f1923;background:'+_punt.color;puntEl.textContent=_punt.label;right.appendChild(puntEl);}
-      row.appendChild(left);row.appendChild(right);el2.appendChild(row);
+      if(finalizado&&!p.edicion_habilitada){
+        var bh=document.createElement('button');bh.textContent='Habilitar edición';bh.style.cssText='margin-top:5px;padding:3px 8px;border-radius:14px;border:0.5px solid var(--border2);background:none;color:var(--accent);font-size:10px;cursor:pointer';
+        (function(id){bh.onclick=function(){habilitarEdicionPedido(id);};})(p.id);
+        right.appendChild(bh);
+      } else if(finalizado&&p.edicion_habilitada){
+        var eh=document.createElement('div');eh.style.cssText='margin-top:5px;font-size:10px;color:var(--accent)';eh.textContent='Edición habilitada';right.appendChild(eh);
+      }
+      row.appendChild(left);row.appendChild(right);cont.appendChild(row);
     });
     var res=document.createElement('div');res.style.cssText='margin-top:14px;background:var(--bg2);border:0.5px solid var(--border2);border-radius:10px;padding:12px';
     res.innerHTML='<div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--text3)">Entregados</span><span style="color:var(--ok);font-weight:500">'+entregados+' / '+ordenados.length+'</span></div>'
       +'<div style="display:flex;justify-content:space-between;font-size:13px;margin-top:8px"><span style="color:var(--text3)">Cobrado en efectivo</span><span style="color:var(--accent);font-weight:500">$'+efectivoTotal.toLocaleString('es-AR')+'</span></div>'
+      +(finalizado?'<div style="margin-top:8px;font-size:11px;color:var(--text3)">🔒 Jorge finalizó el recorrido</div>':'')
       +'<button onclick="renderHojaRuta()" style="width:100%;margin-top:10px;padding:8px;background:none;border:0.5px solid var(--border2);border-radius:8px;color:var(--text2);font-family:Jost,sans-serif;font-size:12px;cursor:pointer">Actualizar estado</button>';
-    el2.appendChild(res);
+    cont.appendChild(res);
   }
+  pintarEstados(el2);pintarEstados(el2Mob);
 }
+
+async function habilitarEdicionPedido(id){
+  await sbUpsert('pedidos',{id:id,edicion_habilitada:true});
+  renderHojaRuta();
+}
+
 
 
 </script>
