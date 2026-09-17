@@ -2605,15 +2605,25 @@ function elegirCliente(item){
   document.getElementById('p-nombre').value=item.nombre;
   cerrarSugerencias();
   var cli=item.cli;
-  if(!cli){// buscar en pedidos pasados
-    var pAnt=pedidos.filter(function(p){return p.nombre.toLowerCase()===item.nombre.toLowerCase();});
-    if(pAnt.length>0){var pU=pAnt[0];if(pU.telefono)document.getElementById('p-tel').value=pU.telefono;if(pU.domicilio&&pU.domicilio!=='Coordinar')document.getElementById('p-dom').value=pU.domicilio;if(pU.piso)document.getElementById('p-piso').value=pU.piso;if(pU.ciudad)document.getElementById('p-ciudad').value=pU.ciudad;if(pU.encargado)document.getElementById('p-enc').value=pU.encargado;}
-  } else {
-    if(cli.telefono)document.getElementById('p-tel').value=cli.telefono;
-    if(cli.domicilio&&cli.domicilio!=='Coordinar')document.getElementById('p-dom').value=cli.domicilio;
-    if(cli.piso)document.getElementById('p-piso').value=cli.piso;
-    if(cli.ciudad)document.getElementById('p-ciudad').value=cli.ciudad;
+  // Pedidos anteriores de este cliente, del mas reciente al mas viejo
+  var pAnt=pedidos.filter(function(p){return (p.nombre||'').toLowerCase()===item.nombre.toLowerCase();})
+    .sort(function(a,b){return (b.fecha||'').localeCompare(a.fecha||'');});
+  // Busca el valor mas reciente que no este vacio, campo por campo
+  function ultimoValor(campo){
+    for(var i=0;i<pAnt.length;i++){
+      var v=pAnt[i][campo];
+      if(v&&String(v).trim()!==''&&v!=='Coordinar')return v;
+    }
+    return null;
   }
+  function setSi(id,valor){var el=document.getElementById(id);if(el&&valor)el.value=valor;}
+
+  // Prioridad: ficha del cliente; si falta el dato ahi, el pedido mas reciente que lo tenga
+  setSi('p-tel',(cli&&cli.telefono)||ultimoValor('telefono'));
+  setSi('p-dom',(cli&&cli.domicilio&&cli.domicilio!=='Coordinar'?cli.domicilio:null)||ultimoValor('domicilio'));
+  setSi('p-piso',(cli&&cli.piso)||ultimoValor('piso'));
+  setSi('p-ciudad',(cli&&cli.ciudad)||ultimoValor('ciudad'));
+  setSi('p-enc',ultimoValor('encargado'));
   actualizarTotalPreview();
 }
 
@@ -5080,15 +5090,25 @@ function elegirCliente(item){
   document.getElementById('p-nombre').value=item.nombre;
   cerrarSugerencias();
   var cli=item.cli;
-  if(!cli){// buscar en pedidos pasados
-    var pAnt=pedidos.filter(function(p){return p.nombre.toLowerCase()===item.nombre.toLowerCase();});
-    if(pAnt.length>0){var pU=pAnt[0];if(pU.telefono)document.getElementById('p-tel').value=pU.telefono;if(pU.domicilio&&pU.domicilio!=='Coordinar')document.getElementById('p-dom').value=pU.domicilio;if(pU.piso)document.getElementById('p-piso').value=pU.piso;if(pU.ciudad)document.getElementById('p-ciudad').value=pU.ciudad;if(pU.encargado)document.getElementById('p-enc').value=pU.encargado;}
-  } else {
-    if(cli.telefono)document.getElementById('p-tel').value=cli.telefono;
-    if(cli.domicilio&&cli.domicilio!=='Coordinar')document.getElementById('p-dom').value=cli.domicilio;
-    if(cli.piso)document.getElementById('p-piso').value=cli.piso;
-    if(cli.ciudad)document.getElementById('p-ciudad').value=cli.ciudad;
+  // Pedidos anteriores de este cliente, del mas reciente al mas viejo
+  var pAnt=pedidos.filter(function(p){return (p.nombre||'').toLowerCase()===item.nombre.toLowerCase();})
+    .sort(function(a,b){return (b.fecha||'').localeCompare(a.fecha||'');});
+  // Busca el valor mas reciente que no este vacio, campo por campo
+  function ultimoValor(campo){
+    for(var i=0;i<pAnt.length;i++){
+      var v=pAnt[i][campo];
+      if(v&&String(v).trim()!==''&&v!=='Coordinar')return v;
+    }
+    return null;
   }
+  function setSi(id,valor){var el=document.getElementById(id);if(el&&valor)el.value=valor;}
+
+  // Prioridad: ficha del cliente; si falta el dato ahi, el pedido mas reciente que lo tenga
+  setSi('p-tel',(cli&&cli.telefono)||ultimoValor('telefono'));
+  setSi('p-dom',(cli&&cli.domicilio&&cli.domicilio!=='Coordinar'?cli.domicilio:null)||ultimoValor('domicilio'));
+  setSi('p-piso',(cli&&cli.piso)||ultimoValor('piso'));
+  setSi('p-ciudad',(cli&&cli.ciudad)||ultimoValor('ciudad'));
+  setSi('p-enc',ultimoValor('encargado'));
   actualizarTotalPreview();
 }
 
