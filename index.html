@@ -5780,7 +5780,16 @@ async function publicarRecorrido(){
   var filFecha=filtroRepartofecha||'';
   var lista=todos.filter(function(p){return (p.encargado||'Cadete')==='Cadete'&&(!filFecha||p.fecha===filFecha);});
   if(lista.length===0){alert('No hay pedidos del cadete para publicar. Filtra por fecha en REPARTO primero.');return;}
-  var ids=lista.map(function(p){return p.id;});
+  var idsDisponibles=lista.map(function(p){return p.id;});
+  var ids;
+  if(cadeteOrden&&cadeteOrden.length>0){
+    // Respetar el orden manual armado en la pestaña CADETE
+    ids=cadeteOrden.filter(function(id){return idsDisponibles.indexOf(id)!==-1;});
+    // Si hay pedidos nuevos que todavia no estan en ese orden manual, se agregan al final (no se pierden)
+    idsDisponibles.forEach(function(id){if(ids.indexOf(id)===-1)ids.push(id);});
+  } else {
+    ids=idsDisponibles;
+  }
   await sbUpsert('config',{key:'cadete_recorrido_ids',value:JSON.stringify(ids)});
   await sbUpsert('config',{key:'cadete_recorrido_finalizado',value:'false'});
   await Promise.all(ids.map(function(id){return sbUpsert('pedidos',{id:id,edicion_habilitada:false});}));
