@@ -1872,13 +1872,21 @@ function calcularRuta(){
   var listaOrd=zonaA.concat(zonaB);
   var key=loadApiKey();
   var msg=document.getElementById('rep-msg');msg.className='';msg.style.cssText='border-radius:8px;padding:9px 13px;font-size:12px;margin-bottom:12px;background:rgba(201,163,79,0.08);border:0.5px solid rgba(201,163,79,0.2);color:var(--accent)';msg.textContent='Calculando ruta...';msg.style.display='block';
-  _ejecutarRuta(listaOrd,key,msg);
+  _ejecutarRuta(listaOrd,key,msg,true,[zonaA,zonaB]);
 }
 
-function _ejecutarRuta(lista,key,msg,optimizar){
+function _ejecutarRuta(lista,key,msg,optimizar,grupos){
   if(optimizar===undefined)optimizar=true;
   var ORIGEN_DIR='Pedro de Villalba 400, Yerba Buena, Tucuman, Argentina';
   var ORIGEN_LATLNG={lat:-26.8121,lng:-65.2144};
+
+  function nombreCiudad(cod){
+    if(!cod)return 'San Miguel de Tucumán';
+    if(/yerba/i.test(cod))return 'Yerba Buena';
+    if(cod==='SMT')return 'San Miguel de Tucumán';
+    return cod;
+  }
+  function direccionDe(p){return (p.domicilio||'')+', '+nombreCiudad(p.ciudad)+', Tucuman, Argentina';}
 
   function construirYRenderizar(response,ordenados){
     var route=response.routes[0];
@@ -1939,33 +1947,66 @@ function _ejecutarRuta(lista,key,msg,optimizar){
     msg.textContent='Ruta calculada con '+conHorario.length+' paradas. Salida '+horaIni+' hs.';
   }
 
+  function manejarError(status){
+    if(status==='NOT_FOUND'||status==='ZERO_RESULTS'){
+      msg.textContent='No se pudo calcular la ruta: alguna dirección no se encontró. Revisá los domicilios cargados.';
+    } else {
+      msg.textContent='Error al calcular ruta con Google Maps: '+status;
+    }
+  }
+
   function calcularConGoogle(){
-    var direccionesTexto=lista.map(function(p){return (p.domicilio||'')+', '+(p.ciudad||'San Miguel de Tucumán')+', Tucuman, Argentina';});
-    var waypoints=direccionesTexto.map(function(d){return{location:d,stopover:true};});
     var directionsService=new google.maps.DirectionsService();
-    msg.textContent='Calculando ruta con Google Maps...';
-    directionsService.route({
-      origin:ORIGEN_DIR,
-      destination:ORIGEN_DIR,
-      waypoints:waypoints,
-      optimizeWaypoints:!!optimizar,
-      travelMode:google.maps.TravelMode.DRIVING
-    },function(response,status){
-      if(status!=='OK'){
-        if(status==='NOT_FOUND'||status==='ZERO_RESULTS'){
-          msg.textContent='No se pudo calcular la ruta: alguna dirección no se encontró. Revisá los domicilios cargados.';
-        } else {
-          msg.textContent='Error al calcular ruta con Google Maps: '+status;
-        }
-        return;
-      }
-      var route=response.routes[0];
-      var ordenados=lista;
-      if(optimizar&&route.waypoint_order){
-        ordenados=route.waypoint_order.map(function(i){return lista[i];});
-      }
-      construirYRenderizar(response,ordenados);
-    });
+
+    function rutaFinal(listaFinal){
+      var waypoints=listaFinal.map(function(p){return{location:direccionDe(p),stopover:true};});
+      msg.textContent='Calculando ruta con Google Maps...';
+      directionsService.route({
+        origin:ORIGEN_DIR,destination:ORIGEN_DIR,waypoints:waypoints,
+        optimizeWaypoints:false,travelMode:google.maps.TravelMode.DRIVING
+      },function(response,status){
+        if(status!=='OK'){manejarError(status);return;}
+        construirYRenderizar(response,listaFinal);
+      });
+    }
+
+    function ordenOptimoDeGrupo(grupo,cb){
+      if(grupo.length<=1){cb(grupo);return;}
+      var waypoints=grupo.map(function(p){return{location:direccionDe(p),stopover:true};});
+      directionsService.route({
+        origin:ORIGEN_DIR,destination:ORIGEN_DIR,waypoints:waypoints,
+        optimizeWaypoints:true,travelMode:google.maps.TravelMode.DRIVING
+      },function(response,status){
+        if(status!=='OK'){cb(grupo);return;}
+        var route=response.routes[0];
+        var ord=route.waypoint_order?route.waypoint_order.map(function(i){return grupo[i];}):grupo;
+        cb(ord);
+      });
+    }
+
+    if(optimizar&&grupos&&grupos.length===2&&grupos[0].length>0&&grupos[1].length>0){
+      // Optimizar cada zona por separado, para respetar cuál va primero
+      msg.textContent='Optimizando orden dentro de cada zona...';
+      ordenOptimoDeGrupo(grupos[0],function(ordA){
+        ordenOptimoDeGrupo(grupos[1],function(ordB){
+          rutaFinal(ordA.concat(ordB));
+        });
+      });
+    } else if(optimizar){
+      var waypoints=lista.map(function(p){return{location:direccionDe(p),stopover:true};});
+      msg.textContent='Calculando ruta con Google Maps...';
+      directionsService.route({
+        origin:ORIGEN_DIR,destination:ORIGEN_DIR,waypoints:waypoints,
+        optimizeWaypoints:true,travelMode:google.maps.TravelMode.DRIVING
+      },function(response,status){
+        if(status!=='OK'){manejarError(status);return;}
+        var route=response.routes[0];
+        var ordenados=route.waypoint_order?route.waypoint_order.map(function(i){return lista[i];}):lista;
+        construirYRenderizar(response,ordenados);
+      });
+    } else {
+      rutaFinal(lista);
+    }
   }
 
   function cargarGoogleMapsYCalcular(){
@@ -4357,13 +4398,21 @@ function calcularRuta(){
   var listaOrd=zonaA.concat(zonaB);
   var key=loadApiKey();
   var msg=document.getElementById('rep-msg');msg.className='';msg.style.cssText='border-radius:8px;padding:9px 13px;font-size:12px;margin-bottom:12px;background:rgba(201,163,79,0.08);border:0.5px solid rgba(201,163,79,0.2);color:var(--accent)';msg.textContent='Calculando ruta...';msg.style.display='block';
-  _ejecutarRuta(listaOrd,key,msg);
+  _ejecutarRuta(listaOrd,key,msg,true,[zonaA,zonaB]);
 }
 
-function _ejecutarRuta(lista,key,msg,optimizar){
+function _ejecutarRuta(lista,key,msg,optimizar,grupos){
   if(optimizar===undefined)optimizar=true;
   var ORIGEN_DIR='Pedro de Villalba 400, Yerba Buena, Tucuman, Argentina';
   var ORIGEN_LATLNG={lat:-26.8121,lng:-65.2144};
+
+  function nombreCiudad(cod){
+    if(!cod)return 'San Miguel de Tucumán';
+    if(/yerba/i.test(cod))return 'Yerba Buena';
+    if(cod==='SMT')return 'San Miguel de Tucumán';
+    return cod;
+  }
+  function direccionDe(p){return (p.domicilio||'')+', '+nombreCiudad(p.ciudad)+', Tucuman, Argentina';}
 
   function construirYRenderizar(response,ordenados){
     var route=response.routes[0];
@@ -4424,33 +4473,66 @@ function _ejecutarRuta(lista,key,msg,optimizar){
     msg.textContent='Ruta calculada con '+conHorario.length+' paradas. Salida '+horaIni+' hs.';
   }
 
+  function manejarError(status){
+    if(status==='NOT_FOUND'||status==='ZERO_RESULTS'){
+      msg.textContent='No se pudo calcular la ruta: alguna dirección no se encontró. Revisá los domicilios cargados.';
+    } else {
+      msg.textContent='Error al calcular ruta con Google Maps: '+status;
+    }
+  }
+
   function calcularConGoogle(){
-    var direccionesTexto=lista.map(function(p){return (p.domicilio||'')+', '+(p.ciudad||'San Miguel de Tucumán')+', Tucuman, Argentina';});
-    var waypoints=direccionesTexto.map(function(d){return{location:d,stopover:true};});
     var directionsService=new google.maps.DirectionsService();
-    msg.textContent='Calculando ruta con Google Maps...';
-    directionsService.route({
-      origin:ORIGEN_DIR,
-      destination:ORIGEN_DIR,
-      waypoints:waypoints,
-      optimizeWaypoints:!!optimizar,
-      travelMode:google.maps.TravelMode.DRIVING
-    },function(response,status){
-      if(status!=='OK'){
-        if(status==='NOT_FOUND'||status==='ZERO_RESULTS'){
-          msg.textContent='No se pudo calcular la ruta: alguna dirección no se encontró. Revisá los domicilios cargados.';
-        } else {
-          msg.textContent='Error al calcular ruta con Google Maps: '+status;
-        }
-        return;
-      }
-      var route=response.routes[0];
-      var ordenados=lista;
-      if(optimizar&&route.waypoint_order){
-        ordenados=route.waypoint_order.map(function(i){return lista[i];});
-      }
-      construirYRenderizar(response,ordenados);
-    });
+
+    function rutaFinal(listaFinal){
+      var waypoints=listaFinal.map(function(p){return{location:direccionDe(p),stopover:true};});
+      msg.textContent='Calculando ruta con Google Maps...';
+      directionsService.route({
+        origin:ORIGEN_DIR,destination:ORIGEN_DIR,waypoints:waypoints,
+        optimizeWaypoints:false,travelMode:google.maps.TravelMode.DRIVING
+      },function(response,status){
+        if(status!=='OK'){manejarError(status);return;}
+        construirYRenderizar(response,listaFinal);
+      });
+    }
+
+    function ordenOptimoDeGrupo(grupo,cb){
+      if(grupo.length<=1){cb(grupo);return;}
+      var waypoints=grupo.map(function(p){return{location:direccionDe(p),stopover:true};});
+      directionsService.route({
+        origin:ORIGEN_DIR,destination:ORIGEN_DIR,waypoints:waypoints,
+        optimizeWaypoints:true,travelMode:google.maps.TravelMode.DRIVING
+      },function(response,status){
+        if(status!=='OK'){cb(grupo);return;}
+        var route=response.routes[0];
+        var ord=route.waypoint_order?route.waypoint_order.map(function(i){return grupo[i];}):grupo;
+        cb(ord);
+      });
+    }
+
+    if(optimizar&&grupos&&grupos.length===2&&grupos[0].length>0&&grupos[1].length>0){
+      // Optimizar cada zona por separado, para respetar cuál va primero
+      msg.textContent='Optimizando orden dentro de cada zona...';
+      ordenOptimoDeGrupo(grupos[0],function(ordA){
+        ordenOptimoDeGrupo(grupos[1],function(ordB){
+          rutaFinal(ordA.concat(ordB));
+        });
+      });
+    } else if(optimizar){
+      var waypoints=lista.map(function(p){return{location:direccionDe(p),stopover:true};});
+      msg.textContent='Calculando ruta con Google Maps...';
+      directionsService.route({
+        origin:ORIGEN_DIR,destination:ORIGEN_DIR,waypoints:waypoints,
+        optimizeWaypoints:true,travelMode:google.maps.TravelMode.DRIVING
+      },function(response,status){
+        if(status!=='OK'){manejarError(status);return;}
+        var route=response.routes[0];
+        var ordenados=route.waypoint_order?route.waypoint_order.map(function(i){return lista[i];}):lista;
+        construirYRenderizar(response,ordenados);
+      });
+    } else {
+      rutaFinal(lista);
+    }
   }
 
   function cargarGoogleMapsYCalcular(){
