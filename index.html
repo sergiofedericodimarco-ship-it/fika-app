@@ -890,8 +890,15 @@ function asignarIdsPedidos(){
   FIKA_ID_COUNTER=maxNum+1;
 }
 
-function nextFikaId(){
+async function nextFikaId(){
   var maxNum=349;
+  try{
+    var top=await sbGet('pedidos','&select=fika_id&fika_id=not.is.null&order=fika_id.desc&limit=1');
+    if(top&&top.length>0&&top[0].fika_id){
+      var nTop=parseInt(String(top[0].fika_id).replace('FIKA-',''));
+      if(!isNaN(nTop)&&nTop>maxNum)maxNum=nTop;
+    }
+  }catch(e){}
   pedidos.forEach(function(p){
     if(p.fikaId){var n=parseInt(p.fikaId.replace('FIKA-',''));if(n>maxNum)maxNum=n;}
   });
@@ -1214,11 +1221,14 @@ async function guardarPedido(){
   var tipoPrecioFinal=usarCombo?'Combo':tipoPrecioActual;
   var precioComboFinal=usarCombo?comboDetectado.precio:null;
   var comboNombreFinal=usarCombo?comboDetectado.nombre:null;
-  var nuevoFikaId=pedidoEditId?(pedidos.find(function(x){return x.id===pedidoEditId;})||{}).fikaId||nextFikaId():nextFikaId();
+  var nuevoFikaId=pedidoEditId?((pedidos.find(function(x){return x.id===pedidoEditId;})||{}).fikaId||await nextFikaId()):await nextFikaId();
   var p={id:pedidoEditId||Date.now().toString(),fikaId:nuevoFikaId,clienteId:cli?cli.id:null,nombre:nombre,fecha:document.getElementById('p-fecha').value,telefono:document.getElementById('p-tel').value.trim(),domicilio:document.getElementById('p-dom').value.trim(),piso:document.getElementById('p-piso').value.trim(),ciudad:document.getElementById('p-ciudad').value,encargado:document.getElementById('p-enc').value,notas:document.getElementById('p-notas').value.trim(),pago:document.getElementById('p-pago').checked,tipoPrecio:tipoPrecioFinal,precioCombo:precioComboFinal,comboNombre:comboNombreFinal,entregado:pExist?pExist.entregado||false:false,panes:JSON.parse(JSON.stringify(pQtys)),_etiqueta:pExist?pExist._etiqueta:null,creadoEn:pExist?pExist.creadoEn:new Date().toISOString()};
   if(pedidoEditId){var idx=pedidos.findIndex(function(x){return x.id===pedidoEditId;});if(idx>=0)pedidos[idx]=p;}else pedidos.unshift(p);
   await guardarPedidoSupa(p);
   sincronizarCobro(p);
+  if(pedidoEditId&&pExist&&(pExist.domicilio!==p.domicilio||pExist.ciudad!==p.ciudad)){
+    verificarCambioDomicilioYRecalcular(p.id);
+  }
   // Si no existe como cliente, crearlo
   if(!cli&&nombre){var nCli={id:'cli_'+Date.now(),nombre:nombre,telefono:p.telefono,domicilio:p.domicilio,piso:p.piso,ciudad:p.ciudad,etiqueta:'nuevo',creado_en:new Date().toISOString()};clientes.push(nCli);sbUpsert('clientes',nCli);localStorage.setItem('fika-clientes',JSON.stringify(clientes));actualizarDatalist();}
   cerrarModal('modal-pedido');renderPedidos();checkAlertaPago();
@@ -1863,6 +1873,145 @@ function renderRepClientes(ordenados){
 
 function loadApiKey(){var k=localStorage.getItem('fika-gmaps-key')||'';if(k)document.getElementById('gmaps-key').value=k;return k;}
 function guardarApiKey(){var k=document.getElementById('gmaps-key').value.trim();if(!k){alert('Pegá tu API key.');return;}localStorage.setItem('fika-gmaps-key',k);alert('API key guardada.');}
+
+// ── RECALCULO POR CAMBIO DE DOMICILIO EN PEDIDO YA PUBLICADO ──────
+function nombreCiudadGlobal(cod){
+  if(!cod)return 'San Miguel de Tucumán';
+  if(/yerba/i.test(cod))return 'Yerba Buena';
+  if(cod==='SMT')return 'San Miguel de Tucumán';
+  return cod;
+}
+function asegurarGoogleMaps(key,cb){
+  if(window.google&&window.google.maps){cb();return;}
+  if(!key){return;}
+  window._mapsReadyGlobal=cb;
+  var sc=document.createElement('script');
+  sc.src='https://maps.googleapis.com/maps/api/js?key='+key+'&callback=_mapsReadyGlobal&language=es&region=AR';
+  document.head.appendChild(sc);
+}
+async function verificarCambioDomicilioYRecalcular(pedidoId){
+  try{
+    var cfg=await sbGet('config','&key=eq.cadete_recorrido_ids');
+    var ids=[];try{ids=JSON.parse(cfg&&cfg[0]?cfg[0].value:'[]');}catch(e){}
+    var pos=ids.indexOf(pedidoId);
+    if(pos===-1)return;
+
+    var key=loadApiKey();
+    if(!key)return;
+
+    var arr=pedidosImportados.length>0?pedidosImportados:pedidos;
+    var afectadosIds=ids.slice(pos);
+    var afectados=afectadosIds.map(function(id){return arr.find(function(x){return x.id===id;});}).filter(Boolean);
+    if(afectados.length===0)return;
+
+    var viejos={};
+    afectados.forEach(function(p){viejos[p.id]={horarioEntrega:p.horarioEntrega,horarioDesde:p.horarioDesde,horarioHasta:p.horarioHasta};});
+
+    asegurarGoogleMaps(key,function(){
+      var ORIGEN_DIR='Pedro de Villalba 400, Yerba Buena, Tucuman, Argentina';
+      var origenPaso;
+      if(pos===0){
+        origenPaso=ORIGEN_DIR;
+      } else {
+        var prevId=ids[pos-1];
+        var prev=arr.find(function(x){return x.id===prevId;});
+        origenPaso=prev?((prev.domicilio||'')+', '+nombreCiudadGlobal(prev.ciudad)+', Tucuman, Argentina'):ORIGEN_DIR;
+      }
+      var waypoints=afectados.map(function(p){return{location:(p.domicilio||'')+', '+nombreCiudadGlobal(p.ciudad)+', Tucuman, Argentina',stopover:true};});
+      var directionsService=new google.maps.DirectionsService();
+      directionsService.route({
+        origin:origenPaso,destination:ORIGEN_DIR,waypoints:waypoints,
+        optimizeWaypoints:false,travelMode:google.maps.TravelMode.DRIVING
+      },function(response,status){
+        if(status!=='OK')return;
+
+        var route=response.routes[0];
+        var tAcum;
+        if(pos===0){
+          var horaIni=document.getElementById('hora-inicio-reparto')?document.getElementById('hora-inicio-reparto').value:'09:00';
+          var hp=horaIni.split(':');tAcum=parseInt(hp[0])*60+(parseInt(hp[1])||0);
+        } else {
+          var prevId2=ids[pos-1];
+          var prevArr=pedidosImportados.length>0?pedidosImportados:pedidos;
+          var prevP=prevArr.find(function(x){return x.id===prevId2;});
+          tAcum=prevP&&prevP.horarioEntrega?toMin(prevP.horarioEntrega):(function(){var hp2=(document.getElementById('hora-inicio-reparto')?document.getElementById('hora-inicio-reparto').value:'09:00').split(':');return parseInt(hp2[0])*60+(parseInt(hp2[1])||0);})();
+        }
+
+        var afectadosNotificar=[];
+        afectados.forEach(function(p,i){
+          var leg=route.legs[i]||{};
+          var durSeg=Math.round((leg.duration?leg.duration.value:0)/60)+MIN_PARADA;
+          tAcum+=durSeg;
+          var nuevoHorario=fromMin(tAcum);
+          var viejo=viejos[p.id];
+          var shiftMin=viejo.horarioEntrega?Math.abs(toMin(nuevoHorario)-toMin(viejo.horarioEntrega)):0;
+
+          var idx=arr.findIndex(function(x){return x.id===p.id;});
+          var nuevaBanda=getBandaHoraria(nuevoHorario);
+          if(idx>=0){arr[idx].horarioEntrega=nuevoHorario;arr[idx].horarioDesde=nuevaBanda.desde;arr[idx].horarioHasta=nuevaBanda.hasta;}
+          sbUpsert('pedidos',{id:p.id,horario_entrega:nuevoHorario,horario_desde:nuevaBanda.desde,horario_hasta:nuevaBanda.hasta});
+
+          if(shiftMin>15&&viejo.horarioEntrega){
+            var bandaVieja=getBandaHoraria(viejo.horarioEntrega);
+            afectadosNotificar.push({
+              id:'ntfh_'+Date.now()+'_'+Math.floor(Math.random()*10000)+'_'+i,
+              fika_id:p.fikaId||'',pedido_id:p.id,nombre:p.nombre||'',
+              horario_desde_viejo:bandaVieja.desde,horario_hasta_viejo:bandaVieja.hasta,
+              horario_desde_nuevo:nuevaBanda.desde,horario_hasta_nuevo:nuevaBanda.hasta,
+              tipo:toMin(nuevoHorario)>toMin(viejo.horarioEntrega)?'atraso':'adelanto',
+              telefono:p.telefono||'',hora:new Date().toISOString(),vista_admin:false,vista_cadete:false
+            });
+          }
+        });
+
+        renderRepClientes();
+        if(document.getElementById('hoja-ruta-lista'))renderHojaRuta();
+
+        if(afectadosNotificar.length>0){
+          afectadosNotificar.forEach(function(n){sbUpsert('notificaciones_horario',n);});
+          mostrarPopupCambiosHorario(afectadosNotificar);
+        }
+      });
+    });
+  }catch(e){}
+}
+
+function textoMensajeHorario(n){
+  var nombre=(n.nombre||'').split(' ')[0];
+  if(n.tipo==='atraso'){
+    return 'Hola '+nombre+'! Tuvimos una demora en el recorrido — tu pedido FIKA va a llegar entre las '+n.horario_desde_nuevo+' y las '+n.horario_hasta_nuevo+' hs. ¡Disculpá las molestias!';
+  }
+  return 'Hola '+nombre+'! El recorrido se adelantó un poco — tu pedido FIKA va a llegar entre las '+n.horario_desde_nuevo+' y las '+n.horario_hasta_nuevo+' hs. ¡Avisanos si no vas a estar!';
+}
+function enviarMensajeHorarioWA(n){
+  var tel=(n.telefono||'').replace(/\D/g,'');
+  var msg=textoMensajeHorario(n);
+  var url=tel?'https://wa.me/549'+tel+'?text='+encodeURIComponent(msg):'https://wa.me/?text='+encodeURIComponent(msg);
+  window.open(url,'_blank');
+}
+function mostrarPopupCambiosHorario(lista){
+  var old=document.getElementById('popup-cambios-horario');if(old)old.remove();
+  var wrap=document.createElement('div');wrap.id='popup-cambios-horario';
+  wrap.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px';
+  var box=document.createElement('div');
+  box.style.cssText='background:var(--bg2);border:0.5px solid var(--border2);border-radius:14px;padding:20px;max-width:420px;width:100%;max-height:80vh;overflow-y:auto';
+  var titulo=document.createElement('div');titulo.style.cssText='font-size:16px;font-weight:600;color:var(--text);margin-bottom:14px';
+  titulo.textContent=lista.length+' pedido'+(lista.length>1?'s':'')+' siguiente'+(lista.length>1?'s':'')+' sufrió'+(lista.length>1?'ieron':'')+' una modificación del horario de entrega';
+  box.appendChild(titulo);
+  lista.forEach(function(n){
+    var row=document.createElement('div');row.style.cssText='background:var(--bg3);border-radius:10px;padding:10px 12px;margin-bottom:8px';
+    var l1=document.createElement('div');l1.style.cssText='font-size:13px;font-weight:600;color:var(--accent)';l1.textContent=(n.fika_id||'')+' - '+n.nombre;
+    var l2=document.createElement('div');l2.style.cssText='font-size:12px;color:var(--text2);margin-top:3px';
+    l2.textContent=n.horario_desde_viejo+'-'+n.horario_hasta_viejo+'  →  '+n.horario_desde_nuevo+'-'+n.horario_hasta_nuevo+' ('+(n.tipo==='atraso'?'atraso':'adelanto')+')';
+    var btn=document.createElement('button');btn.textContent='📱 Avisar por WhatsApp';btn.style.cssText='margin-top:8px;width:100%;padding:7px;background:none;border:0.5px solid rgba(37,211,102,0.4);color:#25d366;border-radius:8px;font-family:Jost,sans-serif;font-size:12px;cursor:pointer';
+    btn.onclick=function(){enviarMensajeHorarioWA(n);};
+    row.appendChild(l1);row.appendChild(l2);row.appendChild(btn);box.appendChild(row);
+  });
+  var cerrar=document.createElement('button');cerrar.textContent='Cerrar';cerrar.style.cssText='width:100%;margin-top:6px;padding:9px;background:var(--accent);border:none;border-radius:8px;color:#0f1923;font-weight:600;font-family:Jost,sans-serif;cursor:pointer';
+  cerrar.onclick=function(){wrap.remove();};
+  box.appendChild(cerrar);
+  wrap.appendChild(box);document.body.appendChild(wrap);
+}
 
 function calcularRuta(){
   var todos=getPedidosReparto();var lista=filtroRepCiudad==='todos'?todos:todos.filter(function(p){return detectarCiudad(p.ciudad)===filtroRepCiudad;});
@@ -3466,8 +3615,15 @@ function asignarIdsPedidos(){
   FIKA_ID_COUNTER=maxNum+1;
 }
 
-function nextFikaId(){
+async function nextFikaId(){
   var maxNum=349;
+  try{
+    var top=await sbGet('pedidos','&select=fika_id&fika_id=not.is.null&order=fika_id.desc&limit=1');
+    if(top&&top.length>0&&top[0].fika_id){
+      var nTop=parseInt(String(top[0].fika_id).replace('FIKA-',''));
+      if(!isNaN(nTop)&&nTop>maxNum)maxNum=nTop;
+    }
+  }catch(e){}
   pedidos.forEach(function(p){
     if(p.fikaId){var n=parseInt(p.fikaId.replace('FIKA-',''));if(n>maxNum)maxNum=n;}
   });
@@ -3740,11 +3896,14 @@ async function guardarPedido(){
   var tipoPrecioFinal=usarCombo?'Combo':tipoPrecioActual;
   var precioComboFinal=usarCombo?comboDetectado.precio:null;
   var comboNombreFinal=usarCombo?comboDetectado.nombre:null;
-  var nuevoFikaId=pedidoEditId?(pedidos.find(function(x){return x.id===pedidoEditId;})||{}).fikaId||nextFikaId():nextFikaId();
+  var nuevoFikaId=pedidoEditId?((pedidos.find(function(x){return x.id===pedidoEditId;})||{}).fikaId||await nextFikaId()):await nextFikaId();
   var p={id:pedidoEditId||Date.now().toString(),fikaId:nuevoFikaId,clienteId:cli?cli.id:null,nombre:nombre,fecha:document.getElementById('p-fecha').value,telefono:document.getElementById('p-tel').value.trim(),domicilio:document.getElementById('p-dom').value.trim(),piso:document.getElementById('p-piso').value.trim(),ciudad:document.getElementById('p-ciudad').value,encargado:document.getElementById('p-enc').value,notas:document.getElementById('p-notas').value.trim(),pago:document.getElementById('p-pago').checked,tipoPrecio:tipoPrecioFinal,precioCombo:precioComboFinal,comboNombre:comboNombreFinal,entregado:pExist?pExist.entregado||false:false,panes:JSON.parse(JSON.stringify(pQtys)),_etiqueta:pExist?pExist._etiqueta:null,creadoEn:pExist?pExist.creadoEn:new Date().toISOString()};
   if(pedidoEditId){var idx=pedidos.findIndex(function(x){return x.id===pedidoEditId;});if(idx>=0)pedidos[idx]=p;}else pedidos.unshift(p);
   await guardarPedidoSupa(p);
   sincronizarCobro(p);
+  if(pedidoEditId&&pExist&&(pExist.domicilio!==p.domicilio||pExist.ciudad!==p.ciudad)){
+    verificarCambioDomicilioYRecalcular(p.id);
+  }
   // Si no existe como cliente, crearlo
   if(!cli&&nombre){var nCli={id:'cli_'+Date.now(),nombre:nombre,telefono:p.telefono,domicilio:p.domicilio,piso:p.piso,ciudad:p.ciudad,etiqueta:'nuevo',creado_en:new Date().toISOString()};clientes.push(nCli);sbUpsert('clientes',nCli);localStorage.setItem('fika-clientes',JSON.stringify(clientes));actualizarDatalist();}
   cerrarModal('modal-pedido');renderPedidos();checkAlertaPago();
