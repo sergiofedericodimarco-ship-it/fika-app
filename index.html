@@ -465,34 +465,10 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
     </div>
 
     <!-- PRODUCCION PC -->
-    <div class="dscreen" id="d-produccion">
-      <div class="desk-grid2">
-        <div>
-          <div class="sec-lbl">Horario</div>
-          <div class="card">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><span style="font-size:13px;color:var(--text2)">Inicio</span><input type="time" id="h-inicio" value="07:15" style="background:var(--bg3);border:0.5px solid var(--border2);border-radius:6px;color:var(--text);font-family:'Raleway',sans-serif;font-size:14px;padding:5px 10px;width:95px;text-align:center;color-scheme:dark"></div>
-            <div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:13px;color:var(--text2)">Límite</span><input type="time" id="h-limite" value="18:00" style="background:var(--bg3);border:0.5px solid var(--border2);border-radius:6px;color:var(--text);font-family:'Raleway',sans-serif;font-size:14px;padding:5px 10px;width:95px;text-align:center;color-scheme:dark"></div>
-          </div>
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-            <div class="sec-lbl" style="margin:0">Pedidos del día</div>
-            <button style="font-size:9px;padding:3px 10px;background:var(--bg3);border:0.5px solid var(--border2);border-radius:20px;color:var(--accent);cursor:pointer;font-family:'Raleway',sans-serif" onclick="cargarDesdeAProducir()">Cargar desde Pedidos</button>
-          </div>
-          <div id="prod-warn" style="background:rgba(201,163,79,0.08);border:0.5px solid rgba(201,163,79,0.3);border-radius:8px;padding:8px 12px;font-size:11px;color:var(--accent);margin-bottom:10px;display:none"></div>
-          <div class="card" id="prod-items"></div>
-          <button class="btn-p" onclick="planificar()">Generar plan de producción</button>
-        </div>
-        <div>
-          <div id="prod-empty" style="text-align:center;padding:80px 20px;color:var(--text3);font-size:13px">Carga los pedidos y genera el plan.</div>
-          <div id="prod-result" style="display:none">
-            <button class="btn-ol" onclick="window.print()">Imprimir plan</button>
-            <div class="desk-stats" id="prod-stats"></div>
-            <div id="prod-status" style="border-radius:8px;padding:9px 13px;font-size:13px;margin-bottom:14px;display:none"></div>
-            <div class="sec-lbl">Orden de producción</div>
-            <div style="position:relative;padding-left:28px"><div style="position:absolute;left:6px;top:8px;bottom:0;width:1px;background:var(--border)"></div><div id="prod-timeline"></div></div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <!-- FASE 10: pantalla de Producción retirada de la interfaz (sin tocar la tabla
+         historial_produccion ni los datos ya guardados en Supabase). Este botón ya no
+         era alcanzable desde ningún menú, y de hecho llamaba a una función
+         (renderProdItems) que no existía — quedaba roto incluso antes de retirarlo. -->
 
     <!-- REPARTO PC -->
     <!-- REPARTO (sección unificada: antes separada en REPARTO y CADETE, Fase 6) -->
@@ -802,7 +778,7 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
     <div class="f-row"><div class="f-lbl">Notas</div><input class="f-in" id="p-notas" placeholder="Opcional"></div>
     <div class="card" style="margin-bottom:10px"><div class="f-row" style="margin-bottom:8px"><div class="f-lbl">Tipo de precio</div><select class="f-in" id="p-tipo-precio" onchange="actualizarTotalPreview()"><option value="Minorista">Minorista</option><option value="Mayorista">Mayorista</option><option value="Combo">Combo / Promo</option></select></div><div class="toggle-row"><span style="font-size:13px;color:var(--text2)">¿Ya realizó el pago?</span><label class="toggle"><input type="checkbox" id="p-pago"><span class="slider"></span></label></div></div>
     <div id="p-total-preview" style="text-align:right;font-size:13px;color:var(--accent);margin-bottom:10px;display:none"></div>
-    <button class="btn-p" onclick="guardarPedido()">Guardar pedido</button>
+    <button class="btn-p" id="btn-guardar-pedido" onclick="guardarPedido()">Guardar pedido</button>
   </div>
 </div>
 
@@ -1049,7 +1025,6 @@ function renderCadeteMob(){
 
 initLayout();
   buildPanesForm();
-  buildProdItems();
   await Promise.all([
     cargarDesdeSupabase(),
     cargarProductos(),
@@ -1202,10 +1177,6 @@ initLayout();
 
 
 
-
-
-// ── PRODUCCION ────────────────────────────────────────────────
-var qtys={};PRODUCTOS.forEach(function(k){qtys[k]=0;});
 
 
 
@@ -1827,7 +1798,17 @@ function segmentarClientes(listaNombres,filtro){
   });
 }
 
+// FASE 4.1 / 12.8: el total de un pedido debe reflejar las condiciones vigentes cuando
+// se creó o confirmó, no la lista de precios actual. calcTotalPedido devuelve el total
+// guardado (p.totalFinal) cuando existe; solo recalcula en vivo (calcTotalPedidoLive) para
+// pedidos guardados antes de este fix, que no tienen ese snapshot todavía. guardarPedido()
+// es quien fija p.totalFinal al momento de confirmar el pedido, para que un cambio de
+// precios futuro no modifique silenciosamente importes ya cerrados.
 function calcTotalPedido(p){
+  if(p.totalFinal!==undefined&&p.totalFinal!==null&&p.totalFinal!=='')return Number(p.totalFinal);
+  return calcTotalPedidoLive(p);
+}
+function calcTotalPedidoLive(p){
   if(p.tipoPrecio==='Combo'&&p.precioCombo>0){
     var c=combos.find(function(x){return x.nombre===p.comboNombre;})||combos.find(function(x){return x.precio===p.precioCombo;});
     if(c){
@@ -1931,7 +1912,7 @@ window.addEventListener('resize',function(){initLayout();});
 function showMob(id){document.querySelectorAll('.mscreen').forEach(function(s){s.classList.remove('active');});document.querySelectorAll('.mnav').forEach(function(b){b.classList.remove('active');});document.getElementById('ms-'+id).classList.add('active');document.getElementById('mn-'+id).classList.add('active');if(id==='pedidos')renderPedidos();if(id==='semana')renderSemana();if(id==='clientes')renderClientesMob();if(id==='cadete-mob'){refrescarEstadosEntrega().then(renderCadeteMob);renderCadeteMob();}if(id==='historial-mob')renderHistorialMob();if(id==='cobros')renderCobros();if(id==='stock'){renderStock();renderCongelados();}if(id==='compras')renderCompras();if(id==='hoja-ruta-mob')renderHojaRuta();toggleDrawerMob(false);}
 // FASE 9.2: abre/cierra el drawer lateral móvil. Elegir una sección (showMob) lo cierra solo.
 function toggleDrawerMob(abrir){document.body.classList.toggle('drawer-open',!!abrir);}
-function showDesk(id){document.querySelectorAll('.dscreen').forEach(function(s){s.classList.remove('active');});document.querySelectorAll('.dtab').forEach(function(t){t.classList.remove('active');});document.getElementById(id).classList.add('active');document.getElementById('dt-'+id).classList.add('active');if(id==='d-pedidos')renderDeskPedidos();if(id==='d-produccion')renderProdItems();if(id==='d-cadete'){loadApiKey();poblarFechasReparto();renderRepClientes();refrescarEstadosEntrega().then(renderCadete);renderCadete();}if(id==='d-stock'){renderDeskStock();renderCongeladosDesk();}if(id==='d-clientes')renderClientesDesk();if(id==='d-cobros')renderCobrosDesk();if(id==='d-precios')renderPrecios();if(id==='d-historial')renderHistorial();if(id==='d-compras'){renderComprasDesk();renderComprasRealizadasDesk();}if(id==='d-hoja-ruta'){renderHojaRuta();}}
+function showDesk(id){document.querySelectorAll('.dscreen').forEach(function(s){s.classList.remove('active');});document.querySelectorAll('.dtab').forEach(function(t){t.classList.remove('active');});document.getElementById(id).classList.add('active');document.getElementById('dt-'+id).classList.add('active');if(id==='d-pedidos')renderDeskPedidos();if(id==='d-cadete'){loadApiKey();poblarFechasReparto();renderRepClientes();refrescarEstadosEntrega().then(renderCadete);renderCadete();}if(id==='d-stock'){renderDeskStock();renderCongeladosDesk();}if(id==='d-clientes')renderClientesDesk();if(id==='d-cobros')renderCobrosDesk();if(id==='d-precios')renderPrecios();if(id==='d-historial')renderHistorial();if(id==='d-compras'){renderComprasDesk();renderComprasRealizadasDesk();}if(id==='d-hoja-ruta'){renderHojaRuta();}}
 function abrirFab(){var s=document.querySelector('.mscreen.active').id.replace('ms-','');if(['pedidos','semana','clientes'].includes(s))abrirModalPedido(null);if(s==='compras')abrirModal('modal-compra');}
 
 // ── LOGIN ─────────────────────────────────────────────────────
@@ -2042,8 +2023,8 @@ function cargarHistorialLocal(){
 }
 
 // ── MAPEADORES ────────────────────────────────────────────────
-function pedidoToRow(p){return{id:p.id,fika_id:p.fikaId||null,cliente_id:p.clienteId||null,nombre:p.nombre,fecha:p.fecha||null,telefono:p.telefono||null,domicilio:p.domicilio||null,piso:p.piso||null,ciudad:p.ciudad||null,encargado:p.encargado||'Cadete',notas:p.notas||null,pago:p.pago||false,entregado:p.entregado||false,panes:p.panes||{},etiqueta:p._etiqueta||null,tipo_precio:p.tipoPrecio||'Minorista',precio_combo:p.precioCombo||null,combo_nombre:p.comboNombre||null,horario_entrega:p.horarioEntrega||null,horario_desde:p.horarioDesde||null,horario_hasta:p.horarioHasta||null,creado_en:p.creadoEn||new Date().toISOString()};}
-function rowToPedido(r){return{id:r.id,fikaId:r.fika_id||null,clienteId:r.cliente_id,nombre:r.nombre,fecha:r.fecha,telefono:r.telefono,domicilio:r.domicilio,piso:r.piso,ciudad:r.ciudad,encargado:r.encargado||'Cadete',notas:r.notas,pago:r.pago||false,entregado:r.entregado||false,panes:r.panes||{},_etiqueta:r.etiqueta,tipoPrecio:r.tipo_precio||'Minorista',precioCombo:r.precio_combo||null,comboNombre:r.combo_nombre||null,horarioEntrega:r.horario_entrega,horarioDesde:r.horario_desde,horarioHasta:r.horario_hasta,horaEntregado:r.hora_entregado||null,creadoEn:r.creado_en,
+function pedidoToRow(p){return{id:p.id,fika_id:p.fikaId||null,cliente_id:p.clienteId||null,nombre:p.nombre,fecha:p.fecha||null,telefono:p.telefono||null,domicilio:p.domicilio||null,piso:p.piso||null,ciudad:p.ciudad||null,encargado:p.encargado||'Cadete',notas:p.notas||null,pago:p.pago||false,entregado:p.entregado||false,panes:p.panes||{},etiqueta:p._etiqueta||null,tipo_precio:p.tipoPrecio||'Minorista',precio_combo:p.precioCombo||null,combo_nombre:p.comboNombre||null,total_final:(p.totalFinal!==undefined&&p.totalFinal!==null)?p.totalFinal:null,horario_entrega:p.horarioEntrega||null,horario_desde:p.horarioDesde||null,horario_hasta:p.horarioHasta||null,creado_en:p.creadoEn||new Date().toISOString()};}
+function rowToPedido(r){return{id:r.id,fikaId:r.fika_id||null,clienteId:r.cliente_id,nombre:r.nombre,fecha:r.fecha,telefono:r.telefono,domicilio:r.domicilio,piso:r.piso,ciudad:r.ciudad,encargado:r.encargado||'Cadete',notas:r.notas,pago:r.pago||false,entregado:r.entregado||false,panes:r.panes||{},_etiqueta:r.etiqueta,tipoPrecio:r.tipo_precio||'Minorista',precioCombo:r.precio_combo||null,comboNombre:r.combo_nombre||null,totalFinal:(r.total_final!==undefined&&r.total_final!==null)?r.total_final:null,horarioEntrega:r.horario_entrega,horarioDesde:r.horario_desde,horarioHasta:r.horario_hasta,horaEntregado:r.hora_entregado||null,creadoEn:r.creado_en,
   // Estado real de entrega que escribe la app del cadete en la misma tabla "pedidos" (no se modifica esa app, solo se lee acá):
   cadeteStatus:r.cadete_status||null,motivoNoEntrega:r.motivo_no_entrega||null,cadetePago:r.cadete_pago||null,edicionHabilitada:r.edicion_habilitada||false};}
 function cobroToRow(c){return{pedido_id:c.pedidoId,nombre:c.nombre,fecha:c.fecha,panes:c.panes||{},pagado:c.pagado||false,fecha_registro:c.fechaRegistro||new Date().toISOString(),fecha_pago:c.fechaPago||null};}
@@ -2233,10 +2214,25 @@ function abrirModalPedido(id){
 
 function toggleCoord(){var dom=document.getElementById('p-dom'),piso=document.getElementById('p-piso'),coord=document.getElementById('p-coord').checked;if(coord){dom.value='Coordinar';dom.disabled=true;dom.style.opacity='0.5';piso.value='';piso.disabled=true;piso.style.opacity='0.5';}else{dom.value='';dom.disabled=false;dom.style.opacity='1';piso.disabled=false;piso.style.opacity='1';}}
 
+var _guardandoPedido=false;
 async function guardarPedido(){
+  // Fase 11: protección contra doble registro por doble clic / reintentos.
+  if(_guardandoPedido)return;
   var nombre=document.getElementById('p-nombre').value.trim();
   if(!nombre){alert('El nombre es obligatorio.');return;}
   if(Object.values(pQtys).reduce(function(a,b){return a+b;},0)===0){alert('Agrega al menos un producto.');return;}
+  _guardandoPedido=true;
+  var btnG=document.getElementById('btn-guardar-pedido');
+  if(btnG){btnG.disabled=true;btnG.textContent='Guardando...';}
+  try{
+    await _guardarPedidoInterno();
+  } finally {
+    _guardandoPedido=false;
+    if(btnG){btnG.disabled=false;btnG.textContent='Guardar pedido';}
+  }
+}
+async function _guardarPedidoInterno(){
+  var nombre=document.getElementById('p-nombre').value.trim();
   // Detectar combo (solo si no es mayorista)
   var tipoPrecioActual=document.getElementById('p-tipo-precio')?document.getElementById('p-tipo-precio').value:'Minorista';
   var comboDetectado=null;var usarCombo=false;
@@ -2258,6 +2254,10 @@ async function guardarPedido(){
   var comboNombreFinal=usarCombo?comboDetectado.nombre:null;
   var nuevoFikaId=pedidoEditId?((pedidos.find(function(x){return x.id===pedidoEditId;})||{}).fikaId||await nextFikaId()):await nextFikaId();
   var p={id:pedidoEditId||Date.now().toString(),fikaId:nuevoFikaId,clienteId:cli?cli.id:null,nombre:nombre,fecha:document.getElementById('p-fecha').value,telefono:document.getElementById('p-tel').value.trim(),domicilio:document.getElementById('p-dom').value.trim(),piso:document.getElementById('p-piso').value.trim(),ciudad:document.getElementById('p-ciudad').value,encargado:document.getElementById('p-enc').value,notas:document.getElementById('p-notas').value.trim(),pago:document.getElementById('p-pago').checked,tipoPrecio:tipoPrecioFinal,precioCombo:precioComboFinal,comboNombre:comboNombreFinal,entregado:pExist?pExist.entregado||false:false,panes:JSON.parse(JSON.stringify(pQtys)),_etiqueta:pExist?pExist._etiqueta:null,creadoEn:pExist?pExist.creadoEn:new Date().toISOString()};
+  // FASE 4.1: se fija el total vigente AHORA, al confirmar el pedido. A partir de acá
+  // calcTotalPedido siempre va a devolver este número, sin importar que mañana cambien
+  // los precios de la lista o los precios especiales del cliente.
+  p.totalFinal=calcTotalPedidoLive(p);
   if(pedidoEditId){var idx=pedidos.findIndex(function(x){return x.id===pedidoEditId;});if(idx>=0)pedidos[idx]=p;}else pedidos.unshift(p);
   await guardarPedidoSupa(p);
   sincronizarCobro(p);
@@ -2862,59 +2862,6 @@ function imprimirPedidos(){
   document.body.classList.add('print-pedidos');
   window.print();
   document.body.classList.remove('print-pedidos');
-}
-
-// ── PRODUCCION ────────────────────────────────────────────────
-var qtys={};PRODUCTOS.forEach(function(k){qtys[k]=0;});
-function buildProdItems(){
-  var g=document.getElementById('prod-items');if(!g)return;g.innerHTML='';
-  PRODUCTOS.forEach(function(k){
-    var row=document.createElement('div');row.style.cssText='display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:10px 0;border-bottom:0.5px solid var(--border)';
-    var info=document.createElement('div');var nm=document.createElement('div');nm.style.cssText='font-size:14px;color:var(--text);display:flex;align-items:center;gap:7px';
-    var dot=document.createElement('span');dot.style.cssText='width:7px;height:7px;border-radius:50%;background:'+PROD_COLORES[k];nm.appendChild(dot);nm.appendChild(document.createTextNode(PROD_NOMBRES[k]));
-    var meta=document.createElement('div');meta.style.cssText='font-size:11px;color:var(--text3);margin-top:2px;padding-left:14px';
-    var ratioH=(k==='focaccia_cherry'||k==='focaccia_cebolla'||k==='focaccia_morron'||k==='prepizza')?4:2;
-    var metas={lactal:'3h · horno 65min · 20/tanda',integral:'3h · horno 65min · 20/tanda',campo:'1h45 · horno 50min · 16/tanda',focaccia_cherry:'masa de noche · 1h armado · 20/tanda',focaccia_cebolla:'masa de noche · 1h armado · 20/tanda',focaccia_morron:'masa de noche · 1h armado · 20/tanda',prepizza:'1h45 · horno 50min · 16/tanda'};
-    meta.textContent=metas[k];info.appendChild(nm);info.appendChild(meta);
-    var badge=document.createElement('div');badge.style.cssText='font-size:10px;color:var(--accent);background:rgba(201,163,79,0.1);border-radius:20px;padding:1px 7px;margin-top:3px;display:inline-block;margin-left:14px';badge.id='badge-'+k;badge.textContent='0 un.';info.appendChild(badge);
-    var ctrl=document.createElement('div');ctrl.className='qc';
-    var bm=document.createElement('button');bm.className='qb';bm.innerHTML='&#8722;';bm.onclick=(function(kk){return function(){qtys[kk]=Math.max(0,(qtys[kk]||0)-1);document.getElementById('qty-'+kk).textContent=qtys[kk];document.getElementById('badge-'+kk).textContent=qtys[kk]+' un.';actualizarWarnMoldes();};})(k);
-    var sp=document.createElement('span');sp.className='qv';sp.id='qty-'+k;sp.textContent='0';
-    var bp=document.createElement('button');bp.className='qb';bp.textContent='+';bp.onclick=(function(kk){return function(){qtys[kk]=(qtys[kk]||0)+1;document.getElementById('qty-'+kk).textContent=qtys[kk];document.getElementById('badge-'+kk).textContent=qtys[kk]+' un.';actualizarWarnMoldes();};})(k);
-    ctrl.appendChild(bm);ctrl.appendChild(sp);ctrl.appendChild(bp);row.appendChild(info);row.appendChild(ctrl);g.appendChild(row);
-  });
-}
-function actualizarWarnMoldes(){var tot=(qtys.lactal||0)+(qtys.integral||0);var w=document.getElementById('prod-warn');if(tot>20){w.textContent='Necesitás '+tot+' moldes y tenés 20. El plan alterna tandas.';w.style.display='block';}else w.style.display='none';}
-function cargarDesdeAProducir(){
-  if(pedidosImportados.length===0&&pedidos.length>0)pedidosImportados=pedidos.slice();
-  if(pedidosImportados.length===0){alert('Primero sincronizá los pedidos.');return;}
-  var todos=pedidosImportados;var lista=filtroPedidosFechas.length===0?todos:todos.filter(function(p){return filtroPedidosFechas.indexOf(p.fecha)>=0;});
-  var tot={};PRODUCTOS.forEach(function(k){tot[k]=0;});lista.forEach(function(p){PRODUCTOS.forEach(function(k){tot[k]+=((p.panes&&p.panes[k])||0);});});
-  var stockData={};stock.forEach(function(s){stockData[s.id]=s.cantidad;});
-  PRODUCTOS.forEach(function(k){qtys[k]=Math.max(0,(tot[k]||0)-(stockData[k]||0));var el=document.getElementById('qty-'+k);if(el)el.textContent=qtys[k];var badge=document.getElementById('badge-'+k);if(badge)badge.textContent=qtys[k]+' un.';});
-  actualizarWarnMoldes();showDesk('d-produccion');
-}
-
-function planificar(){
-  var lq=qtys.lactal||0,iq=qtys.integral||0,cq=qtys.campo||0,fqch=qtys.focaccia_cherry||0,fqce=qtys.focaccia_cebolla||0,fqmo=qtys.focaccia_morron||0,pq=qtys.prepizza||0;
-  var fq=fqch+fqce+fqmo,total=lq+iq+cq+fq+pq;
-  if(total===0){alert('Ingresá al menos un pedido.');return;}
-  var inicio=toMin(document.getElementById('h-inicio').value);var limite=toMin(document.getElementById('h-limite').value);
-  var ev=[],cursor=inicio,totalHorno=0;
-  var PREP_LACTAL=130,HORNO_MOLDE=65,PREP_CAMPO=105,HORNO_CAMPO=50,PREP_FOC=65,HORNO_FOC=30,ENTRE_CAMPO=10,ENTRE_FOC=10;
-  if(lq+iq>0){var lotes=[],lR=lq,iR=iq;while(lR>0||iR>0){var lE=Math.min(lR,20);var iE=Math.min(iR,Math.max(0,20-lE));lotes.push({l:lE,i:iE});lR-=lE;iR-=iE;}if(lotes.length===1){var d0=(lotes[0].l>0?lotes[0].l+' Lactal':'')+((lotes[0].l>0&&lotes[0].i>0)?' + ':'')+(lotes[0].i>0?lotes[0].i+' Integral':'');ev.push({hora:cursor,tipo:'lactal',txt:'Arrancar — '+d0,sub:'Prefermento, pesaje, amasado y leudado'});ev.push({hora:cursor+PREP_LACTAL,tipo:'horno',txt:'Horno — '+d0,sub:'65 min'});totalHorno++;cursor+=PREP_LACTAL+HORNO_MOLDE;}else{var ls=cursor,uHF=0;for(var i=0;i<lotes.length;i++){var l=lotes[i],dl=(l.l>0?l.l+' Lactal':'')+((l.l>0&&l.i>0)?' + ':'')+(l.i>0?l.i+' Integral':'');ev.push({hora:ls,tipo:'lactal',txt:'Arrancar lote '+(i+1)+'/'+lotes.length+' — '+dl});var ht=ls+PREP_LACTAL;ev.push({hora:ht,tipo:'horno',txt:'Horno lote '+(i+1)+' ('+dl+')','sub':'65 min'});totalHorno++;var sal=ht+HORNO_MOLDE;if(i<lotes.length-1)ev.push({hora:sal,tipo:'molde',txt:'Desmoldar lote '+(i+1)+'  — limpiar y recargar moldes',sub:'20 min'});uHF=sal;ls=sal+20-PREP_LACTAL;ls=Math.max(ls,cursor+1);}cursor=uHF;}}
-  if(cq>0){var ct=ceil(cq,16);for(var i=1;i<=ct;i++){var c=Math.min(cq-(i-1)*16,16);ev.push({hora:cursor,tipo:'campo',txt:'Arrancar pan de campo — tanda '+i+'/'+ct,sub:'Amasado, formado, leudado — '+c+' panes'});ev.push({hora:cursor+PREP_CAMPO,tipo:'horno',txt:'Horno — campo tanda '+i+'/'+ct,sub:'50 min'});totalHorno++;cursor+=PREP_CAMPO+HORNO_CAMPO+ENTRE_CAMPO;}}
-  if(fq>0){var ft=ceil(fq,20);var partesFoc=[];if(fqch>0)partesFoc.push(fqch+' cherry');if(fqce>0)partesFoc.push(fqce+' cebolla');if(fqmo>0)partesFoc.push(fqmo+' morrón');var fdesc='Focaccia ('+partesFoc.join(' + ')+')';for(var i=1;i<=ft;i++){var c=Math.min(fq-(i-1)*20,20);ev.push({hora:cursor,tipo:'focaccia',txt:fdesc+' — tanda '+i+'/'+ft,sub:'Sacar de heladera, armar '+c+' moldes'});ev.push({hora:cursor+PREP_FOC,tipo:'horno',txt:'Horno — '+fdesc.toLowerCase()+' tanda '+i+'/'+ft,sub:'30 min'});totalHorno++;cursor+=PREP_FOC+HORNO_FOC+ENTRE_FOC;}}
-  if(pq>0){var pt=ceil(pq,16);for(var i=1;i<=pt;i++){var c=Math.min(pq-(i-1)*16,16);ev.push({hora:cursor,tipo:'campo',txt:'Arrancar prepizza — tanda '+i+'/'+pt,sub:'Amasado — '+c+' panes'});ev.push({hora:cursor+PREP_CAMPO,tipo:'horno',txt:'Horno — prepizza tanda '+i+'/'+pt,sub:'50 min'});totalHorno++;cursor+=PREP_CAMPO+HORNO_CAMPO+ENTRE_CAMPO;}}
-  ev.sort(function(a,b){return a.hora-b.hora;});var fin=cursor;
-  var stats=document.getElementById('prod-stats');stats.innerHTML='';[['s-inicio',fromMin(inicio),'inicio'],['s-fin',fromMin(fin),'fin estimado'],['s-panes',''+total,'panes'],['s-tandas',''+totalHorno,'tandas']].forEach(function(s){var d=document.createElement('div');d.className='dstat';var v=document.createElement('div');v.className='dstat-v';v.textContent=s[1];var l=document.createElement('div');l.className='dstat-l';l.textContent=s[2];d.appendChild(v);d.appendChild(l);stats.appendChild(d);});
-  var sm=document.getElementById('prod-status');sm.style.display='block';if(fin>limite){sm.style.cssText='border-radius:8px;padding:9px 13px;font-size:13px;margin-bottom:14px;background:rgba(224,85,85,0.1);border:0.5px solid rgba(224,85,85,0.3);color:var(--danger)';sm.textContent='Fin estimado '+fromMin(fin)+' — '+Math.round(fin-limite)+' min después del límite.';}else{sm.style.cssText='border-radius:8px;padding:9px 13px;font-size:13px;margin-bottom:14px;background:rgba(90,184,138,0.1);border:0.5px solid rgba(90,184,138,0.3);color:var(--ok)';sm.textContent='Todo listo a las '+fromMin(fin)+', con '+Math.round(limite-fin)+' min de margen.';}
-  var dc={lactal:'var(--lactal,#6a9fd8)',integral:'var(--integral,#5ab88a)',campo:'var(--campo,#c9a34f)',focaccia:'#d4607a',horno:'var(--danger)',molde:'var(--text3)'};
-  var tl=document.getElementById('prod-timeline');tl.innerHTML='';
-  ev.forEach(function(e){var d=document.createElement('div');d.style.cssText='position:relative;margin-bottom:14px';var dot=document.createElement('div');dot.style.cssText='position:absolute;left:-28px;top:4px;width:10px;height:10px;border-radius:50%;background:'+(dc[e.tipo]||'var(--text3)');d.appendChild(dot);var t=document.createElement('div');t.style.cssText='font-size:12px;color:var(--accent);font-weight:500;margin-bottom:1px';t.textContent=fromMin(e.hora);d.appendChild(t);var tx=document.createElement('div');tx.style.cssText='font-size:13px;color:var(--text)';tx.textContent=e.txt;d.appendChild(tx);if(e.sub){var s=document.createElement('div');s.style.cssText='font-size:11px;color:var(--text3);margin-top:1px';s.textContent=e.sub;d.appendChild(s);}tl.appendChild(d);});
-  document.getElementById('prod-empty').style.display='none';document.getElementById('prod-result').style.display='block';
-  var hEntry={id:new Date().toISOString().slice(0,10),fecha:new Date().toISOString(),lactal:lq,integral:iq,campo:cq,focaccia_cherry:fqch,focaccia_cebolla:fqce,focaccia_morron:fqmo,prepizza:pq,total:total,inicio:fromMin(inicio),fin:fromMin(fin)};
-  var hs=new Date().toISOString().slice(0,10);historial=historial.filter(function(h){return h.id!==hs;});historial.unshift(hEntry);if(historial.length>52)historial=historial.slice(0,52);localStorage.setItem('fika-historial',JSON.stringify(historial));sbUpsert('historial_produccion',hEntry);
 }
 
 // ── REPARTO ───────────────────────────────────────────────────
