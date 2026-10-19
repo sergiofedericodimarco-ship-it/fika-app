@@ -277,16 +277,19 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
   <div id="mob-drawer-overlay" onclick="toggleDrawerMob(false)"></div>
   <div id="mob-nav">
     <div id="mob-drawer-hdr"><div class="mob-logo">FIK<span>A</span></div><button id="mob-drawer-close" onclick="toggleDrawerMob(false)" aria-label="Cerrar menú">&#215;</button></div>
+    <!-- ITERACIÓN 2 / Fase 5: orden exacto pedido — Pedidos, Cobros, Reparto, Hoja de ruta,
+         Clientes, Stock, Historial, Precios, Compras. "Semana" no estaba en la lista pedida;
+         se conserva (no se retira nada sin que lo pidan) al final, después de los 9. -->
     <button class="mnav active" onclick="showMob('pedidos')" id="mn-pedidos">Pedidos</button>
-    <button class="mnav" onclick="showMob('semana')" id="mn-semana">Semana</button>
-    <button class="mnav" onclick="showMob('clientes')" id="mn-clientes">Clientes</button>
-    <button class="mnav" onclick="showMob('cadete-mob')" id="mn-cadete-mob">Cadete</button>
     <button class="mnav" onclick="showMob('cobros')" id="mn-cobros">Cobros <span id="cobros-badge" style="display:none;background:var(--danger);color:white;border-radius:50%;width:14px;height:14px;font-size:9px;display:inline-flex;align-items:center;justify-content:center;margin-left:2px"></span></button>
-    <button class="mnav" onclick="showMob('stock')" id="mn-stock">Stock</button>
-    <button class="mnav" onclick="showMob('compras')" id="mn-compras">Compras</button>
-    <button class="mnav" onclick="showMob('historial-mob')" id="mn-historial-mob">Historial</button>
+    <button class="mnav" onclick="showMob('cadete-mob')" id="mn-cadete-mob">Reparto</button>
     <button class="mnav" onclick="showMob('hoja-ruta-mob')" id="mn-hoja-ruta-mob">Hoja ruta</button>
+    <button class="mnav" onclick="showMob('clientes')" id="mn-clientes">Clientes</button>
+    <button class="mnav" onclick="showMob('stock')" id="mn-stock">Stock</button>
+    <button class="mnav" onclick="showMob('historial-mob')" id="mn-historial-mob">Historial</button>
     <button class="mnav" onclick="showMob('precios-mob')" id="mn-precios-mob">Precios</button>
+    <button class="mnav" onclick="showMob('compras')" id="mn-compras">Compras</button>
+    <button class="mnav" onclick="showMob('semana')" id="mn-semana">Semana</button>
   </div>
   <div id="mob-screens">
     <div class="mscreen active" id="ms-pedidos">
@@ -324,6 +327,7 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
           <option value="mayor_facturacion">Mayor facturación</option>
         </select>
         <button class="btn-s" style="margin:0;padding:8px 10px;font-size:11px" onclick="ajustarUmbralInactividad()">Umbral: <span id="umbral-txt-mob">45</span>d</button>
+        <button class="btn-s" style="margin:0;padding:8px 10px;font-size:11px" onclick="limpiarFiltrosClientes()">Limpiar</button>
       </div>
       <div id="clientes-list"></div>
       <div id="clientes-empty" class="empty" style="display:none"><div class="empty-icon">&#128100;</div>Sin clientes aún.</div>
@@ -373,10 +377,6 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
         <div id="compras-real-empty-mob" style="text-align:center;padding:30px;color:var(--text3);font-size:12px;display:none">Sin compras registradas.</div>
       </div>
     </div>
-  </div>
-      <div id="congelados-list"></div>
-      <div id="congelados-empty" class="empty" style="display:none"><div class="empty-icon">❄️</div>Sin stock registrado.</div>
-    </div>
     <div class="mscreen" id="ms-historial-mob">
       <div id="hist-mob-filtros" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px"></div>
       <div id="hist-mob-stats" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px"></div>
@@ -417,6 +417,7 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
       <div id="precios-esp-empty-mob" style="text-align:center;padding:20px;color:var(--text3);font-size:13px;display:none">Sin precios especiales aún.</div>
       <div style="font-size:11px;color:var(--text3);margin-top:14px">Para cargar un precio especial nuevo para un cliente, usá la versión de escritorio — desde acá podés consultar y ajustar los precios existentes.</div>
     </div>
+  </div>
   <button class="fab" id="fab-btn" onclick="abrirFab()">+</button>
   <button id="btn-tema-mob" onclick="toggleTemaMobile()" style="position:fixed;left:16px;bottom:78px;z-index:50;width:40px;height:40px;border-radius:50%;background:var(--bg2);border:0.5px solid var(--border2);color:var(--accent);font-size:16px;cursor:pointer">&#9788;</button>
 </div>
@@ -428,14 +429,15 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
       <div><div class="desk-logo">FIK<span>A</span></div><div class="desk-sub">Gestión pan artesanal</div></div>
       <button id="desk-sidebar-toggle" onclick="toggleSidebarDesk()" title="Contraer/expandir menú">&#9776;</button>
     </div>
+    <!-- ITERACIÓN 2 / Fase 5: orden exacto pedido -->
     <button class="dtab active" onclick="showDesk('d-pedidos')" id="dt-d-pedidos"><span class="dtab-label">Pedidos</span></button>
-    <button class="dtab" onclick="showDesk('d-cadete')" id="dt-d-cadete"><span class="dtab-label">Reparto</span></button>
-    <button class="dtab" onclick="showDesk('d-stock')" id="dt-d-stock"><span class="dtab-label">Stock</span></button>
-    <button class="dtab" onclick="showDesk('d-clientes')" id="dt-d-clientes"><span class="dtab-label">Clientes</span></button>
     <button class="dtab" onclick="showDesk('d-cobros')" id="dt-d-cobros"><span class="dtab-label">Cobros</span></button>
-    <button class="dtab" onclick="showDesk('d-precios')" id="dt-d-precios"><span class="dtab-label">Precios</span></button>
-    <button class="dtab" onclick="showDesk('d-historial')" id="dt-d-historial"><span class="dtab-label">Historial</span></button>
+    <button class="dtab" onclick="showDesk('d-cadete')" id="dt-d-cadete"><span class="dtab-label">Reparto</span></button>
     <button class="dtab" onclick="showDesk('d-hoja-ruta')" id="dt-d-hoja-ruta"><span class="dtab-label">Hoja de ruta</span></button>
+    <button class="dtab" onclick="showDesk('d-clientes')" id="dt-d-clientes"><span class="dtab-label">Clientes</span></button>
+    <button class="dtab" onclick="showDesk('d-stock')" id="dt-d-stock"><span class="dtab-label">Stock</span></button>
+    <button class="dtab" onclick="showDesk('d-historial')" id="dt-d-historial"><span class="dtab-label">Historial</span></button>
+    <button class="dtab" onclick="showDesk('d-precios')" id="dt-d-precios"><span class="dtab-label">Precios</span></button>
     <button class="dtab" onclick="showDesk('d-compras')" id="dt-d-compras"><span class="dtab-label">Compras</span></button>
   </nav>
   <div id="desk-main">
@@ -473,7 +475,7 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
     <!-- REPARTO PC -->
     <!-- REPARTO (sección unificada: antes separada en REPARTO y CADETE, Fase 6) -->
     <div class="dscreen" id="d-cadete">
-      <details style="margin-bottom:14px">
+      <details style="margin-bottom:14px" open>
         <summary class="sec-lbl" style="cursor:pointer;display:inline-block">Cálculo de ruta (Google Maps)</summary>
         <div class="desk-grid2" style="margin-top:10px">
           <div>
@@ -564,6 +566,7 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
           <option value="mayor_facturacion">Mayor facturación</option>
         </select>
         <button class="btn-ol" onclick="ajustarUmbralInactividad()">Umbral de inactividad: <span id="umbral-txt-desk">45</span> días</button>
+        <button class="btn-ol" onclick="limpiarFiltrosClientes()">Limpiar filtros</button>
       </div>
       <div id="desk-clientes-lista"></div>
       <div id="desk-clientes-empty" style="text-align:center;padding:50px;color:var(--text3);font-size:13px;display:none">Sin clientes registrados.</div>
@@ -761,8 +764,12 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
       </div>
     </div>
     <div class="f-row2">
-      <div><div class="f-lbl">Fecha de entrega</div><input class="f-in" type="date" id="p-fecha"></div>
+      <div><div class="f-lbl">Sobrenombre</div><input class="f-in" id="p-sobrenombre" placeholder="Ej: Ariel (opcional)"></div>
       <div><div class="f-lbl">Teléfono</div><input class="f-in" type="tel" id="p-tel" placeholder="381 123 4567"></div>
+    </div>
+    <div class="f-row2">
+      <div><div class="f-lbl">Fecha de entrega</div><input class="f-in" type="date" id="p-fecha"></div>
+      <div></div>
     </div>
     <div class="f-row">
       <div class="f-lbl" style="display:flex;align-items:center;justify-content:space-between">Calle y número<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><span style="font-size:10px;color:var(--text3)">Coordinar</span><label class="toggle" style="margin:0"><input type="checkbox" id="p-coord" onchange="toggleCoord()"><span class="slider"></span></label></label></div>
@@ -800,7 +807,6 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
       <button class="btn-s" style="margin-top:0;color:var(--text3);border-color:var(--border)" onclick="cerrarModal('modal-det-pedido')">Cerrar</button>
     </div>
   </div>
-</div>
 </div>
 
 <div class="modal-ov" id="modal-compra">
@@ -950,9 +956,30 @@ async function doLogin(){
 // ── INIT ──────────────────────────────────────────────────────
 async function iniciarApp(){
   showLoad('Cargando datos...');
-  
-
-
+initLayout();
+  buildPanesForm();
+  await Promise.all([
+    cargarDesdeSupabase(),
+    cargarProductos(),
+    cargarClientes(),
+    cargarHistorialLocal(),
+    cargarUmbralInactividad(),
+    cargarMovimientosCobro(),
+    cargarOrdenCadetePersistido()
+  ]);
+  reconstruirCobros();
+  hideLoad();
+  cargarCongelados();
+  cargarComprasRealizadas();
+  cargarObjetivo();
+  await cargarCombos();
+  asignarIdsPedidos();
+  renderPedidos();
+  renderDeskPedidos();
+  checkAlertaPago();
+  renderStock();
+  actualizarDatalist();
+}
 
 // Paridad con renderCadete() de escritorio (Fase 9): mismos filtros, mismo orden manual
 // compartido vía cadeteOrden, mismos datos (teléfono/importe/estado/observación) y misma
@@ -983,8 +1010,7 @@ function renderCadeteMob(){
   });
   if(filtrados.length===0){list.innerHTML='';empty.style.display='block';return;}
   empty.style.display='none';
-  var ids=filtrados.map(function(p){return p.id;});var ok=cadeteOrden.length===ids.length&&cadeteOrden.every(function(id){return ids.indexOf(id)>=0;})&&ids.every(function(id){return cadeteOrden.indexOf(id)>=0;});
-  if(!ok)cadeteOrden=ids.slice();
+  var ids=filtrados.map(function(p){return p.id;});mergeCadeteOrden(ids,todos);
   if(!cadeteOrdenManual&&filtrados.length>0&&filtrados[0].horarioEntrega)cadeteOrden.sort(function(a,b){var pa=filtrados.find(function(p){return p.id===a;}),pb=filtrados.find(function(p){return p.id===b;});if(!pa||!pa.horarioEntrega)return 1;if(!pb||!pb.horarioEntrega)return -1;return pa.horarioEntrega.localeCompare(pb.horarioEntrega);});
   var ordenados=cadeteOrden.map(function(id){return filtrados.find(function(p){return p.id===id;});}).filter(Boolean);
   list.innerHTML='';
@@ -1020,32 +1046,6 @@ function renderCadeteMob(){
   });
 }
 
-
-
-
-initLayout();
-  buildPanesForm();
-  await Promise.all([
-    cargarDesdeSupabase(),
-    cargarProductos(),
-    cargarClientes(),
-    cargarHistorialLocal(),
-    cargarUmbralInactividad(),
-    cargarMovimientosCobro()
-  ]);
-  reconstruirCobros();
-  hideLoad();
-  cargarCongelados();
-  cargarComprasRealizadas();
-  cargarObjetivo();
-  await cargarCombos();
-  asignarIdsPedidos();
-  renderPedidos();
-  renderDeskPedidos();
-  checkAlertaPago();
-  renderStock();
-  actualizarDatalist();
-}
 
 
 
@@ -1568,6 +1568,7 @@ var pedidoEditId=null,pedidoVerId=null,clienteVerId=null;
 var pQtys={};PRODUCTOS.forEach(function(k){pQtys[k]=0;});
 var UMBRAL_INACTIVIDAD_DIAS=45; // regla por defecto, ajustable: ver cargarUmbralInactividad()
 var FILTRO_SEG_CLIENTES='todos';
+var BUSQUEDA_CLIENTES=''; // ITERACIÓN 2 / Fase 2: texto del buscador superior cuando la pantalla Clientes está activa
 var movimientosCobro=[];var _registrandoMovimiento=false;var cobroPedidoModalId=null;
 var semanaOffset=0;
 var filtroPedidosFechas=[],filtroEncCadete='Cadete',filtroCiudadCadete='Todos';
@@ -1579,6 +1580,17 @@ var pedidosImportados=[];
 // ── SUPABASE ──────────────────────────────────────────────────
 function sbH(e){var h={'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json'};if(e)Object.assign(h,e);return h;}
 async function sbGet(t,q){try{var r=await fetch(SUPA_URL+'/'+t+'?select=*'+(q||''),{headers:sbH()});if(!r.ok)return null;return await r.json();}catch(e){return null;}}
+// ITERACIÓN 2 / Fase 6: llamada a funciones de Postgres (RPC) vía PostgREST, mismo esquema
+// de autenticación que sbGet/sbUpsert. Se usa para pedir el próximo número de pedido de forma
+// atómica (ver siguiente_fika_id() en la migración SQL). Devuelve null si falla o si la
+// función todavía no existe en Supabase (p.ej. antes de correr la migración).
+async function sbRpc(fn,params){
+  try{
+    var r=await fetch(SUPA_URL+'/rpc/'+fn,{method:'POST',headers:sbH(),body:JSON.stringify(params||{})});
+    if(!r.ok)return null;
+    return await r.json();
+  }catch(e){return null;}
+}
 async function sbUpsert(t,d){
   try{
     var arr=Array.isArray(d)?d:[d];
@@ -1785,6 +1797,34 @@ function calcClienteStats(nombre){
     inactivo:inactivo,esNuevo:pPedidos.length>0&&diasDesde!==null&&(Date.now()-new Date(pPedidos[0].fecha+'T12:00').getTime())/86400000<=30
   };
 }
+// ITERACIÓN 2 / Fase 2: matchea un cliente (por nombre) contra el texto del buscador,
+// probando nombre formal, sobrenombre, teléfono (normalizado, ignora espacios/guiones/código
+// de país) y número de pedido (FIKA-ID) asociado a alguno de sus pedidos.
+function clienteCoincideBusqueda(nombre,q){
+  if(!q)return true;
+  var qL=q.trim().toLowerCase();
+  var qDig=qL.replace(/\D/g,'');
+  if((nombre||'').toLowerCase().includes(qL))return true;
+  var cli=clientes.find(function(c){return c.nombre.toLowerCase()===(nombre||'').toLowerCase();});
+  if(cli&&cli.sobrenombre&&cli.sobrenombre.toLowerCase().includes(qL))return true;
+  if(cli&&cli.telefono&&qDig.length>=3&&cli.telefono.replace(/\D/g,'').includes(qDig))return true;
+  var pedidosCli=pedidos.filter(function(p){return (p.nombre||'').toLowerCase()===(nombre||'').toLowerCase();});
+  if(pedidosCli.some(function(p){return p.telefono&&qDig.length>=3&&p.telefono.replace(/\D/g,'').includes(qDig);}))return true;
+  if(pedidosCli.some(function(p){return p.fikaId&&String(p.fikaId).toLowerCase().includes(qL);}))return true;
+  return false;
+}
+function filtrarNombresPorBusqueda(nombres,q){
+  if(!q)return nombres;
+  return nombres.filter(function(n){return clienteCoincideBusqueda(n,q);});
+}
+// ITERACIÓN 2 / Fase 2: forma explícita de limpiar búsqueda + filtro de segmentación a la vez.
+function limpiarFiltrosClientes(){
+  FILTRO_SEG_CLIENTES='todos';BUSQUEDA_CLIENTES='';
+  var mi=document.getElementById('mob-search-inp');if(mi)mi.value='';
+  var di=document.getElementById('desk-search-inp');if(di)di.value='';
+  var mc=document.getElementById('mob-search-clear');if(mc)mc.style.display='none';
+  if(ES_MOVIL)renderClientesMob();else renderClientesDesk();
+}
 function segmentarClientes(listaNombres,filtro){
   if(filtro==='todos')return listaNombres;
   return listaNombres.filter(function(nombre){
@@ -1926,7 +1966,7 @@ function asignarIdsPedidos(){
   var sinId=pedidos.filter(function(p){return !p.fikaId;});
   if(sinId.length===0)return;
   // Encontrar el máximo ID actual
-  var maxNum=349;
+  var maxNum=299; // 300 es el primer número real (piso), nunca un valor inventado
   pedidos.forEach(function(p){
     if(p.fikaId){var n=parseInt(p.fikaId.replace('FIKA-',''));if(n>maxNum)maxNum=n;}
   });
@@ -1944,8 +1984,36 @@ function asignarIdsPedidos(){
   FIKA_ID_COUNTER=maxNum+1;
 }
 
+var _avisoNumeracionNoAtomica=false; // para no repetir el warning en consola en cada pedido
+// ITERACIÓN 2 / Fase 6: numeración persistente y segura ante creación simultánea.
+// Causa real del problema reportado: el método anterior leía el máximo fika_id existente
+// (ordenando como TEXTO, no como número, y sin ninguna garantía atómica) y recién después
+// guardaba el pedido con ese número + 1. Si dos pedidos se creaban casi al mismo tiempo
+// (dos pestañas, dos dispositivos), ambos podían leer el mismo máximo antes de que el otro
+// guardara, y terminaban con el mismo número — esto es justamente lo que permite duplicados
+// aunque una consulta de verificación posterior no encuentre ninguno en ese momento puntual.
+// Además, ordenar fika_id como texto falla si hay valores con distinta cantidad de dígitos
+// (por ejemplo "FIKA-300" vs "FIKA-1024": como texto, "FIKA-300" > "FIKA-1024").
+//
+// La solución real vive en el servidor: una secuencia de Postgres (pedidos_fika_seq) más la
+// función siguiente_fika_id(), que hacen la asignación atómica (nextval() nunca entrega el
+// mismo número dos veces, ni con conexiones concurrentes). Ver la migración SQL entregada.
+// Mientras esa migración no esté aplicada, se usa un método de respaldo (el anterior, con sus
+// mismas limitaciones) para que la app no deje de funcionar — pero se avisa explícitamente
+// en consola y una única vez por sesión, para que quede claro que ese respaldo NO es seguro
+// ante concurrencia.
 async function nextFikaId(){
-  var maxNum=349;
+  var viaRpc=await sbRpc('siguiente_fika_id',{});
+  if(viaRpc!==null&&viaRpc!==undefined&&typeof viaRpc==='string'&&/^FIKA-\d+$/.test(viaRpc)){
+    return viaRpc;
+  }
+  if(!_avisoNumeracionNoAtomica){
+    _avisoNumeracionNoAtomica=true;
+    console.error('[FIKA] La función siguiente_fika_id() no respondió (¿falta correr la migración SQL de Fase 6?). '+
+      'Usando el método de respaldo, que NO es seguro ante creación simultánea de pedidos. '+
+      'Avisale a Fede: hay que ejecutar la migración SQL de numeración.');
+  }
+  var maxNum=299; // 300 es el primer número real (piso), nunca un valor inventado
   try{
     var top=await sbGet('pedidos','&select=fika_id&fika_id=not.is.null&order=fika_id.desc&limit=1');
     if(top&&top.length>0&&top[0].fika_id){
@@ -2061,9 +2129,23 @@ function checkAlertaPago(){var n=pedidos.filter(function(p){return !p.pago;}).le
 function buscarCliente(q){
   q=(q||'').trim().toLowerCase();
   // Detectar pestaña activa
-  var enCobros=false;
-  if(ES_MOVIL){var mc=document.getElementById('ms-cobros');if(mc&&mc.classList.contains('active'))enCobros=true;}
-  else{var dc=document.getElementById('d-cobros');if(dc&&dc.classList.contains('active'))enCobros=true;}
+  var enCobros=false,enClientes=false;
+  if(ES_MOVIL){
+    var mc=document.getElementById('ms-cobros');if(mc&&mc.classList.contains('active'))enCobros=true;
+    var mcli=document.getElementById('ms-clientes');if(mcli&&mcli.classList.contains('active'))enClientes=true;
+  } else {
+    var dc=document.getElementById('d-cobros');if(dc&&dc.classList.contains('active'))enCobros=true;
+    var dcli=document.getElementById('d-clientes');if(dcli&&dcli.classList.contains('active'))enClientes=true;
+  }
+
+  // ITERACIÓN 2 / Fase 2: el buscador superior antes no hacía nada en la pantalla Clientes
+  // (caía al filtro de Pedidos, que no está visible ahí). Ahora busca por nombre, sobrenombre,
+  // teléfono y número de pedido, y se combina con el filtro de segmentación activo.
+  if(enClientes){
+    BUSQUEDA_CLIENTES=q;
+    if(ES_MOVIL)renderClientesMob();else renderClientesDesk();
+    return;
+  }
 
   if(enCobros){
     if(!q){if(ES_MOVIL)renderCobros();else renderCobrosDesk();return;}
@@ -2195,7 +2277,7 @@ function pQty(k,d){pQtys[k]=Math.max(0,(pQtys[k]||0)+d);document.getElementById(
 function abrirModalPedido(id){
   pedidoEditId=id;
   PRODUCTOS.forEach(function(k){pQtys[k]=0;document.getElementById('pq-'+k).textContent=0;});
-  ['p-nombre','p-tel','p-dom','p-piso','p-notas'].forEach(function(x){document.getElementById(x).value='';});
+  ['p-nombre','p-sobrenombre','p-tel','p-dom','p-piso','p-notas'].forEach(function(x){document.getElementById(x).value='';});
   document.getElementById('p-fecha').value='';document.getElementById('p-ciudad').value='';document.getElementById('p-enc').value='Cadete';document.getElementById('p-pago').checked=false;document.getElementById('p-coord').checked=false;if(document.getElementById('p-tipo-precio'))document.getElementById('p-tipo-precio').value='Minorista';
   document.getElementById('p-dom').disabled=false;document.getElementById('p-dom').style.opacity='1';document.getElementById('p-piso').disabled=false;document.getElementById('p-piso').style.opacity='1';
   document.getElementById('p-total-preview').style.display='none';
@@ -2203,6 +2285,10 @@ function abrirModalPedido(id){
     var p=pedidos.find(function(x){return x.id===id;});
     if(p){
       document.getElementById('p-nombre').value=p.nombre||'';document.getElementById('p-fecha').value=p.fecha||'';document.getElementById('p-tel').value=p.telefono||'';document.getElementById('p-dom').value=p.domicilio||'';document.getElementById('p-piso').value=p.piso||'';document.getElementById('p-ciudad').value=p.ciudad||'';document.getElementById('p-enc').value=p.encargado||'Cadete';document.getElementById('p-notas').value=p.notas||'';document.getElementById('p-pago').checked=p.pago||false;if(document.getElementById('p-tipo-precio'))document.getElementById('p-tipo-precio').value='Minorista';
+      // FASE 2.1: el sobrenombre vive en la ficha del cliente, no en el pedido (evita
+      // duplicar el dato en dos tablas). Se busca por clienteId y, si no hay, por nombre.
+      var cliDelPedido=(p.clienteId&&clientes.find(function(x){return x.id===p.clienteId;}))||clientes.find(function(x){return x.nombre.toLowerCase()===(p.nombre||'').toLowerCase();});
+      document.getElementById('p-sobrenombre').value=(cliDelPedido&&cliDelPedido.sobrenombre)||'';
       if(p.domicilio==='Coordinar'){document.getElementById('p-coord').checked=true;toggleCoord();}
       if(p.panes)PRODUCTOS.forEach(function(k){pQtys[k]=p.panes[k]||0;document.getElementById('pq-'+k).textContent=pQtys[k];});
     }
@@ -2264,8 +2350,14 @@ async function _guardarPedidoInterno(){
   if(pedidoEditId&&pExist&&(pExist.domicilio!==p.domicilio||pExist.ciudad!==p.ciudad)){
     verificarCambioDomicilioYRecalcular(p.id);
   }
+  // FASE 2.2: el sobrenombre se escribe/edita directamente desde el formulario de pedido,
+  // pero vive únicamente en la ficha del cliente (clientes.sobrenombre), para no duplicarlo
+  // en la tabla pedidos. Si el campo quedó vacío, NO se pisa un sobrenombre ya guardado
+  // (evita que editar otro dato del pedido borre el sobrenombre por accidente).
+  var sobrenombreForm=document.getElementById('p-sobrenombre').value.trim();
   // Si no existe como cliente, crearlo
-  if(!cli&&nombre){var nCli={id:'cli_'+Date.now(),nombre:nombre,telefono:p.telefono,domicilio:p.domicilio,piso:p.piso,ciudad:p.ciudad,etiqueta:'nuevo',creado_en:new Date().toISOString()};clientes.push(nCli);sbUpsert('clientes',nCli);localStorage.setItem('fika-clientes',JSON.stringify(clientes));actualizarDatalist();}
+  if(!cli&&nombre){var nCli={id:'cli_'+Date.now(),nombre:nombre,sobrenombre:sobrenombreForm||null,telefono:p.telefono,domicilio:p.domicilio,piso:p.piso,ciudad:p.ciudad,etiqueta:'nuevo',creado_en:new Date().toISOString()};clientes.push(nCli);sbUpsert('clientes',nCli);localStorage.setItem('fika-clientes',JSON.stringify(clientes));actualizarDatalist();}
+  else if(cli&&sobrenombreForm&&cli.sobrenombre!==sobrenombreForm){cli.sobrenombre=sobrenombreForm;sbUpsert('clientes',cli);localStorage.setItem('fika-clientes',JSON.stringify(clientes));}
   cerrarModal('modal-pedido');renderPedidos();checkAlertaPago();
   if(!ES_MOVIL)renderDeskPedidos();
 }
@@ -2433,9 +2525,9 @@ function renderClientesMob(){
   var selEl=document.getElementById('seg-clientes-mob');if(selEl)selEl.value=FILTRO_SEG_CLIENTES;
   var ut=document.getElementById('umbral-txt-mob');if(ut)ut.textContent=UMBRAL_INACTIVIDAD_DIAS;
   var mapa={};pedidos.forEach(function(p){if(!mapa[p.nombre])mapa[p.nombre]={nombre:p.nombre,pedidos:[],etiqueta:p._etiqueta||'ninguna'};mapa[p.nombre].pedidos.push(p);if(p._etiqueta)mapa[p.nombre].etiqueta=p._etiqueta;});
-  var nombres=segmentarClientes(Object.keys(mapa),FILTRO_SEG_CLIENTES);
+  var nombres=filtrarNombresPorBusqueda(segmentarClientes(Object.keys(mapa),FILTRO_SEG_CLIENTES),BUSQUEDA_CLIENTES);
   var lista=nombres.map(function(n){return mapa[n];}).sort(function(a,b){return b.pedidos.length-a.pedidos.length;});
-  if(lista.length===0){list.innerHTML='';empty.style.display='block';return;}
+  if(lista.length===0){list.innerHTML='';empty.style.display='block';empty.innerHTML=BUSQUEDA_CLIENTES?'<div class="empty-icon">&#128269;</div>Sin resultados para "'+BUSQUEDA_CLIENTES+'".':'<div class="empty-icon">&#128100;</div>Sin clientes aún.';return;}
   empty.style.display='none';list.innerHTML='';
   lista.forEach(function(c){
     var totalPanes=c.pedidos.reduce(function(a,p){return a+Object.values(p.panes||{}).reduce(function(x,y){return x+y;},0);},0);
@@ -2500,6 +2592,33 @@ function verClienteMob(nombre){
   drowF('Ticket promedio',fmtPeso(stats.ticketPromedio));
   drowF('Pagados',pagados+'/'+c.pedidos.length);
   cont.appendChild(c1b);
+  // ITERACIÓN 2 / Fase 2: trazabilidad de la deuda — de qué pedidos surge y qué pagos
+  // se registraron, en vez de mostrar solo el total agregado.
+  var pedidosConSaldo=c.pedidos.filter(function(p){return saldoPedido(p)>0;}).sort(function(a,b){return (a.fecha||'').localeCompare(b.fecha||'');});
+  if(pedidosConSaldo.length>0){
+    var slDeu=document.createElement('div');slDeu.className='sec-lbl';slDeu.textContent='Pedidos con saldo pendiente';cont.appendChild(slDeu);
+    var cDeu=document.createElement('div');cDeu.className='card';cDeu.style.marginBottom='12px';
+    pedidosConSaldo.forEach(function(p){
+      var r=document.createElement('div');r.className='det-row';
+      var l=document.createElement('span');l.className='det-lbl';l.textContent=(p.fikaId||('#'+p.id))+' · '+(p.fecha?new Date(p.fecha+'T12:00').toLocaleDateString('es-AR',{day:'numeric',month:'short'}):'s/f');
+      var v=document.createElement('span');v.className='det-val';v.style.color='var(--danger)';v.textContent='Debe '+fmtPeso(saldoPedido(p))+' de '+fmtPeso(calcTotalPedido(p));
+      r.appendChild(l);r.appendChild(v);cDeu.appendChild(r);
+    });
+    cont.appendChild(cDeu);
+  }
+  var movsCli=movimientosCobro.filter(function(m){return !m.anulado&&((m.clienteNombre||'').toLowerCase()===nombre.toLowerCase()||c.pedidos.some(function(p){return p.id===m.pedidoId;}));}).sort(function(a,b){return (b.fecha||'').localeCompare(a.fecha||'');});
+  if(movsCli.length>0){
+    var slPag=document.createElement('div');slPag.className='sec-lbl';slPag.textContent='Pagos registrados';cont.appendChild(slPag);
+    var cPag=document.createElement('div');cPag.className='card';cPag.style.marginBottom='12px';
+    movsCli.forEach(function(m){
+      var pedRef=m.pedidoId?c.pedidos.find(function(p){return p.id===m.pedidoId;}):null;
+      var r=document.createElement('div');r.className='det-row';
+      var l=document.createElement('span');l.className='det-lbl';l.textContent=(m.fecha?new Date(m.fecha).toLocaleDateString('es-AR'):'s/f')+(pedRef?' · '+(pedRef.fikaId||('#'+pedRef.id)):' · anticipo sin aplicar')+(m.medioPago?' · '+m.medioPago:'');
+      var v=document.createElement('span');v.className='det-val';v.style.color='var(--ok)';v.textContent=fmtPeso(m.importe);
+      r.appendChild(l);r.appendChild(v);cPag.appendChild(r);
+    });
+    cont.appendChild(cPag);
+  }
   if(cliRegD){var bMsg=document.createElement('button');bMsg.className='btn-s';bMsg.style.marginBottom='12px';bMsg.textContent='💬 Mensaje posventa (último pedido)';bMsg.onclick=function(){var ultimoPed=c.pedidos.slice().sort(function(a,b){return (b.fecha||'').localeCompare(a.fecha||'');})[0];if(ultimoPed){pedidoVerId=ultimoPed.id;enviarMensajePosventa();}};cont.appendChild(bMsg);}
   // Consumo por producto
   var tipos={};PRODUCTOS.forEach(function(k){tipos[k]=0;});c.pedidos.forEach(function(p){PRODUCTOS.forEach(function(k){tipos[k]+=(p.panes&&p.panes[k])||0;});});
@@ -2744,7 +2863,10 @@ async function sincronizarPedidos(){
   await cargarDesdeSupabase();
   hideLoad();
   pedidosImportados=pedidos.slice();
-  cadeteOrden=[];filtroPedidosFechas=[];
+  // ITERACIÓN 2 / Fase 4: antes "Sincronizar" vaciaba cadeteOrden sin recargar el orden
+  // guardado, así que el próximo render lo reconstruía desde cero (natural) y se perdía
+  // el orden de reparto confirmado. Ahora se recarga el orden persistido en Supabase.
+  await cargarOrdenCadetePersistido();filtroPedidosFechas=[];
   asignarIdsPedidos();
   renderPedidos();renderDeskPedidos();renderCadete();renderRepClientes();
   checkAlertaPago();
@@ -2925,7 +3047,15 @@ function guardarApiKey(){var k=document.getElementById('gmaps-key').value.trim()
 
 function calcularRuta(){
   var todos=getPedidosReparto();var lista=filtroRepCiudad==='todos'?todos:todos.filter(function(p){return detectarCiudad(p.ciudad)===filtroRepCiudad;});
-  if(lista.length===0){alert('Sin pedidos con domicilio.');return;}
+  if(lista.length===0){
+    // ITERACIÓN 2 / Fase 3: antes decía solo "Sin pedidos con domicilio.", sin explicar que
+    // REPARTO solo toma pedidos con domicilio real Y encargado = "Cadete" (ver getPedidosReparto).
+    var totalConDom=(pedidosImportados.length>0?pedidosImportados:pedidos).filter(function(p){return p.domicilio&&p.domicilio!=='Coordinar';}).length;
+    if(totalConDom>0)alert('No hay pedidos para mostrar en el mapa con el filtro actual.\n\nREPARTO solo incluye pedidos con domicilio real y Encargado = "Cadete". Hay '+totalConDom+' pedido(s) con domicilio pero con otro encargado o fuera del filtro de fecha/ciudad activo.');
+    else alert('Sin pedidos con domicilio. Cargá un domicilio real (no "Coordinar") en el pedido para que aparezca en el mapa.');
+    return;
+  }
+  if(!loadApiKey()){alert('Falta la API Key de Google Maps. Pegala en "Cálculo de ruta (Google Maps)" arriba y guardala antes de calcular la ruta.');return;}
   var zonaA=lista.filter(function(p){return detectarCiudad(p.ciudad)===inicioRuta;});
   var zonaB=lista.filter(function(p){return detectarCiudad(p.ciudad)!==inicioRuta;});
   var listaOrd=zonaA.concat(zonaB);
@@ -3114,7 +3244,107 @@ function moverCadeteOrden(id,dir){
   var i=cadeteOrden.indexOf(id);if(i<0)return;
   var j=i+dir;if(j<0||j>=cadeteOrden.length)return;
   var tmp=cadeteOrden[i];cadeteOrden[i]=cadeteOrden[j];cadeteOrden[j]=tmp;
-  cadeteOrdenManual=true;renderCadete();renderCadeteMob();
+  cadeteOrdenManual=true;guardarCadeteOrden();renderCadete();renderCadeteMob();
+}
+
+// ITERACIÓN 2 / Fase 4: el orden de reparto (cadeteOrden) vivía solo en memoria del navegador.
+// Causa real de "se reordena todo al llegar un pedido nuevo": cada render comparaba el set de
+// ids filtrado contra cadeteOrden, y si NO coincidía exactamente (lo cual pasa apenas aparece
+// UN pedido nuevo, o se cierra/cancela uno), tiraba todo el orden guardado y lo rearmaba desde
+// cero en el orden "natural" (el que vino de la consulta). Además, como cadeteOrden nunca se
+// guardaba en Supabase, recargar la página también lo perdía. Ahora: se persiste en la tabla
+// config (clave cadete_orden_manual) y, cuando el set de ids cambia, se hace un merge que
+// conserva el orden relativo de los pedidos que ya estaban y agrega los nuevos al final —
+// nunca se vuelve a barajar lo que ya estaba confirmado.
+function mergeCadeteOrden(ids,todosPedidos){
+  var nuevo=cadeteOrden.filter(function(id){return ids.indexOf(id)!==-1;});
+  var agregados=[];
+  ids.forEach(function(id){if(nuevo.indexOf(id)===-1){nuevo.push(id);agregados.push(id);}});
+  var cambio=nuevo.length!==cadeteOrden.length||nuevo.some(function(id,i){return cadeteOrden[i]!==id;});
+  cadeteOrden=nuevo;
+  if(cambio)guardarCadeteOrden();
+  // ITERACIÓN 2 / Fase 4.2: el pedido nuevo ya quedó agregado al final de forma inmediata
+  // (nunca se pierde ni se demora mientras se calcula nada). Si el orden ya fue confirmado
+  // manualmente, se intenta reubicarlo cerca de la parada más cercana según su domicilio
+  // real (ver reubicarNuevosPorProximidad). Si no hay API key o falla el cálculo, se queda
+  // donde está: al final, nunca se simula una reubicación que no ocurrió.
+  if(agregados.length>0&&todosPedidos)reubicarNuevosPorProximidad(agregados,todosPedidos);
+  return cambio;
+}
+// ITERACIÓN 2 / Fase 4.2: inserción geográfica de pedidos nuevos en un recorrido ya
+// confirmado. Usa la Distance Matrix de Google (mismo origen y misma API key que ya usa
+// "Calcular ruta óptima") para encontrar, entre las paradas ya confirmadas, el lugar donde
+// insertar el pedido nuevo agrega menos recorrido — sin tocar el orden relativo de las
+// paradas existentes ni sus horarios ya comunicados (eso lo hace el usuario manualmente si
+// hiciera falta, nunca esta función). Si no hay API key configurada o la consulta falla,
+// el pedido se queda donde mergeCadeteOrden ya lo dejó (al final) y se registra el motivo
+// en consola — nunca se inventa una posición.
+var _reposicionandoIds={};
+function direccionPedidoCadete(p){return (p.domicilio||'')+(p.piso?', '+p.piso:'')+', '+(p.ciudad||'Tucuman')+', Argentina';}
+function reubicarNuevosPorProximidad(nuevosIds,todosPedidos){
+  if(!cadeteOrdenManual||nuevosIds.length===0)return;
+  var key=loadApiKey();
+  if(!key)return;
+  nuevosIds.forEach(function(nuevoId){
+    if(_reposicionandoIds[nuevoId])return;
+    _reposicionandoIds[nuevoId]=true;
+    var nuevoP=todosPedidos.find(function(x){return x.id===nuevoId;});
+    if(!nuevoP||!nuevoP.domicilio||nuevoP.domicilio==='Coordinar'){delete _reposicionandoIds[nuevoId];return;}
+    asegurarGoogleMaps(key,function(){
+      try{
+        if(cadeteOrden.indexOf(nuevoId)===-1){delete _reposicionandoIds[nuevoId];return;}
+        var restoIds=cadeteOrden.filter(function(id){return id!==nuevoId;});
+        var stops=restoIds.map(function(id){return todosPedidos.find(function(p){return p.id===id;});}).filter(function(p){return p&&p.domicilio&&p.domicilio!=='Coordinar';});
+        if(stops.length===0){delete _reposicionandoIds[nuevoId];return;}
+        var ORIGEN_DIR='Pedro de Villalba 400, Yerba Buena, Tucuman, Argentina';
+        var puntos=[ORIGEN_DIR].concat(stops.map(direccionPedidoCadete)).concat([direccionPedidoCadete(nuevoP)]);
+        var service=new google.maps.DistanceMatrixService();
+        service.getDistanceMatrix({origins:puntos,destinations:puntos,travelMode:google.maps.TravelMode.DRIVING},function(resp,status){
+          delete _reposicionandoIds[nuevoId];
+          if(status!=='OK'||!resp||!resp.rows){console.error('[FIKA] Distance Matrix no disponible para ubicar el pedido nuevo en Reparto ('+status+'); queda al final del orden confirmado.');return;}
+          var idxNuevo=puntos.length-1;
+          function dist(i,j){var el=resp.rows[i]&&resp.rows[i].elements[j];return (el&&el.status==='OK')?el.distance.value:Infinity;}
+          var mejorPos=stops.length,mejorCosto=Infinity;
+          for(var pos=0;pos<=stops.length;pos++){
+            var prevIdx=pos;
+            var nextIdx=pos<stops.length?pos+1:null;
+            var costo=dist(prevIdx,idxNuevo)+(nextIdx!==null?dist(idxNuevo,nextIdx):0)-(nextIdx!==null?dist(prevIdx,nextIdx):0);
+            if(costo<mejorCosto){mejorCosto=costo;mejorPos=pos;}
+          }
+          if(!isFinite(mejorCosto)){console.error('[FIKA] Distance Matrix devolvió distancias no válidas; el pedido nuevo queda al final del orden confirmado.');return;}
+          if(cadeteOrden.indexOf(nuevoId)===-1)return;
+          var ordenFinal=stops.map(function(p){return p.id;});
+          ordenFinal.splice(mejorPos,0,nuevoId);
+          cadeteOrden=ordenFinal;
+          cadeteOrdenManual=true;
+          guardarCadeteOrden();
+          if(typeof renderCadete==='function'&&document.getElementById('d-cadete')&&document.getElementById('d-cadete').classList.contains('active'))renderCadete();
+          if(typeof renderCadeteMob==='function'&&document.getElementById('ms-cadete-mob')&&document.getElementById('ms-cadete-mob').classList.contains('active'))renderCadeteMob();
+        });
+      }catch(e){delete _reposicionandoIds[nuevoId];console.error('[FIKA] Error al reubicar pedido nuevo por proximidad:',e);}
+    });
+  });
+}
+var _guardandoCadeteOrden=false,_cadeteOrdenPendiente=false;
+async function guardarCadeteOrden(){
+  // Debounce simple: si ya hay un guardado en curso, marca que hay que volver a guardar
+  // al terminar (evita pisarse si se reordena varias veces rápido).
+  if(_guardandoCadeteOrden){_cadeteOrdenPendiente=true;return;}
+  _guardandoCadeteOrden=true;
+  try{
+    await sbUpsert('config',{key:'cadete_orden_manual',value:JSON.stringify({ids:cadeteOrden,manual:cadeteOrdenManual})});
+  }catch(e){console.error('[FIKA] No se pudo guardar el orden de reparto en Supabase:',e);}
+  _guardandoCadeteOrden=false;
+  if(_cadeteOrdenPendiente){_cadeteOrdenPendiente=false;guardarCadeteOrden();}
+}
+async function cargarOrdenCadetePersistido(){
+  try{
+    var r=await sbGet('config','&select=value&key=eq.cadete_orden_manual');
+    if(r&&r.length>0&&r[0].value){
+      var d=JSON.parse(r[0].value);
+      if(d&&Array.isArray(d.ids)){cadeteOrden=d.ids;cadeteOrdenManual=!!d.manual;}
+    }
+  }catch(e){console.error('[FIKA] No se pudo cargar el orden de reparto guardado:',e);}
 }
 
 function renderCadete(){
@@ -3141,9 +3371,17 @@ function renderCadete(){
     return encOk&&ciudadOk&&fechaOk;
   });
   var empty=document.getElementById('cadete-empty'),tabla=document.getElementById('cadete-tabla');if(!tabla)return;
-  if(filtrados.length===0){tabla.innerHTML='';empty.style.display='block';cadeteOrden=[];return;}empty.style.display='none';
-  var ids=filtrados.map(function(p){return p.id;});var ok=cadeteOrden.length===ids.length&&cadeteOrden.every(function(id){return ids.indexOf(id)>=0;})&&ids.every(function(id){return cadeteOrden.indexOf(id)>=0;});
-  if(!ok)cadeteOrden=ids.slice();
+  // ITERACIÓN 2 / Fase 4: antes esto vaciaba cadeteOrden por completo con un filtro que no
+  // tiene resultados (p. ej. cambiar de fecha), perdiendo el orden guardado de otras fechas.
+  // Ahora solo se muestra el estado vacío, sin tocar el orden persistido.
+  if(filtrados.length===0){tabla.innerHTML='';empty.style.display='block';return;}empty.style.display='none';
+  // BUG REAL (iteración 2, Fase 7): esta línea referenciaba una variable "ok" que nunca se
+  // declaraba (mergeCadeteOrden ya deja cadeteOrden actualizado y no hace falta capturar su
+  // valor de retorno acá). Al ser una referencia a una variable inexistente, JS tiraba un
+  // ReferenceError ("ok is not defined") cada vez que se renderizaba REPARTO en escritorio,
+  // lo que cortaba la función a mitad de camino: el resto de renderCadete() (ordenar por
+  // horario, dibujar la tabla) nunca llegaba a ejecutarse, dejando la pantalla a medio pintar.
+  var ids=filtrados.map(function(p){return p.id;});mergeCadeteOrden(ids,todos);
   if(!cadeteOrdenManual&&filtrados.length>0&&filtrados[0].horarioEntrega)cadeteOrden.sort(function(a,b){var pa=filtrados.find(function(p){return p.id===a;}),pb=filtrados.find(function(p){return p.id===b;});if(!pa||!pa.horarioEntrega)return 1;if(!pb||!pb.horarioEntrega)return -1;return pa.horarioEntrega.localeCompare(pb.horarioEntrega);});
   var ordenados=cadeteOrden.map(function(id){return filtrados.find(function(p){return p.id===id;});}).filter(Boolean);
   var tbl=document.createElement('table');tbl.className='dtable';
@@ -3182,7 +3420,7 @@ function initDrag(){
     row.addEventListener('dragend',function(){row.style.opacity='1';rows.forEach(function(r){r.style.borderTop='';});dragging=null;});
     row.addEventListener('dragover',function(e){e.preventDefault();if(dragging&&dragging!==row)row.style.borderTop='2px solid var(--accent)';});
     row.addEventListener('dragleave',function(){row.style.borderTop='';});
-    row.addEventListener('drop',function(e){e.preventDefault();row.style.borderTop='';if(!dragging||dragging===row)return;var all=Array.from(document.querySelectorAll('.cadete-drag'));var fi=all.indexOf(dragging),ti=all.indexOf(row);var moved=cadeteOrden.splice(fi,1)[0];cadeteOrden.splice(ti,0,moved);cadeteOrdenManual=true;renderCadete();});
+    row.addEventListener('drop',function(e){e.preventDefault();row.style.borderTop='';if(!dragging||dragging===row)return;var all=Array.from(document.querySelectorAll('.cadete-drag'));var fi=all.indexOf(dragging),ti=all.indexOf(row);var moved=cadeteOrden.splice(fi,1)[0];cadeteOrden.splice(ti,0,moved);cadeteOrdenManual=true;guardarCadeteOrden();renderCadete();});
   });
 }
 
@@ -3220,7 +3458,18 @@ function abrirEditarDomicilio(id){
   var sub=document.createElement('div');sub.style.cssText='font-size:12px;color:var(--text2);margin-bottom:18px';sub.textContent=p.nombre;
   modal.appendChild(title);modal.appendChild(sub);modal.appendChild(campo('Calle y número','-dom',p.domicilio,'Ej: Av. Belgrano 1234'));modal.appendChild(campo('Piso / Dpto','-piso',p.piso,'Opcional'));modal.appendChild(campo('Ciudad','-ciudad',p.ciudad,'Yerba Buena o SMT'));
   var wEnc=document.createElement('div');wEnc.style.marginBottom='14px';var lEnc=document.createElement('div');lEnc.style.cssText='font-size:10px;color:var(--text3);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:5px';lEnc.textContent='Encargado';var selEnc=document.createElement('select');selEnc.id='ed-enc';selEnc.style.cssText='width:100%;background:var(--bg3);border:0.5px solid var(--border2);border-radius:6px;color:var(--text);font-family:Raleway,sans-serif;font-size:14px;padding:8px 12px;color-scheme:dark;-webkit-appearance:none';ENCARGADOS.forEach(function(e){var opt=document.createElement('option');opt.value=e;opt.textContent=e;if((p.encargado||'Cadete')===e)opt.selected=true;selEnc.appendChild(opt);});wEnc.appendChild(lEnc);wEnc.appendChild(selEnc);modal.appendChild(wEnc);
-  var btns=document.createElement('div');btns.style.cssText='display:flex;gap:10px';var bS=document.createElement('button');bS.style.cssText='flex:1;padding:11px;background:var(--accent2);border:none;border-radius:8px;color:var(--bg);font-family:Raleway,sans-serif;font-size:14px;font-weight:500;cursor:pointer';bS.textContent='Guardar';bS.onclick=function(){p.domicilio=document.getElementById('ed-dom').value.trim();p.piso=document.getElementById('ed-piso').value.trim();p.ciudad=document.getElementById('ed-ciudad').value.trim();p.encargado=document.getElementById('ed-enc').value;(pedidosImportados.length>0?pedidosImportados:pedidos).forEach(function(x){x.horarioEntrega=null;x.num=null;});cadeteOrden=[];ov.remove();renderCadete();renderCadeteMob();renderRepClientes();guardarPedidoSupa(p);alert('Actualizado. Recalculá la ruta en Reparto.');};var bC=document.createElement('button');bC.style.cssText='padding:11px 18px;background:none;border:0.5px solid var(--border2);border-radius:8px;color:var(--text2);font-family:Raleway,sans-serif;cursor:pointer';bC.textContent='Cancelar';bC.onclick=function(){ov.remove();};btns.appendChild(bS);btns.appendChild(bC);modal.appendChild(btns);ov.appendChild(modal);ov.onclick=function(e){if(e.target===ov)ov.remove();};document.body.appendChild(ov);
+  var btns=document.createElement('div');btns.style.cssText='display:flex;gap:10px';var bS=document.createElement('button');bS.style.cssText='flex:1;padding:11px;background:var(--accent2);border:none;border-radius:8px;color:var(--bg);font-family:Raleway,sans-serif;font-size:14px;font-weight:500;cursor:pointer';bS.textContent='Guardar';bS.onclick=function(){
+  // ITERACIÓN 2 / Fase 4: antes, editar el domicilio de UN pedido borraba el horario
+  // confirmado de TODOS los pedidos del cadete y el orden completo de reparto, obligando a
+  // recalcular toda la ruta y reordenando silenciosamente a clientes que ya tenían su horario
+  // comunicado. Ahora solo se invalida el horario del pedido editado (porque su domicilio
+  // cambió, así que su posición en la ruta ya no es confiable); el resto de los pedidos y el
+  // orden de reparto quedan intactos.
+  p.domicilio=document.getElementById('ed-dom').value.trim();p.piso=document.getElementById('ed-piso').value.trim();p.ciudad=document.getElementById('ed-ciudad').value.trim();p.encargado=document.getElementById('ed-enc').value;
+  p.horarioEntrega=null;p.num=null;
+  ov.remove();renderCadete();renderCadeteMob();renderRepClientes();guardarPedidoSupa(p);
+  alert('Domicilio actualizado. El horario de este pedido quedó sin confirmar — recalculá la ruta en Reparto para asignarle uno nuevo. El resto del recorrido no se modificó.');
+};var bC=document.createElement('button');bC.style.cssText='padding:11px 18px;background:none;border:0.5px solid var(--border2);border-radius:8px;color:var(--text2);font-family:Raleway,sans-serif;cursor:pointer';bC.textContent='Cancelar';bC.onclick=function(){ov.remove();};btns.appendChild(bS);btns.appendChild(bC);modal.appendChild(btns);ov.appendChild(modal);ov.onclick=function(e){if(e.target===ov)ov.remove();};document.body.appendChild(ov);
 }
 
 // ── TICKETS ───────────────────────────────────────────────────
@@ -3262,9 +3511,9 @@ function renderClientesDesk(){
     if(p.panes)PRODUCTOS.forEach(function(k){mapa[p.nombre].panes[k]=(mapa[p.nombre].panes[k]||0)+(p.panes[k]||0);});
     mapa[p.nombre].total+=calcTotalPedido(p);
   });
-  var nombres=segmentarClientes(Object.keys(mapa),FILTRO_SEG_CLIENTES);
+  var nombres=filtrarNombresPorBusqueda(segmentarClientes(Object.keys(mapa),FILTRO_SEG_CLIENTES),BUSQUEDA_CLIENTES);
   var lista=nombres.map(function(n){return mapa[n];}).sort(function(a,b){return b.pedidos-a.pedidos;});
-  if(lista.length===0){el.innerHTML='';if(empty)empty.style.display='block';return;}
+  if(lista.length===0){el.innerHTML='';if(empty){empty.style.display='block';empty.innerHTML=BUSQUEDA_CLIENTES?'Sin resultados para "'+BUSQUEDA_CLIENTES+'".':'Sin clientes aún.';}return;}
   if(empty)empty.style.display='none';el.innerHTML='';
   lista.forEach(function(item){
     var c=item.cli||{};
@@ -3771,6 +4020,7 @@ function elegirCliente(item){
   function setSi(id,valor){var el=document.getElementById(id);if(el&&valor)el.value=valor;}
 
   // Prioridad: ficha del cliente; si falta el dato ahi, el pedido mas reciente que lo tenga
+  var elSob=document.getElementById('p-sobrenombre');if(elSob)elSob.value=(cli&&cli.sobrenombre)||'';
   setSi('p-tel',(cli&&cli.telefono)||ultimoValor('telefono'));
   setSi('p-dom',(cli&&cli.domicilio&&cli.domicilio!=='Coordinar'?cli.domicilio:null)||ultimoValor('domicilio'));
   setSi('p-piso',(cli&&cli.piso)||ultimoValor('piso'));
