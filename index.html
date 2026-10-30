@@ -408,7 +408,10 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
       <div id="hoja-ruta-estados-mob"></div>
     </div>
     <div class="mscreen" id="ms-precios-mob">
-      <div class="sec-lbl">Minorista</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div class="sec-lbl" style="margin:0">Minorista</div>
+        <button class="btn-ol" style="margin:0" onclick="agregarProductoNuevo()">+ Nuevo producto</button>
+      </div>
       <div class="card" id="precios-lista-mob" style="margin-bottom:20px"></div>
       <div class="sec-lbl">Mayorista</div>
       <div class="card" id="precios-lista-may-mob" style="margin-bottom:20px"></div>
@@ -581,7 +584,10 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
     <!-- PRECIOS PC -->
     <div class="dscreen" id="d-precios">
       <div style="max-width:700px">
-        <div class="sec-lbl">Minorista</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div class="sec-lbl" style="margin:0">Minorista</div>
+          <button class="btn-ol" style="margin:0" onclick="agregarProductoNuevo()">+ Nuevo producto</button>
+        </div>
         <div class="card" id="precios-lista" style="margin-bottom:20px"></div>
         <div class="sec-lbl">Mayorista</div>
         <div class="card" id="precios-lista-may" style="margin-bottom:20px"></div>
@@ -784,6 +790,28 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
     <div class="panes-grid" id="panes-form"></div>
     <div class="f-row"><div class="f-lbl">Notas</div><input class="f-in" id="p-notas" placeholder="Opcional"></div>
     <div class="card" style="margin-bottom:10px"><div class="f-row" style="margin-bottom:8px"><div class="f-lbl">Tipo de precio</div><select class="f-in" id="p-tipo-precio" onchange="actualizarTotalPreview()"><option value="Minorista">Minorista</option><option value="Mayorista">Mayorista</option><option value="Combo">Combo / Promo</option></select></div><div class="toggle-row"><span style="font-size:13px;color:var(--text2)">¿Ya realizó el pago?</span><label class="toggle"><input type="checkbox" id="p-pago"><span class="slider"></span></label></div></div>
+    <!-- ITERACIÓN 3 / Fase 4: envío como concepto aparte, nunca un producto ni parte del stock. -->
+    <div class="card" style="margin-bottom:10px">
+      <div class="f-lbl" style="margin-bottom:8px">Envío</div>
+      <select class="f-in" id="p-envio-tipo" onchange="cambioEnvioTipo()" style="margin-bottom:8px">
+        <option value="">Sin definir</option>
+        <option value="pago">Envío con costo</option>
+        <option value="gratis">Envío sin cargo</option>
+      </select>
+      <input class="f-in" id="p-envio-importe" type="number" min="0" step="1" placeholder="Importe del envío" style="display:none">
+    </div>
+    <!-- ITERACIÓN 3 / Fase 2 (parte A): cantidad de bolsas, dato propio del pedido. -->
+    <div class="card" style="margin-bottom:10px">
+      <div class="f-lbl" style="margin-bottom:8px">Cantidad de bolsas</div>
+      <select class="f-in" id="p-bolsas">
+        <option value="">Sin confirmar</option>
+        <option value="1">1 bolsa</option>
+        <option value="2">2 bolsas</option>
+        <option value="3">3 bolsas</option>
+        <option value="4">4 bolsas</option>
+        <option value="5">5 bolsas</option>
+      </select>
+    </div>
     <div id="p-total-preview" style="text-align:right;font-size:13px;color:var(--accent);margin-bottom:10px;display:none"></div>
     <button class="btn-p" id="btn-guardar-pedido" onclick="guardarPedido()">Guardar pedido</button>
   </div>
@@ -797,6 +825,9 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
       <button id="btn-pagado" onclick="togglePagado()" style="width:100%;padding:13px;border-radius:8px;border:0.5px solid var(--border2);font-family:Jost,sans-serif;font-size:14px;font-weight:700;cursor:pointer;background:var(--bg3);color:var(--text2)">Sin pago</button>
       <button id="btn-entregado" onclick="toggleEntregado()" style="width:100%;padding:13px;border-radius:8px;border:0.5px solid var(--border2);font-family:Jost,sans-serif;font-size:14px;font-weight:700;cursor:pointer;background:var(--bg3);color:var(--text2)">Sin entregar</button>
     </div>
+    <!-- ITERACIÓN 3 / Fase 6/7: mensaje estructurado del pedido (detalle, envío, total,
+         estado de pago real), misma lógica centralizada que los accesos de PEDIDOS y REPARTO. -->
+    <button class="btn-s" style="margin-top:0;margin-bottom:6px" onclick="abrirMensajePedidoWA(pedidoVerId)">&#128172; Mensaje de pedido por WhatsApp</button>
     <button class="btn-s" style="margin-top:0;margin-bottom:6px" onclick="enviarHorarioVisita()">&#128241; Enviar horario por WhatsApp</button>
     <button class="btn-s" style="margin-top:0;margin-bottom:6px" onclick="enviarAlias()">Enviar alias de pago</button>
     <button class="btn-s" style="margin-top:0;margin-bottom:6px" onclick="enviarMensajePosventa()">&#128172; Mensaje posventa</button>
@@ -964,9 +995,14 @@ initLayout();
     cargarClientes(),
     cargarHistorialLocal(),
     cargarUmbralInactividad(),
+    cargarConfigEnvioDefault(),
     cargarMovimientosCobro(),
     cargarOrdenCadetePersistido()
   ]);
+  // ITERACIÓN 3 / Fase 5: recién acá "productos" (con su columna activo/inactivo) ya
+  // terminó de cargar desde Supabase, así que se reconstruye el formulario de panes para
+  // que oculte correctamente los productos desactivados.
+  buildPanesForm();
   reconstruirCobros();
   hideLoad();
   cargarCongelados();
@@ -1759,6 +1795,31 @@ async function ajustarUmbralInactividad(){
   await sbUpsert('config',{key:'umbral_inactividad_dias',value:String(n)});
   renderClientesDesk();renderClientesMob();
 }
+// ITERACIÓN 3 / Fase 4: importe de envío configurable, guardado en "config" igual que el
+// umbral de inactividad. Es solo un valor PROPUESTO al crear un pedido nuevo — nunca se
+// aplica solo: Fede elige el tipo de envío en cada pedido, y lo que quede elegido ahí es lo
+// que se congela en ese pedido para siempre (no cambia si después se actualiza este valor).
+var CONFIG_ENVIO_DEFAULT=0;
+async function cargarConfigEnvioDefault(){
+  try{
+    var data=await sbGet('config','&key=eq.envio_precio_default');
+    if(data&&data.length>0&&!isNaN(parseFloat(data[0].value))){CONFIG_ENVIO_DEFAULT=parseFloat(data[0].value);}
+  }catch(e){}
+}
+async function ajustarConfigEnvioDefault(){
+  var n=prompt('Importe de envío por defecto (se propone al crear un pedido nuevo, pero se puede cambiar en cada pedido):',CONFIG_ENVIO_DEFAULT||'');
+  if(n===null)return;n=parseFloat(n);if(isNaN(n)||n<0){alert('Ingresá un importe válido.');return;}
+  CONFIG_ENVIO_DEFAULT=n;
+  await sbUpsert('config',{key:'envio_precio_default',value:String(n)});
+  var sp=document.getElementById('envio-default-txt');if(sp)sp.textContent=fmtPeso(n)||'$0';
+}
+function cambioEnvioTipo(){
+  var tipo=document.getElementById('p-envio-tipo').value;
+  var imp=document.getElementById('p-envio-importe');
+  if(tipo==='pago'){imp.style.display='block';if(!imp.value&&CONFIG_ENVIO_DEFAULT>0)imp.value=CONFIG_ENVIO_DEFAULT;}
+  else{imp.style.display='none';imp.value='';}
+  actualizarTotalPreview();
+}
 // Devuelve las estadísticas comerciales reales de un cliente a partir de sus pedidos y cobros.
 // Si un dato no puede calcularse con lo disponible, se marca explícitamente como no disponible
 // en vez de inventarlo (ej: "cancelados", porque la app no tiene ese estado todavía).
@@ -1848,6 +1909,13 @@ function calcTotalPedido(p){
   if(p.totalFinal!==undefined&&p.totalFinal!==null&&p.totalFinal!=='')return Number(p.totalFinal);
   return calcTotalPedidoLive(p);
 }
+// ITERACIÓN 3 / Fase 4: el costo de envío es un concepto comercial aparte de los
+// productos (nunca se mezcla con el stock ni con los combos): se suma al final, una sola
+// vez, sobre el total de productos ya calculado.
+function envioImportePedido(p){
+  if(p.envioTipo==='pago')return Number(p.envioImporte)||0;
+  return 0; // gratis o no definido: no suma (nunca se asume gratis por ausencia del dato)
+}
 function calcTotalPedidoLive(p){
   if(p.tipoPrecio==='Combo'&&p.precioCombo>0){
     var c=combos.find(function(x){return x.nombre===p.comboNombre;})||combos.find(function(x){return x.precio===p.precioCombo;});
@@ -1874,11 +1942,11 @@ function calcTotalPedidoLive(p){
           if(ex>0){var prod=productos.find(function(pr){return pr.id===k;});if(prod)extra+=ex*(prod.precio||0);}
         });
       }
-      return p.precioCombo+extra;
+      return p.precioCombo+extra+envioImportePedido(p);
     }
-    return p.precioCombo;
+    return p.precioCombo+envioImportePedido(p);
   }
-  return calcTotal(p.panes,p.nombre,p.tipoPrecio);
+  return calcTotal(p.panes,p.nombre,p.tipoPrecio)+envioImportePedido(p);
 }
 function calcTotal(panes,nombreCliente,tipoPrecio){
   var t=0;if(!panes||productos.length===0)return 0;
@@ -1908,6 +1976,132 @@ function calcTotal(panes,nombreCliente,tipoPrecio){
   return t;
 }
 function fmtPeso(n){return n>0?'$'+n.toLocaleString('es-AR'):'';}
+// ITERACIÓN 3 / Fase 3: comparar nombres de cliente sin normalizar (espacios extra,
+// mayúsculas distintas) generaba registros de "clientes" duplicados — el mismo Fede creaba
+// sin querer una ficha nueva cada vez que tipeaba el nombre con una mayúscula o un espacio
+// distinto al guardado, y esa ficha nueva nacía sin teléfono. Esta función normaliza antes
+// de comparar, en todos los lugares que buscan "es el mismo cliente".
+function normNombre(s){return (s||'').toString().trim().replace(/\s+/g,' ').toLowerCase();}
+function fmtPesoMsg(n){n=Math.round(n||0);return '$'+n.toLocaleString('es-AR');}
+
+// ITERACIÓN 3 / Fase 6: helper de precio unitario para el detalle de productos de un
+// pedido, reutilizando exactamente la misma prioridad de precios que calcTotal (lista
+// mayorista/minorista, y luego precio especial por cliente si existe). Nunca se inventa
+// un precio aparte del que realmente usa el sistema de cobros.
+function precioUnitProducto(k,nombreCliente,tipoPrecio){
+  var prod=productos.find(function(p){return p.id===k;});
+  if(!prod)return 0;
+  var precio=(tipoPrecio==='Mayorista'&&prod.precio_mayorista>0)?prod.precio_mayorista:(prod.precio||0);
+  if(nombreCliente){
+    var cli=clientes.find(function(c){return normNombre(c.nombre)===normNombre(nombreCliente);});
+    if(cli){
+      var pe=preciosCliente.find(function(pc){return pc.cliente_id===cli.id&&pc.producto_id===k;});
+      if(!pe)pe=preciosCliente.find(function(pc){return pc.cliente_id===cli.id&&pc.producto_id==='todos';});
+      if(pe)precio=pe.precio;
+    }
+  }
+  return precio;
+}
+
+// Detalle de productos de un pedido, en el mismo orden que PRODUCTOS/el ticket impreso:
+// [{key,nombre,cantidad,precioUnit,importeLinea}]. precioUnit/importeLinea quedan en null
+// cuando el pedido usa precio de combo, porque ahí el precio por unidad ya NO representa lo
+// realmente cobrado (Fase 6: "no mostrar precios individuales que no sean el importe
+// comercial aplicado"). No reconstruye productos a partir de otros campos: solo lee p.panes,
+// la misma fuente que ya usa el ticket impreso.
+// El combo solo determina el precio del pedido cuando tipoPrecio==='Combo' (igual criterio
+// que usa calcTotalPedidoLive); comboNombre/precioCombo pueden quedar como datos residuales
+// del formulario aunque el pedido se haya guardado con otro tipo de precio, así que no basta
+// con mirar si esos campos existen.
+function pedidoUsaCombo(p){return !!(p&&p.tipoPrecio==='Combo'&&p.precioCombo>0);}
+function detalleProductosPedido(p){
+  var usaCombo=pedidoUsaCombo(p);
+  var out=[];
+  if(!p||!p.panes)return out;
+  PRODUCTOS.forEach(function(k){
+    var cant=p.panes[k]||0;
+    if(cant<=0)return;
+    var precioUnit=usaCombo?null:precioUnitProducto(k,p.nombre,p.tipoPrecio);
+    out.push({key:k,nombre:PROD_NOMBRES[k]||k,cantidad:cant,precioUnit:precioUnit,importeLinea:precioUnit!==null?precioUnit*cant:null});
+  });
+  return out;
+}
+
+// Nombre a usar al dirigirse al cliente en un mensaje (Fase 6.1): sobrenombre si está
+// cargado, si no el nombre de pila, y si no hay ninguno, un saludo neutral.
+function nombreParaMensaje(p){
+  var cli=clientes.find(function(c){return normNombre(c.nombre)===normNombre(p&&p.nombre);});
+  if(cli&&cli.sobrenombre&&cli.sobrenombre.trim())return cli.sobrenombre.trim();
+  var nombrePila=((p&&p.nombre)||'').trim().split(' ')[0];
+  return nombrePila||'';
+}
+
+// ITERACIÓN 3 / Fase 6: mensaje de WhatsApp estructurado y centralizado para un pedido —
+// usado desde la ficha del pedido, PEDIDOS y REPARTO (Fase 7), siempre con la misma lógica.
+// Detalle de productos con importes (salvo combo, ver arriba), envío diferenciado y nunca
+// inferido como gratis por ausencia de dato (6.5), total, y texto según el estado REAL de
+// pago (saldoPedido/estadoPagoPedido — nunca un texto fijo ni "impago" solo porque p.pago
+// sea false, ya que puede haber pagos parciales). Sin signos de apertura ¿¡ (6.7). Devuelve
+// {texto, advertencias[]} para que quien lo use pueda avisar qué dato faltaba, en vez de que
+// el mensaje invente algo (6.8).
+function construirMensajePedido(p){
+  var advertencias=[];
+  if(!p)return{texto:'',advertencias:['Pedido no encontrado.']};
+  var nombre=nombreParaMensaje(p);
+  var lineas=[(nombre?('Hola '+nombre+'!'):'Hola!')+' 🍞','','Te paso el detalle de tu pedido de FIKA:',''];
+  var detalle=detalleProductosPedido(p);
+  if(detalle.length===0)advertencias.push('el pedido no tiene productos cargados, no se puede armar el detalle');
+  var usaCombo=pedidoUsaCombo(p);
+  detalle.forEach(function(d){
+    lineas.push('• '+d.nombre+' x'+d.cantidad+(d.importeLinea!==null?(' — '+fmtPesoMsg(d.importeLinea)):''));
+  });
+  var envioMostrado=0;
+  if(p.envioTipo==='pago'&&p.envioImporte>0)envioMostrado=p.envioImporte;
+  var total=calcTotalPedido(p);
+  if(usaCombo){
+    lineas.push('');lineas.push((p.comboNombre||'Combo')+': '+fmtPesoMsg(p.precioCombo||0));
+    // El total real (calcTotalPedido) puede incluir productos pedidos por fuera de lo que
+    // cubre el combo (ver calcTotalPedidoLive); si eso pasa, se informa como una línea aparte
+    // en vez de dejar un "Total" que no cierra con lo que se detalló arriba (6: "el total
+    // informado debe coincidir con el importe real del pedido").
+    var extra=total-envioMostrado-(p.precioCombo||0);
+    if(extra>0)lineas.push('Adicional fuera del combo: '+fmtPesoMsg(extra));
+  }
+  if(p.envioTipo==='gratis'){
+    lineas.push('');lineas.push('*🚚 Envío SIN CARGO*');
+  } else if(p.envioTipo==='pago'&&p.envioImporte>0){
+    lineas.push('');lineas.push('Envío: '+fmtPesoMsg(p.envioImporte));
+  } else if(!p.envioTipo){
+    advertencias.push('el envío todavía no está definido para este pedido (no se muestra como gratuito)');
+  }
+  lineas.push('');lineas.push('*Total: '+fmtPesoMsg(total)+'*');
+  var estado=typeof estadoPagoPedido==='function'?estadoPagoPedido(p):(p.pago?'pagado':'pendiente');
+  var saldo=typeof saldoPedido==='function'?saldoPedido(p):(p.pago?0:total);
+  if(estado==='parcial'){
+    lineas.push('Ya abonado: '+fmtPesoMsg(total-saldo));
+    lineas.push('Saldo pendiente: '+fmtPesoMsg(saldo));
+  }
+  // estado 'pagado': no se pide pago, no se muestra como deuda (6.4).
+  // estado 'pendiente': el total de arriba ya es el importe a abonar, no hace falta repetirlo.
+  lineas.push('');lineas.push('Gracias por elegir FIKA! 💙');
+  return {texto:lineas.join('\n'),advertencias:advertencias};
+}
+
+// Abre WhatsApp con el mensaje de pedido ya armado (Fase 6/7). Nunca modifica el pedido ni
+// sus importes por el solo hecho de preparar el texto (7). Si falta el teléfono, igual arma
+// el texto y avisa que no hay destinatario válido, en vez de fallar en silencio (6.8).
+function abrirMensajePedidoWA(pedidoId){
+  var _src=pedidosImportados&&pedidosImportados.length>0?pedidosImportados:pedidos;
+  var p=_src.find(function(x){return x.id===pedidoId;})||pedidos.find(function(x){return x.id===pedidoId;});
+  if(!p){alert('No se encontró el pedido.');return;}
+  var r=construirMensajePedido(p);
+  var tel=(p.telefono||'').replace(/\D/g,'');
+  var avisos=r.advertencias.slice();
+  if(!tel)avisos.push('no hay un teléfono válido cargado: se abre WhatsApp sin destinatario, elegilo manualmente');
+  if(avisos.length>0)alert('Antes de enviar:\n- '+avisos.join('\n- '));
+  var url=tel?'https://wa.me/549'+tel+'?text='+encodeURIComponent(r.texto):'https://wa.me/?text='+encodeURIComponent(r.texto);
+  window.open(url,'_blank');
+}
 
 // ── PUNTUALIDAD DE ENTREGA ────────────────────────────────────
 function minsHHMM(s){if(!s)return null;var pt=s.split(':');return parseInt(pt[0])*60+parseInt(pt[1]);}
@@ -2066,6 +2260,20 @@ async function cargarProductos(){
   } else {
     try{productos=JSON.parse(localStorage.getItem('fika-productos')||'[]');}catch(e){productos=[];}
   }
+  hidratarProductosDinamicos();
+}
+// ITERACIÓN 3 / Fase 5: PRODUCTOS/PROD_NOMBRES nacieron como constantes fijas en el código
+// (agregar un producto nuevo significaba editar el código fuente). Ahora "productos" —ya
+// cargado desde Supabase arriba— es la fuente real: cualquier producto que Fede cree desde
+// PRECIOS queda guardado en la tabla "productos" y esta función lo agrega también a
+// PRODUCTOS/PROD_NOMBRES en memoria, para que todo el resto de la app (que ya usa esos dos
+// nombres en decenas de lugares) lo reconozca sin tener que reescribir esos lugares.
+function hidratarProductosDinamicos(){
+  productos.forEach(function(prod){
+    if(PRODUCTOS.indexOf(prod.id)===-1)PRODUCTOS.push(prod.id);
+    if(prod.nombre)PROD_NOMBRES[prod.id]=prod.nombre;
+    if(!PROD_COLORES[prod.id])PROD_COLORES[prod.id]='#8a8a8a';
+  });
 }
 
 async function cargarClientes(){
@@ -2091,8 +2299,8 @@ function cargarHistorialLocal(){
 }
 
 // ── MAPEADORES ────────────────────────────────────────────────
-function pedidoToRow(p){return{id:p.id,fika_id:p.fikaId||null,cliente_id:p.clienteId||null,nombre:p.nombre,fecha:p.fecha||null,telefono:p.telefono||null,domicilio:p.domicilio||null,piso:p.piso||null,ciudad:p.ciudad||null,encargado:p.encargado||'Cadete',notas:p.notas||null,pago:p.pago||false,entregado:p.entregado||false,panes:p.panes||{},etiqueta:p._etiqueta||null,tipo_precio:p.tipoPrecio||'Minorista',precio_combo:p.precioCombo||null,combo_nombre:p.comboNombre||null,total_final:(p.totalFinal!==undefined&&p.totalFinal!==null)?p.totalFinal:null,horario_entrega:p.horarioEntrega||null,horario_desde:p.horarioDesde||null,horario_hasta:p.horarioHasta||null,creado_en:p.creadoEn||new Date().toISOString()};}
-function rowToPedido(r){return{id:r.id,fikaId:r.fika_id||null,clienteId:r.cliente_id,nombre:r.nombre,fecha:r.fecha,telefono:r.telefono,domicilio:r.domicilio,piso:r.piso,ciudad:r.ciudad,encargado:r.encargado||'Cadete',notas:r.notas,pago:r.pago||false,entregado:r.entregado||false,panes:r.panes||{},_etiqueta:r.etiqueta,tipoPrecio:r.tipo_precio||'Minorista',precioCombo:r.precio_combo||null,comboNombre:r.combo_nombre||null,totalFinal:(r.total_final!==undefined&&r.total_final!==null)?r.total_final:null,horarioEntrega:r.horario_entrega,horarioDesde:r.horario_desde,horarioHasta:r.horario_hasta,horaEntregado:r.hora_entregado||null,creadoEn:r.creado_en,
+function pedidoToRow(p){return{id:p.id,fika_id:p.fikaId||null,cliente_id:p.clienteId||null,nombre:p.nombre,fecha:p.fecha||null,telefono:p.telefono||null,domicilio:p.domicilio||null,piso:p.piso||null,ciudad:p.ciudad||null,encargado:p.encargado||'Cadete',notas:p.notas||null,pago:p.pago||false,entregado:p.entregado||false,panes:p.panes||{},etiqueta:p._etiqueta||null,tipo_precio:p.tipoPrecio||'Minorista',precio_combo:p.precioCombo||null,combo_nombre:p.comboNombre||null,total_final:(p.totalFinal!==undefined&&p.totalFinal!==null)?p.totalFinal:null,horario_entrega:p.horarioEntrega||null,horario_desde:p.horarioDesde||null,horario_hasta:p.horarioHasta||null,bolsas:(p.bolsas!==undefined&&p.bolsas!==null&&p.bolsas!=='')?p.bolsas:null,envio_tipo:p.envioTipo||null,envio_importe:(p.envioTipo==='pago'&&p.envioImporte>0)?p.envioImporte:(p.envioTipo==='gratis'?0:null),creado_en:p.creadoEn||new Date().toISOString()};}
+function rowToPedido(r){return{id:r.id,fikaId:r.fika_id||null,clienteId:r.cliente_id,nombre:r.nombre,fecha:r.fecha,telefono:r.telefono,domicilio:r.domicilio,piso:r.piso,ciudad:r.ciudad,encargado:r.encargado||'Cadete',notas:r.notas,pago:r.pago||false,entregado:r.entregado||false,panes:r.panes||{},_etiqueta:r.etiqueta,tipoPrecio:r.tipo_precio||'Minorista',precioCombo:r.precio_combo||null,comboNombre:r.combo_nombre||null,totalFinal:(r.total_final!==undefined&&r.total_final!==null)?r.total_final:null,horarioEntrega:r.horario_entrega,horarioDesde:r.horario_desde,horarioHasta:r.horario_hasta,horaEntregado:r.hora_entregado||null,bolsas:(r.bolsas!==undefined&&r.bolsas!==null)?r.bolsas:null,envioTipo:r.envio_tipo||null,envioImporte:(r.envio_importe!==undefined&&r.envio_importe!==null)?Number(r.envio_importe):null,creadoEn:r.creado_en,
   // Estado real de entrega que escribe la app del cadete en la misma tabla "pedidos" (no se modifica esa app, solo se lee acá):
   cadeteStatus:r.cadete_status||null,motivoNoEntrega:r.motivo_no_entrega||null,cadetePago:r.cadete_pago||null,edicionHabilitada:r.edicion_habilitada||false};}
 function cobroToRow(c){return{pedido_id:c.pedidoId,nombre:c.nombre,fecha:c.fecha,panes:c.panes||{},pagado:c.pagado||false,fecha_registro:c.fechaRegistro||new Date().toISOString(),fecha_pago:c.fechaPago||null};}
@@ -2241,17 +2449,19 @@ function actualizarTotalPreview(){
   var nombre=document.getElementById('p-nombre')?document.getElementById('p-nombre').value.trim():'';
   var tipoPrecio=document.getElementById('p-tipo-precio')?document.getElementById('p-tipo-precio').value:'Minorista';
   // Si es Mayorista y los productos no tienen precio_mayorista, recargar desde Supabase
+  var envioTipoP=document.getElementById('p-envio-tipo')?document.getElementById('p-envio-tipo').value:'';
+  var envioImpP=envioTipoP==='pago'?(parseFloat(document.getElementById('p-envio-importe').value)||0):0;
   if(tipoPrecio==='Mayorista'&&productos.every(function(p){return !p.precio_mayorista||p.precio_mayorista===0;})){
     cargarProductos().then(function(){
-      var total2=calcTotal(pQtys,nombre,'Mayorista');
+      var total2=calcTotal(pQtys,nombre,'Mayorista')+envioImpP;
       var tp2=document.getElementById('p-total-preview');
-      if(tp2){if(total2>0){tp2.textContent='Total: '+fmtPeso(total2);tp2.style.display='block';}else tp2.style.display='none';}
+      if(tp2){if(total2>0){tp2.textContent='Total: '+fmtPeso(total2)+(envioImpP>0?' (incluye envío '+fmtPeso(envioImpP)+')':'');tp2.style.display='block';}else tp2.style.display='none';}
     });
     return;
   }
-  var total=calcTotal(pQtys,nombre,tipoPrecio);
+  var total=calcTotal(pQtys,nombre,tipoPrecio)+envioImpP;
   var tp=document.getElementById('p-total-preview');
-  if(total>0){tp.textContent='Total: '+fmtPeso(total);tp.style.display='block';}
+  if(total>0){tp.textContent='Total: '+fmtPeso(total)+(envioImpP>0?' (incluye envío '+fmtPeso(envioImpP)+')':'');tp.style.display='block';}
   else tp.style.display='none';
 }
 
@@ -2259,7 +2469,12 @@ function actualizarTotalPreview(){
 function buildPanesForm(){
   var g=document.getElementById('panes-form');if(!g)return;g.innerHTML='';
   PRODUCTOS.forEach(function(k){
-    var d=document.createElement('div');d.className='pan-item';
+    var d=document.createElement('div');d.className='pan-item';d.id='pan-item-'+k;
+    // ITERACIÓN 3 / Fase 5: un producto desactivado no se ofrece por defecto en pedidos
+    // nuevos (fila oculta acá), pero la fila sigue existiendo en el DOM para que, al editar
+    // un pedido histórico que sí lo tenga cargado, abrirModalPedido pueda mostrarla de
+    // nuevo — así nunca se pierde ni se esconde el detalle de un pedido ya confirmado.
+    if(!productoActivo(k))d.style.display='none';
     var nm=document.createElement('div');nm.className='pan-nm';
     var dot=document.createElement('span');dot.className='pdot';dot.style.background=PROD_COLORES[k];
     nm.appendChild(dot);nm.appendChild(document.createTextNode(PROD_NOMBRES[k]));
@@ -2271,6 +2486,7 @@ function buildPanesForm(){
     d.appendChild(nm);d.appendChild(qc);g.appendChild(d);
   });
 }
+function productoActivo(k){var prod=productos.find(function(p){return p.id===k;});return !prod||prod.activo!==false;}
 
 function pQty(k,d){pQtys[k]=Math.max(0,(pQtys[k]||0)+d);document.getElementById('pq-'+k).textContent=pQtys[k];actualizarTotalPreview();}
 
@@ -2281,6 +2497,9 @@ function abrirModalPedido(id){
   document.getElementById('p-fecha').value='';document.getElementById('p-ciudad').value='';document.getElementById('p-enc').value='Cadete';document.getElementById('p-pago').checked=false;document.getElementById('p-coord').checked=false;if(document.getElementById('p-tipo-precio'))document.getElementById('p-tipo-precio').value='Minorista';
   document.getElementById('p-dom').disabled=false;document.getElementById('p-dom').style.opacity='1';document.getElementById('p-piso').disabled=false;document.getElementById('p-piso').style.opacity='1';
   document.getElementById('p-total-preview').style.display='none';
+  // ITERACIÓN 3: envío por defecto, el importe configurado en PRECIOS (no inventa un precio).
+  document.getElementById('p-envio-tipo').value='';document.getElementById('p-envio-importe').value='';document.getElementById('p-envio-importe').style.display='none';
+  document.getElementById('p-bolsas').value='';
   if(id){
     var p=pedidos.find(function(x){return x.id===id;});
     if(p){
@@ -2290,7 +2509,15 @@ function abrirModalPedido(id){
       var cliDelPedido=(p.clienteId&&clientes.find(function(x){return x.id===p.clienteId;}))||clientes.find(function(x){return x.nombre.toLowerCase()===(p.nombre||'').toLowerCase();});
       document.getElementById('p-sobrenombre').value=(cliDelPedido&&cliDelPedido.sobrenombre)||'';
       if(p.domicilio==='Coordinar'){document.getElementById('p-coord').checked=true;toggleCoord();}
-      if(p.panes)PRODUCTOS.forEach(function(k){pQtys[k]=p.panes[k]||0;document.getElementById('pq-'+k).textContent=pQtys[k];});
+      if(p.panes)PRODUCTOS.forEach(function(k){pQtys[k]=p.panes[k]||0;var el=document.getElementById('pq-'+k);if(el)el.textContent=pQtys[k];var row=document.getElementById('pan-item-'+k);if(row&&pQtys[k]>0)row.style.display='';});
+      document.getElementById('p-envio-tipo').value=p.envioTipo||'';
+      if(p.envioTipo==='pago'){document.getElementById('p-envio-importe').style.display='block';document.getElementById('p-envio-importe').value=p.envioImporte||'';}
+      document.getElementById('p-bolsas').value=(p.bolsas!==undefined&&p.bolsas!==null)?p.bolsas:'';
+    } else {
+      // ITERACIÓN 3 / Fase 4: pedido nuevo, propone el importe de envío configurado en
+      // PRECIOS (si existe) pero sin forzar el tipo — Fede decide si corresponde o no.
+      var envioDef=CONFIG_ENVIO_DEFAULT;
+      if(envioDef>0)document.getElementById('p-envio-importe').value=envioDef;
     }
     document.getElementById('mp-title').textContent='Editar pedido';
   } else document.getElementById('mp-title').textContent='Nuevo pedido';
@@ -2334,12 +2561,15 @@ async function _guardarPedidoInterno(){
     }
   }
   var pExist=pedidoEditId?pedidos.find(function(x){return x.id===pedidoEditId;}):null;
-  var cli=clientes.find(function(c){return c.nombre.toLowerCase()===nombre.toLowerCase();});
+  var cli=clientes.find(function(c){return normNombre(c.nombre)===normNombre(nombre);});
   var tipoPrecioFinal=usarCombo?'Combo':tipoPrecioActual;
   var precioComboFinal=usarCombo?comboDetectado.precio:null;
   var comboNombreFinal=usarCombo?comboDetectado.nombre:null;
   var nuevoFikaId=pedidoEditId?((pedidos.find(function(x){return x.id===pedidoEditId;})||{}).fikaId||await nextFikaId()):await nextFikaId();
-  var p={id:pedidoEditId||Date.now().toString(),fikaId:nuevoFikaId,clienteId:cli?cli.id:null,nombre:nombre,fecha:document.getElementById('p-fecha').value,telefono:document.getElementById('p-tel').value.trim(),domicilio:document.getElementById('p-dom').value.trim(),piso:document.getElementById('p-piso').value.trim(),ciudad:document.getElementById('p-ciudad').value,encargado:document.getElementById('p-enc').value,notas:document.getElementById('p-notas').value.trim(),pago:document.getElementById('p-pago').checked,tipoPrecio:tipoPrecioFinal,precioCombo:precioComboFinal,comboNombre:comboNombreFinal,entregado:pExist?pExist.entregado||false:false,panes:JSON.parse(JSON.stringify(pQtys)),_etiqueta:pExist?pExist._etiqueta:null,creadoEn:pExist?pExist.creadoEn:new Date().toISOString()};
+  var envioTipoForm=document.getElementById('p-envio-tipo').value||null;
+  var envioImporteForm=envioTipoForm==='pago'?(parseFloat(document.getElementById('p-envio-importe').value)||0):null;
+  var bolsasForm=document.getElementById('p-bolsas').value;bolsasForm=bolsasForm?parseInt(bolsasForm):null;
+  var p={id:pedidoEditId||Date.now().toString(),fikaId:nuevoFikaId,clienteId:cli?cli.id:null,nombre:nombre,fecha:document.getElementById('p-fecha').value,telefono:document.getElementById('p-tel').value.trim(),domicilio:document.getElementById('p-dom').value.trim(),piso:document.getElementById('p-piso').value.trim(),ciudad:document.getElementById('p-ciudad').value,encargado:document.getElementById('p-enc').value,notas:document.getElementById('p-notas').value.trim(),pago:document.getElementById('p-pago').checked,tipoPrecio:tipoPrecioFinal,precioCombo:precioComboFinal,comboNombre:comboNombreFinal,entregado:pExist?pExist.entregado||false:false,panes:JSON.parse(JSON.stringify(pQtys)),_etiqueta:pExist?pExist._etiqueta:null,envioTipo:envioTipoForm,envioImporte:envioImporteForm,bolsas:bolsasForm,creadoEn:pExist?pExist.creadoEn:new Date().toISOString()};
   // FASE 4.1: se fija el total vigente AHORA, al confirmar el pedido. A partir de acá
   // calcTotalPedido siempre va a devolver este número, sin importar que mañana cambien
   // los precios de la lista o los precios especiales del cliente.
@@ -2924,7 +3154,10 @@ function _renderDeskTabla(lista){
     var tdF=r.insertCell();tdF.style.cssText='font-size:11px;color:var(--text3)';if(p.fecha){var d=new Date(p.fecha+'T12:00');tdF.textContent=DIAS_C2[d.getDay()]+' '+d.getDate()+'/'+(d.getMonth()+1);}else tdF.textContent='--';
     PRODUCTOS.forEach(function(k){cel((p.panes&&p.panes[k])||0);});
     var total=calcTotalPedido(p);var tdTot=r.insertCell();tdTot.textContent=total>0?fmtPeso(total):'--';tdTot.style.color='var(--accent)';
-    var tdE=r.insertCell();var btnE=document.createElement('button');btnE.className='btn-ol';btnE.style.cssText='margin:0;padding:3px 9px;font-size:11px';btnE.textContent='Editar';btnE.onclick=(function(pid){return function(){abrirEditarPanesPc(pid);};})(p.id);tdE.appendChild(btnE);
+    var tdE=r.insertCell();tdE.style.cssText='white-space:nowrap';var btnE=document.createElement('button');btnE.className='btn-ol';btnE.style.cssText='margin:0;padding:3px 9px;font-size:11px';btnE.textContent='Editar';btnE.onclick=(function(pid){return function(){abrirEditarPanesPc(pid);};})(p.id);tdE.appendChild(btnE);
+    // ITERACIÓN 3 / Fase 7: acceso directo al mensaje de WhatsApp del pedido, sin tener
+    // que abrir la ficha — misma lógica centralizada que la ficha individual y REPARTO.
+    var btnWA=document.createElement('button');btnWA.className='btn-ol';btnWA.style.cssText='margin:0 0 0 4px;padding:3px 9px;font-size:11px';btnWA.textContent='💬';btnWA.title='Mensaje de pedido por WhatsApp';btnWA.onclick=(function(pid){return function(e){e.stopPropagation();abrirMensajePedidoWA(pid);};})(p.id);tdE.appendChild(btnWA);
   });
   var tr=tbody.insertRow();tr.className='total-row';var tdl=tr.insertCell();tdl.textContent='TOTAL';tr.insertCell();
   PRODUCTOS.forEach(function(k){var td=tr.insertCell();td.textContent=tot[k]||'--';});tr.insertCell();tr.insertCell();
@@ -3406,8 +3639,10 @@ function renderCadete(){
     tdEst.style.cssText='font-size:12px;font-weight:500;color:'+colorEst+';white-space:nowrap';tdEst.textContent=txtEst;
     if(estCad==='no_entregado'&&p.motivoNoEntrega){var mv=document.createElement('div');mv.style.cssText='font-size:10px;color:var(--text3);margin-top:2px;font-weight:400';mv.textContent=p.motivoNoEntrega;tdEst.appendChild(mv);}
     var tdObs=tr.insertCell();tdObs.style.cssText='font-size:12px;color:var(--text2)';tdObs.textContent=p.notas||'--';
-    var tdEdit=tr.insertCell();
+    var tdEdit=tr.insertCell();tdEdit.style.cssText='white-space:nowrap';
     var bEdit=document.createElement('button');bEdit.className='btn-ol';bEdit.style.cssText='margin:0;padding:3px 9px;font-size:11px';bEdit.textContent='Editar';bEdit.onclick=(function(pid){return function(){abrirEditarDomicilio(pid);};})(p.id);tdEdit.appendChild(bEdit);
+    // ITERACIÓN 3 / Fase 7: acceso directo al mensaje de WhatsApp del pedido desde REPARTO.
+    var bWA=document.createElement('button');bWA.className='btn-ol';bWA.style.cssText='margin:0 0 0 4px;padding:3px 9px;font-size:11px';bWA.textContent='💬';bWA.title='Mensaje de pedido por WhatsApp';bWA.onclick=(function(pid){return function(e){e.stopPropagation();abrirMensajePedidoWA(pid);};})(p.id);tdEdit.appendChild(bWA);
   });
   tabla.innerHTML='';tabla.appendChild(tbl);
   initDrag();
@@ -3488,6 +3723,11 @@ function imprimirTickets(){
     var sep1=document.createElement('div');sep1.style.cssText='border-top:1px dashed #999;margin:1.5mm 0';ticket.appendChild(sep1);
     var panes=document.createElement('div');panes.className='t-panes';
     PRODUCTOS.forEach(function(k){if(p.panes&&p.panes[k]){var lin=document.createElement('div');lin.className='t-pan';var lbl=document.createElement('span');lbl.textContent=PROD_NOMBRES[k];var val=document.createElement('span');val.textContent='× '+p.panes[k];lin.appendChild(lbl);lin.appendChild(val);panes.appendChild(lin);}});
+    // ITERACIÓN 3 / Fase 4: el envío se muestra como concepto aparte, nunca mezclado con los productos.
+    if(p.envioTipo==='pago'&&p.envioImporte>0){var linE=document.createElement('div');linE.className='t-pan';var lblE=document.createElement('span');lblE.textContent='Envío';var valE=document.createElement('span');valE.textContent=fmtPeso(p.envioImporte);linE.appendChild(lblE);linE.appendChild(valE);panes.appendChild(linE);}
+    else if(p.envioTipo==='gratis'){var linG=document.createElement('div');linG.className='t-pan';var lblG=document.createElement('span');lblG.textContent='Envío';var valG=document.createElement('span');valG.textContent='Sin cargo';linG.appendChild(lblG);linG.appendChild(valG);panes.appendChild(linG);}
+    // ITERACIÓN 3 / Fase 2 (parte A): cantidad de bolsas, visible también en el ticket impreso.
+    if(p.bolsas){var linB=document.createElement('div');linB.className='t-pan';var lblB=document.createElement('span');lblB.textContent='Bolsas';var valB=document.createElement('span');valB.textContent=p.bolsas;linB.appendChild(lblB);linB.appendChild(valB);panes.appendChild(linB);}
     ticket.appendChild(panes);
     var sep2=document.createElement('div');sep2.style.cssText='border-top:1px dashed #999;margin:1.5mm 0';ticket.appendChild(sep2);
     var gracias=document.createElement('div');gracias.style.cssText='text-align:center;font-size:5.5pt;color:#555;line-height:1.6;margin-bottom:1.5mm';gracias.textContent='Gracias por apoyar este emprendimiento artesanal ♥';ticket.appendChild(gracias);
@@ -3554,14 +3794,25 @@ function renderPrecioLista(containerId, tipo){
   var el=document.getElementById(containerId);if(!el)return;el.innerHTML='';
   if(productos.length===0){el.innerHTML='<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px">Cargando...</div>';cargarProductos().then(renderPrecios);return;}
   productos.forEach(function(prod){
-    var row=document.createElement('div');row.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:0.5px solid var(--border)';
-    var nm=document.createElement('div');nm.style.cssText='font-size:14px;color:var(--text)';nm.textContent=prod.nombre;
-    var right=document.createElement('div');right.style.cssText='display:flex;align-items:center;gap:10px';
+    var inactivo=prod.activo===false;
+    var row=document.createElement('div');row.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:0.5px solid var(--border)'+(inactivo?';opacity:0.5':'');
+    var nm=document.createElement('div');nm.style.cssText='font-size:14px;color:var(--text)';nm.textContent=prod.nombre+(inactivo?' (desactivado)':'');
+    var right=document.createElement('div');right.style.cssText='display:flex;align-items:center;gap:8px';
     var precioVal=tipo==='mayorista'?(prod.precio_mayorista||0):(prod.precio||0);
     var precio=document.createElement('span');precio.style.cssText='font-size:14px;color:var(--accent);font-weight:500';precio.textContent=precioVal>0?fmtPeso(precioVal):'Sin precio';
     var bEdit=document.createElement('button');bEdit.className='btn-ol';bEdit.style.cssText='margin:0;padding:3px 10px;font-size:11px';bEdit.textContent='Editar';
     bEdit.onclick=(function(p,t){return function(){editarPrecioTipo(p,t);};})(prod,tipo);
-    right.appendChild(precio);right.appendChild(bEdit);row.appendChild(nm);row.appendChild(right);el.appendChild(row);
+    right.appendChild(precio);right.appendChild(bEdit);
+    // ITERACIÓN 3 / Fase 5: administrar productos (renombrar/activar/desactivar) se muestra
+    // una sola vez por producto (en la pasada "minorista"), no duplicado en cada lista de precio.
+    if(tipo==='minorista'){
+      var bRen=document.createElement('button');bRen.className='btn-ol';bRen.style.cssText='margin:0;padding:3px 10px;font-size:11px';bRen.textContent='Renombrar';
+      bRen.onclick=(function(p){return function(){renombrarProducto(p);};})(prod);
+      var bTog=document.createElement('button');bTog.className='btn-ol';bTog.style.cssText='margin:0;padding:3px 10px;font-size:11px';bTog.textContent=inactivo?'Activar':'Desactivar';
+      bTog.onclick=(function(p){return function(){toggleActivoProducto(p);};})(prod);
+      right.appendChild(bRen);right.appendChild(bTog);
+    }
+    row.appendChild(nm);row.appendChild(right);el.appendChild(row);
   });
 }
 
@@ -3595,7 +3846,70 @@ function editarPrecioTipo(prod,tipo){
   else prod.precio=n;
   sbUpsert('productos',[prod]);
   localStorage.setItem('fika-productos',JSON.stringify(productos));
-  renderPrecios();
+  renderPrecios();renderPreciosMob();
+}
+
+// ITERACIÓN 3 / Fase 5: administración de productos desde PRECIOS, sin tocar código.
+// Genera un id interno (slug) a partir del nombre, evitando colisiones con productos ya
+// existentes (incluidos los desactivados, para no reciclar el id de un producto retirado
+// y mezclar accidentalmente su historial con el del producto nuevo).
+function generarIdProducto(nombre){
+  var base=(nombre||'').toString().trim().toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g,'') // saca acentos
+    .replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');
+  if(!base)base='producto';
+  var id=base,n=2;
+  while(productos.some(function(p){return p.id===id;})){id=base+'_'+n;n++;}
+  return id;
+}
+async function agregarProductoNuevo(){
+  var nombre=prompt('Nombre del producto nuevo (ej: Pan de masa madre):');
+  if(nombre===null)return;nombre=nombre.trim();
+  if(!nombre){alert('El nombre no puede estar vacío.');return;}
+  if(productos.some(function(p){return normNombre(p.nombre)===normNombre(nombre)&&p.activo!==false;})){
+    alert('Ya existe un producto activo con ese nombre.');return;
+  }
+  var precioStr=prompt('Precio minorista (sin $):');
+  if(precioStr===null)return;
+  var precio=parseInt(precioStr.replace(/[^0-9]/g,''));
+  if(isNaN(precio)||precio<0){alert('Precio inválido.');return;}
+  var id=generarIdProducto(nombre);
+  var nuevo={id:id,nombre:nombre,precio:precio,precio_mayorista:precio,activo:true};
+  productos.push(nuevo);
+  hidratarProductosDinamicos();
+  await sbUpsert('productos',[nuevo]);
+  localStorage.setItem('fika-productos',JSON.stringify(productos));
+  buildPanesForm();
+  renderPrecios();renderPreciosMob();
+  alert('Producto "'+nombre+'" agregado.');
+}
+function renombrarProducto(prod){
+  var nuevoNombre=prompt('Nuevo nombre para "'+prod.nombre+'":',prod.nombre);
+  if(nuevoNombre===null)return;nuevoNombre=nuevoNombre.trim();
+  if(!nuevoNombre){alert('El nombre no puede estar vacío.');return;}
+  prod.nombre=nuevoNombre;
+  PROD_NOMBRES[prod.id]=nuevoNombre;
+  sbUpsert('productos',[prod]);
+  localStorage.setItem('fika-productos',JSON.stringify(productos));
+  buildPanesForm();
+  renderPrecios();renderPreciosMob();
+}
+async function toggleActivoProducto(prod){
+  var activar=prod.activo===false;
+  if(!activar){
+    // ITERACIÓN 3 / Fase 5: antes de desactivar, avisar si el producto tiene pedidos
+    // reales asociados (no se borra nada, solo deja de ofrecerse en pedidos nuevos).
+    var enUso=pedidos.some(function(p){return p.panes&&p.panes[prod.id]>0;});
+    var msg=enUso
+      ? 'El producto "'+prod.nombre+'" ya se usó en pedidos existentes. Al desactivarlo, esos pedidos conservan su detalle tal cual, pero dejará de ofrecerse en pedidos nuevos. ¿Confirmás?'
+      : '¿Desactivar "'+prod.nombre+'"? Dejará de ofrecerse en pedidos nuevos.';
+    if(!confirm(msg))return;
+  }
+  prod.activo=activar;
+  await sbUpsert('productos',[prod]);
+  localStorage.setItem('fika-productos',JSON.stringify(productos));
+  buildPanesForm();
+  renderPrecios();renderPreciosMob();
 }
 
 function renderPreciosEspeciales(){
@@ -4005,27 +4319,33 @@ function buscarSugerencias(q){
 function elegirCliente(item){
   document.getElementById('p-nombre').value=item.nombre;
   cerrarSugerencias();
-  var cli=item.cli;
+  var nombreNorm=normNombre(item.nombre);
+  // ITERACIÓN 3 / Fase 3: causa real del teléfono "perdido" — podía existir más de un
+  // registro en "clientes" para la misma persona (duplicado por mayúsculas/espacios de
+  // cargas anteriores a este fix). Si la sugerencia elegida apuntaba al duplicado sin
+  // teléfono, el dato bueno quedaba guardado en el otro registro y nunca se mostraba. Ahora
+  // se buscan TODOS los registros de "clientes" que coincidan por nombre normalizado, y se
+  // usa el primer valor no vacío entre todos ellos (y, si ninguno lo tiene, el pedido más
+  // reciente de esa persona que sí lo tenga).
+  var clisCoincidentes=clientes.filter(function(c){return normNombre(c.nombre)===nombreNorm;});
   // Pedidos anteriores de este cliente, del mas reciente al mas viejo
-  var pAnt=pedidos.filter(function(p){return (p.nombre||'').toLowerCase()===item.nombre.toLowerCase();})
+  var pAnt=pedidos.filter(function(p){return normNombre(p.nombre)===nombreNorm;})
     .sort(function(a,b){return (b.fecha||'').localeCompare(a.fecha||'');});
-  // Busca el valor mas reciente que no este vacio, campo por campo
-  function ultimoValor(campo){
-    for(var i=0;i<pAnt.length;i++){
-      var v=pAnt[i][campo];
-      if(v&&String(v).trim()!==''&&v!=='Coordinar')return v;
-    }
-    return null;
-  }
-  function setSi(id,valor){var el=document.getElementById(id);if(el&&valor)el.value=valor;}
+  function esValido(v){return v&&String(v).trim()!==''&&v!=='Coordinar';}
+  function primerValido(valores){for(var i=0;i<valores.length;i++){if(esValido(valores[i]))return valores[i];}return '';}
+  function ultimoValorPedido(campo){for(var i=0;i<pAnt.length;i++){if(esValido(pAnt[i][campo]))return pAnt[i][campo];}return '';}
+  // ITERACIÓN 3: siempre se asigna el valor resuelto, incluso vacío. Antes, si el campo
+  // resultaba vacío, el input simplemente no se tocaba — y si el formulario tenía cargado
+  // el teléfono de OTRO cliente elegido un momento antes, ese teléfono ajeno quedaba pegado
+  // (bug real: "cambio de cliente arrastra el teléfono del anterior").
+  function setResuelto(id,valor){var el=document.getElementById(id);if(el)el.value=valor||'';}
 
-  // Prioridad: ficha del cliente; si falta el dato ahi, el pedido mas reciente que lo tenga
-  var elSob=document.getElementById('p-sobrenombre');if(elSob)elSob.value=(cli&&cli.sobrenombre)||'';
-  setSi('p-tel',(cli&&cli.telefono)||ultimoValor('telefono'));
-  setSi('p-dom',(cli&&cli.domicilio&&cli.domicilio!=='Coordinar'?cli.domicilio:null)||ultimoValor('domicilio'));
-  setSi('p-piso',(cli&&cli.piso)||ultimoValor('piso'));
-  setSi('p-ciudad',(cli&&cli.ciudad)||ultimoValor('ciudad'));
-  setSi('p-enc',ultimoValor('encargado'));
+  setResuelto('p-sobrenombre',primerValido(clisCoincidentes.map(function(c){return c.sobrenombre;})));
+  setResuelto('p-tel',primerValido(clisCoincidentes.map(function(c){return c.telefono;}).concat([ultimoValorPedido('telefono')])));
+  setResuelto('p-dom',primerValido(clisCoincidentes.map(function(c){return c.domicilio;}).concat([ultimoValorPedido('domicilio')])));
+  setResuelto('p-piso',primerValido(clisCoincidentes.map(function(c){return c.piso;}).concat([ultimoValorPedido('piso')])));
+  setResuelto('p-ciudad',primerValido(clisCoincidentes.map(function(c){return c.ciudad;}).concat([ultimoValorPedido('ciudad')])));
+  var enc=ultimoValorPedido('encargado');var elEnc=document.getElementById('p-enc');if(elEnc&&enc)elEnc.value=enc;
   actualizarTotalPreview();
 }
 
