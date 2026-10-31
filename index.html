@@ -235,7 +235,30 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
 .pedido-main{flex:1;cursor:pointer}
 .pedido-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px}
 .badges{display:flex;gap:5px;margin-top:5px;flex-wrap:wrap}
-.btn-del-pedido{width:30px;height:30px;border-radius:50%;background:rgba(224,85,85,0.1);border:0.5px solid rgba(224,85,85,0.3);color:var(--danger);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}</style>
+.btn-del-pedido{width:30px;height:30px;border-radius:50%;background:rgba(224,85,85,0.1);border:0.5px solid rgba(224,85,85,0.3);color:var(--danger);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+/* ETAPA 1: Inicio (dashboard) */
+.inicio-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.inicio-sem-lbl{font-size:13px;color:var(--text);font-weight:500}
+.inicio-estado{font-size:11px;color:var(--text3);margin-bottom:10px}
+.inicio-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:12px}
+.inicio-card{margin-bottom:0}
+.inicio-big{font-size:26px;color:var(--accent);font-weight:500;line-height:1.2;margin:2px 0 4px}
+.inicio-sub{font-size:12px;color:var(--text2);margin-top:4px}
+.inicio-sub-tit{font-size:11px;color:var(--text3);margin:10px 0 4px;letter-spacing:0.04em}
+.inicio-nd{font-size:13px;color:var(--text3);padding:6px 0}
+.inicio-barra{height:8px;border-radius:6px;background:var(--bg3);border:0.5px solid var(--border2);overflow:hidden;margin:6px 0 2px}
+.inicio-barra-fill{height:100%;background:var(--accent2)}
+.inicio-cmp{font-size:12px;margin-top:6px;color:var(--text2)}
+.inicio-cmp-bien{color:var(--ok)}
+.inicio-cmp-mal{color:var(--danger)}
+.inicio-cmp-nd,.inicio-cmp-eq{color:var(--text3)}
+.inicio-fila{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--text);padding:3px 0;border-bottom:0.5px solid var(--border)}
+.inicio-fila-n{flex:1;min-width:120px}
+.inicio-fila-v{color:var(--text2)}
+.inicio-badge-venc{background:rgba(224,85,85,0.15);color:var(--danger);border:0.5px solid rgba(224,85,85,0.4);border-radius:20px;padding:1px 8px;font-size:10px;font-weight:600}
+.inicio-cfg-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--border)}
+.inicio-cfg-val{font-size:15px;color:var(--accent);font-weight:500}
+</style>
 </head>
 <body>
 <div id="toast-notif-wrap" style="position:fixed;top:12px;right:12px;z-index:9999;display:flex;flex-direction:column;gap:8px;max-width:320px"></div>
@@ -280,7 +303,8 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
     <!-- ITERACIÓN 2 / Fase 5: orden exacto pedido — Pedidos, Cobros, Reparto, Hoja de ruta,
          Clientes, Stock, Historial, Precios, Compras. "Semana" no estaba en la lista pedida;
          se conserva (no se retira nada sin que lo pidan) al final, después de los 9. -->
-    <button class="mnav active" onclick="showMob('pedidos')" id="mn-pedidos">Pedidos</button>
+    <button class="mnav active" onclick="showMob('inicio')" id="mn-inicio">Inicio</button>
+    <button class="mnav" onclick="showMob('pedidos')" id="mn-pedidos">Pedidos</button>
     <button class="mnav" onclick="showMob('cobros')" id="mn-cobros">Cobros <span id="cobros-badge" style="display:none;background:var(--danger);color:white;border-radius:50%;width:14px;height:14px;font-size:9px;display:inline-flex;align-items:center;justify-content:center;margin-left:2px"></span></button>
     <button class="mnav" onclick="showMob('cadete-mob')" id="mn-cadete-mob">Reparto</button>
     <button class="mnav" onclick="showMob('hoja-ruta-mob')" id="mn-hoja-ruta-mob">Hoja ruta</button>
@@ -292,7 +316,8 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
     <button class="mnav" onclick="showMob('semana')" id="mn-semana">Semana</button>
   </div>
   <div id="mob-screens">
-    <div class="mscreen active" id="ms-pedidos">
+    <div class="mscreen active" id="ms-inicio"><div class="inicio-root"></div></div>
+    <div class="mscreen" id="ms-pedidos">
       <div id="pedidos-list"></div>
       <div id="pedidos-empty" class="empty" style="display:none"><div class="empty-icon">&#127838;</div>Sin pedidos. Toca + para agregar.</div>
       <button class="btn-p" onclick="exportarPedidosSabado()">Exportar pedidos del sábado</button>
@@ -415,6 +440,11 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
       <div class="card" id="precios-lista-mob" style="margin-bottom:20px"></div>
       <div class="sec-lbl">Mayorista</div>
       <div class="card" id="precios-lista-may-mob" style="margin-bottom:20px"></div>
+      <div class="sec-lbl">Envío</div>
+      <div class="card" style="margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><div><div class="f-lbl" style="margin:0">Tarifa de envío "Con costo"</div><div style="font-size:15px;color:var(--accent);font-weight:500" class="envio-tarifa-txt">$1.000</div><div style="font-size:11px;color:var(--text3)">Los pedidos anteriores conservan su importe.</div></div><button class="btn-ol" style="margin:0" onclick="ajustarConfigEnvioDefault()">Modificar tarifa</button></div>
+        <div class="sec-lbl">Metas y cadete</div>
+        <div class="card metas-cadete-box" style="margin-bottom:20px"></div>
+
       <div class="sec-lbl">Precios especiales</div>
       <div id="precios-especiales-lista-mob"></div>
       <div id="precios-esp-empty-mob" style="text-align:center;padding:20px;color:var(--text3);font-size:13px;display:none">Sin precios especiales aún.</div>
@@ -433,7 +463,8 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
       <button id="desk-sidebar-toggle" onclick="toggleSidebarDesk()" title="Contraer/expandir menú">&#9776;</button>
     </div>
     <!-- ITERACIÓN 2 / Fase 5: orden exacto pedido -->
-    <button class="dtab active" onclick="showDesk('d-pedidos')" id="dt-d-pedidos"><span class="dtab-label">Pedidos</span></button>
+    <button class="dtab active" onclick="showDesk('d-inicio')" id="dt-d-inicio"><span class="dtab-label">Inicio</span></button>
+    <button class="dtab" onclick="showDesk('d-pedidos')" id="dt-d-pedidos"><span class="dtab-label">Pedidos</span></button>
     <button class="dtab" onclick="showDesk('d-cobros')" id="dt-d-cobros"><span class="dtab-label">Cobros</span></button>
     <button class="dtab" onclick="showDesk('d-cadete')" id="dt-d-cadete"><span class="dtab-label">Reparto</span></button>
     <button class="dtab" onclick="showDesk('d-hoja-ruta')" id="dt-d-hoja-ruta"><span class="dtab-label">Hoja de ruta</span></button>
@@ -453,7 +484,8 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
   </div>
   <div id="desk-body">
     <!-- PEDIDOS PC -->
-    <div class="dscreen active" id="d-pedidos">
+    <div class="dscreen active" id="d-inicio"><div class="inicio-root"></div></div>
+    <div class="dscreen" id="d-pedidos">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
         <div style="font-size:13px;color:var(--text2)" id="desk-ped-sub">Sincronizá para ver los pedidos</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -591,6 +623,11 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
         <div class="card" id="precios-lista" style="margin-bottom:20px"></div>
         <div class="sec-lbl">Mayorista</div>
         <div class="card" id="precios-lista-may" style="margin-bottom:20px"></div>
+        <div class="sec-lbl">Envío</div>
+        <div class="card" style="margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><div><div class="f-lbl" style="margin:0">Tarifa de envío "Con costo"</div><div style="font-size:15px;color:var(--accent);font-weight:500" class="envio-tarifa-txt">$1.000</div><div style="font-size:11px;color:var(--text3)">Los pedidos anteriores conservan su importe.</div></div><button class="btn-ol" style="margin:0" onclick="ajustarConfigEnvioDefault()">Modificar tarifa</button></div>
+        <div class="sec-lbl">Metas y cadete</div>
+        <div class="card metas-cadete-box" style="margin-bottom:20px"></div>
+
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
           <div class="sec-lbl" style="margin:0">Precios especiales</div>
           <button class="btn-ol" style="margin:0" onclick="abrirFormPrecioEspecial()">+ Agregar</button>
@@ -793,24 +830,18 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
     <!-- ITERACIÓN 3 / Fase 4: envío como concepto aparte, nunca un producto ni parte del stock. -->
     <div class="card" style="margin-bottom:10px">
       <div class="f-lbl" style="margin-bottom:8px">Envío</div>
-      <select class="f-in" id="p-envio-tipo" onchange="cambioEnvioTipo()" style="margin-bottom:8px">
-        <option value="">Sin definir</option>
-        <option value="pago">Envío con costo</option>
-        <option value="gratis">Envío sin cargo</option>
-      </select>
-      <input class="f-in" id="p-envio-importe" type="number" min="0" step="1" placeholder="Importe del envío" style="display:none">
+      <input type="hidden" id="p-envio-tipo" value="gratis">
+      <input type="hidden" id="p-envio-importe" value="0">
+      <div style="display:flex;gap:8px">
+        <button type="button" class="btn-s" id="envio-btn-gratis" style="margin:0;flex:1" onclick="setEnvioTipo('gratis')">Sin costo</button>
+        <button type="button" class="btn-s" id="envio-btn-pago" style="margin:0;flex:1" onclick="setEnvioTipo('pago')">Con costo</button>
+      </div>
+      <div id="envio-resumen" style="font-size:12px;color:var(--text2);margin-top:6px"></div>
     </div>
     <!-- ITERACIÓN 3 / Fase 2 (parte A): cantidad de bolsas, dato propio del pedido. -->
     <div class="card" style="margin-bottom:10px">
       <div class="f-lbl" style="margin-bottom:8px">Cantidad de bolsas</div>
-      <select class="f-in" id="p-bolsas">
-        <option value="">Sin confirmar</option>
-        <option value="1">1 bolsa</option>
-        <option value="2">2 bolsas</option>
-        <option value="3">3 bolsas</option>
-        <option value="4">4 bolsas</option>
-        <option value="5">5 bolsas</option>
-      </select>
+      <input class="f-in" type="number" id="p-bolsas" min="1" step="1" value="1">
     </div>
     <div id="p-total-preview" style="text-align:right;font-size:13px;color:var(--accent);margin-bottom:10px;display:none"></div>
     <button class="btn-p" id="btn-guardar-pedido" onclick="guardarPedido()">Guardar pedido</button>
@@ -827,10 +858,9 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
     </div>
     <!-- ITERACIÓN 3 / Fase 6/7: mensaje estructurado del pedido (detalle, envío, total,
          estado de pago real), misma lógica centralizada que los accesos de PEDIDOS y REPARTO. -->
-    <button class="btn-s" style="margin-top:0;margin-bottom:6px" onclick="abrirMensajePedidoWA(pedidoVerId)">&#128172; Mensaje de pedido por WhatsApp</button>
-    <button class="btn-s" style="margin-top:0;margin-bottom:6px" onclick="enviarHorarioVisita()">&#128241; Enviar horario por WhatsApp</button>
+    <button class="btn-s" style="margin-top:0;margin-bottom:6px" onclick="abrirMensajePedidoWA(pedidoVerId)">&#128172; Confirmación del pedido</button>
     <button class="btn-s" style="margin-top:0;margin-bottom:6px" onclick="enviarAlias()">Enviar alias de pago</button>
-    <button class="btn-s" style="margin-top:0;margin-bottom:6px" onclick="enviarMensajePosventa()">&#128172; Mensaje posventa</button>
+    <button class="btn-s" style="margin-top:0;margin-bottom:6px" onclick="abrirPostventaWA(pedidoVerId)">&#127838; Mensaje postventa</button>
     <button class="btn-s" style="margin-top:0;margin-bottom:6px" onclick="abrirCobroPedido(pedidoVerId)">&#128179; Pagos / cuenta corriente</button>
 
     <div style="display:flex;gap:7px;margin-top:6px">
@@ -996,8 +1026,10 @@ initLayout();
     cargarHistorialLocal(),
     cargarUmbralInactividad(),
     cargarConfigEnvioDefault(),
+    persistirBolsasPorDefecto(),
     cargarMovimientosCobro(),
-    cargarOrdenCadetePersistido()
+    cargarOrdenCadetePersistido(),
+    cargarConfigInicio()
   ]);
   // ITERACIÓN 3 / Fase 5: recién acá "productos" (con su columna activo/inactivo) ya
   // terminó de cargar desde Supabase, así que se reconstruye el formulario de panes para
@@ -1015,6 +1047,7 @@ initLayout();
   checkAlertaPago();
   renderStock();
   actualizarDatalist();
+  renderInicio();
 }
 
 // Paridad con renderCadete() de escritorio (Fase 9): mismos filtros, mismo orden manual
@@ -1078,6 +1111,11 @@ function renderCadeteMob(){
     var bEdit=document.createElement('button');bEdit.className='btn-ol';bEdit.style.cssText='margin:0;padding:3px 10px;font-size:12px;flex:1';bEdit.textContent='Editar';bEdit.onclick=(function(pid){return function(){abrirEditarDomicilio(pid);};})(p.id);
     acciones.appendChild(bUp);acciones.appendChild(bDown);acciones.appendChild(bEdit);
     card.appendChild(acciones);
+    var extraMob=document.createElement('div');extraMob.style.cssText='display:flex;gap:8px;align-items:center;justify-content:space-between;margin-top:8px;flex-wrap:wrap';
+    var lblB=document.createElement('span');lblB.style.cssText='font-size:12px;color:var(--text2)';lblB.textContent='🛍️ Bolsas';
+    var bolsaWrap=document.createElement('div');bolsaWrap.style.cssText='display:flex;align-items:center;gap:6px';bolsaWrap.appendChild(lblB);bolsaWrap.appendChild(crearControlBolsas(p));
+    extraMob.appendChild(bolsaWrap);extraMob.appendChild(crearBotonesWA(p.id));
+    card.appendChild(extraMob);
     list.appendChild(card);
   });
 }
@@ -1799,26 +1837,44 @@ async function ajustarUmbralInactividad(){
 // umbral de inactividad. Es solo un valor PROPUESTO al crear un pedido nuevo — nunca se
 // aplica solo: Fede elige el tipo de envío en cada pedido, y lo que quede elegido ahí es lo
 // que se congela en ese pedido para siempre (no cambia si después se actualiza este valor).
-var CONFIG_ENVIO_DEFAULT=0;
+var CONFIG_ENVIO_DEFAULT=1000;
+var _envioOrig={tipo:null,importe:0};
 async function cargarConfigEnvioDefault(){
   try{
     var data=await sbGet('config','&key=eq.envio_precio_default');
     if(data&&data.length>0&&!isNaN(parseFloat(data[0].value))){CONFIG_ENVIO_DEFAULT=parseFloat(data[0].value);}
+    else if(data&&data.length===0){await sbUpsert('config',{key:'envio_precio_default',value:String(CONFIG_ENVIO_DEFAULT)});}
   }catch(e){}
+  actualizarTarifaEnvioTxt();
 }
+function actualizarTarifaEnvioTxt(){
+  document.querySelectorAll('.envio-tarifa-txt').forEach(function(el){el.textContent=fmtPeso(CONFIG_ENVIO_DEFAULT)||'$0';});
+}
+// Tarifa vigente de "Con costo". Solo se aplica a pedidos NUEVOS o a los que se pasen a "Con costo";
+// cada pedido congela el importe elegido al guardarse (envio_importe + total_final).
 async function ajustarConfigEnvioDefault(){
-  var n=prompt('Importe de envío por defecto (se propone al crear un pedido nuevo, pero se puede cambiar en cada pedido):',CONFIG_ENVIO_DEFAULT||'');
-  if(n===null)return;n=parseFloat(n);if(isNaN(n)||n<0){alert('Ingresá un importe válido.');return;}
-  CONFIG_ENVIO_DEFAULT=n;
-  await sbUpsert('config',{key:'envio_precio_default',value:String(n)});
-  var sp=document.getElementById('envio-default-txt');if(sp)sp.textContent=fmtPeso(n)||'$0';
+  var n=prompt('Nueva tarifa de envío "Con costo" (solo se aplica a pedidos nuevos; los anteriores conservan la suya):',CONFIG_ENVIO_DEFAULT||'');
+  if(n===null)return;n=parseFloat(String(n).replace(/[^0-9.]/g,''));if(isNaN(n)||n<=0){alert('Ingresá un importe válido mayor a 0.');return;}
+  var ok=await sbUpsert('config',{key:'envio_precio_default',value:String(n)});
+  if(!ok){alert('No se pudo guardar la tarifa en Supabase. Reintentá.');return;}
+  CONFIG_ENVIO_DEFAULT=n;actualizarTarifaEnvioTxt();
 }
-function cambioEnvioTipo(){
+function pintarEnvioBotones(){
   var tipo=document.getElementById('p-envio-tipo').value;
-  var imp=document.getElementById('p-envio-importe');
-  if(tipo==='pago'){imp.style.display='block';if(!imp.value&&CONFIG_ENVIO_DEFAULT>0)imp.value=CONFIG_ENVIO_DEFAULT;}
-  else{imp.style.display='none';imp.value='';}
-  actualizarTotalPreview();
+  [['gratis','envio-btn-gratis'],['pago','envio-btn-pago']].forEach(function(x){
+    var b=document.getElementById(x[1]);if(!b)return;var on=tipo===x[0];
+    b.style.background=on?'var(--accent2)':'var(--bg3)';b.style.color=on?'var(--bg)':'var(--text2)';b.style.fontWeight=on?'700':'400';
+  });
+  var imp=parseFloat(document.getElementById('p-envio-importe').value)||0;
+  var r=document.getElementById('envio-resumen');
+  if(r)r.textContent=tipo==='pago'?('Envío: '+fmtPeso(imp)):tipo==='gratis'?'Envío sin costo ($0)':'Envío sin definir (pedido histórico)';
+}
+function setEnvioTipo(t){
+  document.getElementById('p-envio-tipo').value=t;
+  var imp=0;
+  if(t==='pago')imp=(_envioOrig.tipo==='pago'&&_envioOrig.importe>0)?_envioOrig.importe:CONFIG_ENVIO_DEFAULT;
+  document.getElementById('p-envio-importe').value=imp;
+  pintarEnvioBotones();actualizarTotalPreview();
 }
 // Devuelve las estadísticas comerciales reales de un cliente a partir de sus pedidos y cobros.
 // Si un dato no puede calcularse con lo disponible, se marca explícitamente como no disponible
@@ -2036,71 +2092,114 @@ function nombreParaMensaje(p){
   return nombrePila||'';
 }
 
-// ITERACIÓN 3 / Fase 6: mensaje de WhatsApp estructurado y centralizado para un pedido —
-// usado desde la ficha del pedido, PEDIDOS y REPARTO (Fase 7), siempre con la misma lógica.
-// Detalle de productos con importes (salvo combo, ver arriba), envío diferenciado y nunca
-// inferido como gratis por ausencia de dato (6.5), total, y texto según el estado REAL de
-// pago (saldoPedido/estadoPagoPedido — nunca un texto fijo ni "impago" solo porque p.pago
-// sea false, ya que puede haber pagos parciales). Sin signos de apertura ¿¡ (6.7). Devuelve
-// {texto, advertencias[]} para que quien lo use pueda avisar qué dato faltaba, en vez de que
-// el mensaje invente algo (6.8).
-function construirMensajePedido(p){
-  var advertencias=[];
-  if(!p)return{texto:'',advertencias:['Pedido no encontrado.']};
-  var nombre=nombreParaMensaje(p);
-  var lineas=[(nombre?('Hola '+nombre+'!'):'Hola!')+' 🍞','','Te paso el detalle de tu pedido de FIKA:',''];
-  var detalle=detalleProductosPedido(p);
-  if(detalle.length===0)advertencias.push('el pedido no tiene productos cargados, no se puede armar el detalle');
-  var usaCombo=pedidoUsaCombo(p);
-  detalle.forEach(function(d){
-    lineas.push('• '+d.nombre+' x'+d.cantidad+(d.importeLinea!==null?(' — '+fmtPesoMsg(d.importeLinea)):''));
-  });
-  var envioMostrado=0;
-  if(p.envioTipo==='pago'&&p.envioImporte>0)envioMostrado=p.envioImporte;
-  var total=calcTotalPedido(p);
-  if(usaCombo){
-    lineas.push('');lineas.push((p.comboNombre||'Combo')+': '+fmtPesoMsg(p.precioCombo||0));
-    // El total real (calcTotalPedido) puede incluir productos pedidos por fuera de lo que
-    // cubre el combo (ver calcTotalPedidoLive); si eso pasa, se informa como una línea aparte
-    // en vez de dejar un "Total" que no cierra con lo que se detalló arriba (6: "el total
-    // informado debe coincidir con el importe real del pedido").
-    var extra=total-envioMostrado-(p.precioCombo||0);
-    if(extra>0)lineas.push('Adicional fuera del combo: '+fmtPesoMsg(extra));
-  }
-  if(p.envioTipo==='gratis'){
-    lineas.push('');lineas.push('*🚚 Envío SIN CARGO*');
-  } else if(p.envioTipo==='pago'&&p.envioImporte>0){
-    lineas.push('');lineas.push('Envío: '+fmtPesoMsg(p.envioImporte));
-  } else if(!p.envioTipo){
-    advertencias.push('el envío todavía no está definido para este pedido (no se muestra como gratuito)');
-  }
-  lineas.push('');lineas.push('*Total: '+fmtPesoMsg(total)+'*');
-  var estado=typeof estadoPagoPedido==='function'?estadoPagoPedido(p):(p.pago?'pagado':'pendiente');
-  var saldo=typeof saldoPedido==='function'?saldoPedido(p):(p.pago?0:total);
-  if(estado==='parcial'){
-    lineas.push('Ya abonado: '+fmtPesoMsg(total-saldo));
-    lineas.push('Saldo pendiente: '+fmtPesoMsg(saldo));
-  }
-  // estado 'pagado': no se pide pago, no se muestra como deuda (6.4).
-  // estado 'pendiente': el total de arriba ya es el importe a abonar, no hace falta repetirlo.
-  lineas.push('');lineas.push('Gracias por elegir FIKA! 💙');
-  return {texto:lineas.join('\n'),advertencias:advertencias};
+// ITERACIÓN 4 / Parte 1: dos plantillas de WhatsApp centralizadas (confirmación del pedido y
+// postventa). Todos los botones (ficha, PEDIDOS, REPARTO escritorio y móvil) usan estas dos
+// funciones. Sin signos de apertura. Nunca modifican el pedido: solo arman texto y abren wa.me.
+function pedidoParaMensaje(id){
+  var imp=(pedidosImportados||[]).find(function(x){return x.id===id;});
+  var base=pedidos.find(function(x){return x.id===id;});
+  var p=base||imp;if(!p)return null;
+  // Los horarios asignados por el cálculo de reparto viven en pedidosImportados.
+  if(imp&&base)p=Object.assign({},base,{horarioEntrega:imp.horarioEntrega||base.horarioEntrega,horarioDesde:imp.horarioDesde||base.horarioDesde,horarioHasta:imp.horarioHasta||base.horarioHasta});
+  return p;
 }
-
-// Abre WhatsApp con el mensaje de pedido ya armado (Fase 6/7). Nunca modifica el pedido ni
-// sus importes por el solo hecho de preparar el texto (7). Si falta el teléfono, igual arma
-// el texto y avisa que no hay destinatario válido, en vez de fallar en silencio (6.8).
-function abrirMensajePedidoWA(pedidoId){
-  var _src=pedidosImportados&&pedidosImportados.length>0?pedidosImportados:pedidos;
-  var p=_src.find(function(x){return x.id===pedidoId;})||pedidos.find(function(x){return x.id===pedidoId;});
-  if(!p){alert('No se encontró el pedido.');return;}
-  var r=construirMensajePedido(p);
-  var tel=(p.telefono||'').replace(/\D/g,'');
-  var avisos=r.advertencias.slice();
+function telefonoParaMensaje(p){
+  var cli=clientes.find(function(c){return normNombre(c.nombre)===normNombre(p&&p.nombre);});
+  return String((p&&p.telefono)||(cli&&cli.telefono)||'').replace(/\D/g,'');
+}
+function construirMensajeConfirmacion(p){
+  var adv=[];
+  var nombre=nombreParaMensaje(p);
+  var dom;
+  if(!p.domicilio)dom='A confirmar';
+  else if(p.domicilio==='Coordinar')dom='A coordinar';
+  else{
+    var ciu=p.ciudad==='SMT'?'San Miguel de Tucumán':(p.ciudad||'');
+    dom=p.domicilio+(p.piso?' '+p.piso:'')+(ciu?' - '+ciu:'');
+  }
+  var fecha='a confirmar';
+  if(p.fecha){var d=new Date(p.fecha+'T12:00');fecha=d.toLocaleDateString('es-AR',{weekday:'long'})+' '+d.getDate()+'/'+(d.getMonth()+1);}
+  else adv.push('el pedido no tiene fecha de entrega');
+  var banda='Horario pendiente de confirmar';
+  var desde='',hasta='';
+  if(p.horarioEntrega){var b=getBandaHoraria(p.horarioEntrega);desde=b.desde;hasta=b.hasta;}
+  else if(p.horarioDesde&&p.horarioHasta){desde=p.horarioDesde;hasta=p.horarioHasta;}
+  if(desde&&hasta)banda='entre las '+desde+' y las '+hasta+' hs.';
+  else adv.push('el pedido todavía no tiene horario asignado (se informa como pendiente de confirmar)');
+  var detalle=getPanesStr(p.panes,' + ');
+  if(!detalle){detalle='sin detalle de productos';adv.push('el pedido no tiene detalle de productos');}
+  var envio;
+  if(p.envioTipo==='gratis')envio='*Sin costo*';
+  else if(p.envioTipo==='pago'&&p.envioImporte>0)envio=fmtPesoMsg(p.envioImporte);
+  else{envio='A confirmar';adv.push('el envío no está definido en este pedido (histórico): se informa "A confirmar"');}
+  var texto=['Hola'+(nombre?' '+nombre:'')+'! 🍞 Te escribo por tu pedido de FIKA:','',
+    '📍 '+dom,'','📆 '+fecha,'','⏳ '+banda,'','🛒 '+detalle,'','🛵 '+envio,'',
+    '💵 '+fmtPesoMsg(calcTotalPedido(p)),'','🗒️Alias: fika.pan','','Nos vemos mañana! 🍞'].join('\n');
+  return {texto:texto,advertencias:adv};
+}
+function construirMensajePostventa(p){
+  var nombre=nombreParaMensaje(p);
+  return 'Hola'+(nombre?' '+nombre:'')+'! Soy Fede, de FIKA 🍞 Quería saber cómo te llegó el pedido y qué te parecieron los panes. Tu opinión me ayuda un montón a seguir mejorando. Gracias por la confianza de siempre!';
+}
+function abrirWhatsAppPedido(p,texto,avisos){
+  var tel=telefonoParaMensaje(p);
+  avisos=(avisos||[]).slice();
   if(!tel)avisos.push('no hay un teléfono válido cargado: se abre WhatsApp sin destinatario, elegilo manualmente');
   if(avisos.length>0)alert('Antes de enviar:\n- '+avisos.join('\n- '));
-  var url=tel?'https://wa.me/549'+tel+'?text='+encodeURIComponent(r.texto):'https://wa.me/?text='+encodeURIComponent(r.texto);
-  window.open(url,'_blank');
+  window.open(tel?'https://wa.me/549'+tel+'?text='+encodeURIComponent(texto):'https://wa.me/?text='+encodeURIComponent(texto),'_blank');
+}
+function abrirMensajePedidoWA(pedidoId){
+  var p=pedidoParaMensaje(pedidoId);
+  if(!p){alert('No se encontró el pedido.');return;}
+  var r=construirMensajeConfirmacion(p);
+  abrirWhatsAppPedido(p,r.texto,r.advertencias);
+}
+function abrirPostventaWA(pedidoId){
+  var p=pedidoParaMensaje(pedidoId);
+  if(!p){alert('No se encontró el pedido.');return;}
+  abrirWhatsAppPedido(p,construirMensajePostventa(p),[]);
+}
+
+// ITERACIÓN 4 / Parte 1.3: botones de WhatsApp compactos por pedido (REPARTO).
+function crearBotonesWA(pid){
+  var w=document.createElement('span');w.style.cssText='display:inline-flex;gap:4px;margin-left:4px';
+  [['💬','Confirmación del pedido',abrirMensajePedidoWA],['🍞','Mensaje postventa',abrirPostventaWA]].forEach(function(d){
+    var b=document.createElement('button');b.className='btn-ol';b.style.cssText='margin:0;padding:3px 9px;font-size:11px';b.textContent=d[0];b.title=d[1];b.setAttribute('aria-label',d[1]);
+    b.onclick=function(e){e.stopPropagation();d[2](pid);};w.appendChild(b);
+  });
+  return w;
+}
+// ITERACIÓN 4 / Parte 2: cantidad de bolsas editable por pedido desde REPARTO. Guarda SOLO la
+// columna bolsas (PATCH puntual): nunca reescribe el resto del pedido ni toca estado, orden o cobros.
+async function guardarBolsas(id,n){
+  n=parseInt(n);
+  if(isNaN(n)||n<1){alert('La cantidad de bolsas debe ser un número entero de 1 o más.');return false;}
+  var previos=[];
+  [pedidos,pedidosImportados].forEach(function(arr){var q=(arr||[]).find(function(x){return x.id===id;});if(q){previos.push([q,q.bolsas]);q.bolsas=n;}});
+  var ok=false;
+  try{var r=await fetch(SUPA_URL+'/pedidos?id=eq.'+encodeURIComponent(id),{method:'PATCH',headers:sbH({'Prefer':'return=minimal'}),body:JSON.stringify({bolsas:n})});ok=r.ok;}catch(e){ok=false;}
+  if(!ok){previos.forEach(function(x){x[0].bolsas=x[1];});alert('No se pudo guardar la cantidad de bolsas en Supabase. Se restauró el valor anterior.');}
+  else guardar();
+  renderCadete();renderCadeteMob();
+  return ok;
+}
+function crearControlBolsas(p){
+  var w=document.createElement('span');w.style.cssText='display:inline-flex;align-items:center;gap:3px';
+  var cur=(p.bolsas>0)?p.bolsas:1;
+  var mk=function(t,d){var b=document.createElement('button');b.className='btn-ol';b.style.cssText='margin:0;padding:2px 8px;font-size:13px';b.textContent=t;b.setAttribute('aria-label',d<0?'Menos bolsas':'Más bolsas');b.onclick=function(e){e.stopPropagation();if(cur+d<1)return;guardarBolsas(p.id,cur+d);};return b;};
+  var inp=document.createElement('input');inp.type='number';inp.min='1';inp.step='1';inp.value=cur;inp.style.cssText='width:46px;text-align:center;background:var(--bg3);border:0.5px solid var(--border2);border-radius:6px;color:var(--text);padding:3px 2px;font-size:13px';
+  inp.setAttribute('aria-label','Cantidad de bolsas');inp.onclick=function(e){e.stopPropagation();};inp.onmousedown=function(e){e.stopPropagation();};
+  inp.onchange=function(){var v=parseInt(inp.value);if(isNaN(v)||v<1){inp.value=cur;alert('La cantidad de bolsas debe ser un número entero de 1 o más.');return;}if(v!==cur)guardarBolsas(p.id,v);};
+  w.appendChild(mk('−',-1));w.appendChild(inp);w.appendChild(mk('+',1));
+  return w;
+}
+// Pedidos históricos con bolsas vacías: se resuelven como 1 (nunca se tocan los que ya tienen valor).
+// Un único PATCH sobre la columna bolsas de las filas con NULL, sin modificar ningún otro campo.
+async function persistirBolsasPorDefecto(){
+  try{
+    var r=await fetch(SUPA_URL+'/pedidos?bolsas=is.null',{method:'PATCH',headers:sbH({'Prefer':'return=minimal'}),body:JSON.stringify({bolsas:1})});
+    if(!r.ok)console.error('[FIKA] No se pudo persistir bolsas=1 en pedidos históricos (¿falta la columna bolsas?).');
+  }catch(e){}
 }
 
 // ── PUNTUALIDAD DE ENTREGA ────────────────────────────────────
@@ -2142,12 +2241,371 @@ function initLayout(){
 }
 window.addEventListener('resize',function(){initLayout();});
 
+// ── INICIO (ETAPA 1: DASHBOARD) ───────────────────────────────
+// ETAPA 1: pantalla de inicio con 10 tarjetas de la semana FIKA (viernes a jueves, por fecha de
+// entrega). Solo lee datos que ya existen (pedidos, movimientos_cobro, clientes, config); no
+// escribe nada salvo las metas/tarifas que se editan desde PRECIOS ("Metas y cadete").
+// Para no depender del historial completo en memoria (PostgREST corta por defecto en ~1000
+// filas), la pantalla pide solo las dos semanas que necesita, paginando con Content-Range.
+var CFG_INICIO_DEF={meta_pedidos_semana:30,meta_unidades_semana:80,cadete_base:10000,cadete_base_entregas:5,cadete_extra:1500,alerta_margen_min:55};
+var CFG_INICIO=Object.assign({},CFG_INICIO_DEF);
+var CFG_INICIO_LBL={
+  meta_pedidos_semana:'Meta de pedidos por semana',meta_unidades_semana:'Meta de unidades por semana',
+  cadete_base:'Cadete: importe base por viernes',cadete_base_entregas:'Cadete: entregas incluidas en el base',cadete_extra:'Cadete: importe por entrega extra'
+};
+var INICIO_OFFSET=0,INICIO_TOKEN=0,INICIO_DATA=null,INICIO_CARGANDO=false;
+
+async function cargarConfigInicio(){
+  try{
+    var keys=Object.keys(CFG_INICIO_DEF).join(',');
+    var rows=await sbGet('config','&key=in.('+keys+')');
+    if(rows)rows.forEach(function(r){
+      if(r&&CFG_INICIO_DEF.hasOwnProperty(r.key)){var v=parseFloat(r.value);if(!isNaN(v))CFG_INICIO[r.key]=v;}
+    });
+  }catch(e){}
+}
+// Lectura paginada con select a medida. Si el servidor informa el total (Content-Range) se
+// pide hasta completarlo; si no, se corta cuando una página viene incompleta. null = falló.
+async function sbGetSel(t,sel,q){
+  var out=[],off=0,PAG=1000,total=null;
+  try{
+    for(var i=0;i<60;i++){
+      var h=sbH({'Prefer':'count=exact'});
+      var r=await fetch(SUPA_URL+'/'+t+'?select='+sel+(q||'')+'&limit='+PAG+'&offset='+off,{headers:h});
+      if(!r.ok)return null;
+      var d=await r.json();
+      if(!Array.isArray(d))return null;
+      out=out.concat(d);off+=d.length;
+      var cr=r.headers.get('content-range');
+      if(cr&&cr.indexOf('/')>=0){var tt=parseInt(cr.split('/')[1]);if(!isNaN(tt))total=tt;}
+      if(d.length===0)break;
+      if(total!==null){if(out.length>=total)break;}
+      else if(d.length<PAG)break;
+    }
+  }catch(e){return null;}
+  return out;
+}
+function fechaISO(d){var m=d.getMonth()+1,dd=d.getDate();return d.getFullYear()+'-'+(m<10?'0':'')+m+'-'+(dd<10?'0':'')+dd;}
+function parseFechaISO(s){return new Date(s+'T12:00');}
+function sumarDias(s,n){var d=parseFechaISO(s);d.setDate(d.getDate()+n);return fechaISO(d);}
+// Semana FIKA: arranca el viernes (getDay()===5) y termina el jueves.
+function inicioSemanaFika(s){var d=parseFechaISO(s);d.setDate(d.getDate()-((d.getDay()-5+7)%7));return fechaISO(d);}
+function semanaFikaDe(offset){var ini=sumarDias(inicioSemanaFika(fechaISO(new Date())),offset*7);return{ini:ini,fin:sumarDias(ini,6)};}
+function fechaCorta(s){var d=parseFechaISO(s);return DIAS[d.getDay()].substring(0,3)+' '+d.getDate()+'/'+(d.getMonth()+1);}
+// Próxima horneada: lunes (entregas del martes) o jueves (entregas del viernes), la que venga primero.
+function proximaHorneada(){
+  var hoy=fechaISO(new Date());
+  for(var i=0;i<8;i++){
+    var f=sumarDias(hoy,i),dow=parseFechaISO(f).getDay();
+    if(dow===1||dow===4)return{horneada:f,entrega:sumarDias(f,1)};
+  }
+  return null;
+}
+function esPedidoB2B(p){return p.tipoPrecio==='Mayorista';}
+function unidadesPedido(p){var t=0;if(p&&p.panes)Object.keys(p.panes).forEach(function(k){var n=Number(p.panes[k]);if(n>0)t+=n;});return t;}
+function normNombreDash(n){return String(n||'').toLowerCase().replace(/\s+/g,' ').trim();}
+// Mismo criterio que REPARTO: encargado Cadete y domicilio real.
+function esEntregaCadete(p){return (p.encargado||'Cadete')==='Cadete'&&!!p.domicilio&&p.domicilio!=='Coordinar';}
+// Igual que saldoPedido(): con movimientos manda el ledger; sin movimientos, el booleano viejo.
+function saldoDash(p,movs){
+  var tiene=false,cob=0,tot=calcTotalPedido(p);
+  movs.forEach(function(m){if(m.pedidoId===p.id){tiene=true;if(!m.anulado)cob+=m.importe;}});
+  if(!tiene)return{cobrado:p.pago?tot:0,saldo:p.pago?0:tot};
+  cob=Math.min(cob,tot);
+  return{cobrado:cob,saldo:Math.max(0,tot-cob)};
+}
+function costoCadeteViernes(n){return CFG_INICIO.cadete_base+Math.max(0,n-CFG_INICIO.cadete_base_entregas)*CFG_INICIO.cadete_extra;}
+function calcSemanaInicio(peds,movs,ini,nombresAntes){
+  var r={n:peds.length,unidades:0,ventas:0,ventasB2C:0,ventasB2B:0,cobrado:0,pendiente:0,nuevas:[],entregasViernes:0};
+  var vistos={};
+  peds.slice().sort(function(a,b){return (a.fecha||'').localeCompare(b.fecha||'');}).forEach(function(p){
+    var tot=calcTotalPedido(p);
+    r.unidades+=unidadesPedido(p);r.ventas+=tot;
+    if(esPedidoB2B(p))r.ventasB2B+=tot;else r.ventasB2C+=tot;
+    r.cobrado+=saldoDash(p,movs).cobrado;
+    if(p.fecha===ini&&esEntregaCadete(p))r.entregasViernes++;
+    var k=normNombreDash(p.nombre);
+    if(k&&!nombresAntes[k]&&!vistos[k]){vistos[k]=1;r.nuevas.push(p.nombre);}
+  });
+  r.pendiente=Math.max(0,r.ventas-r.cobrado);
+  return r;
+}
+function nombreVisibleClienta(nombre){
+  var k=normNombreDash(nombre);
+  var c=clientes.find(function(x){return normNombreDash(x.nombre)===k;});
+  return (c&&c.sobrenombre)?c.sobrenombre:nombre;
+}
+function enRango(p,a,b){return !!p.fecha&&p.fecha>=a&&p.fecha<=b;}
+
+async function cargarDatosInicio(sem){
+  var prevIni=sumarDias(sem.ini,-7),prevFin=sumarDias(sem.ini,-1);
+  var nb=proximaHorneada();
+  var res={sem:sem,prevIni:prevIni,offline:false,nb:nb,hora:new Date()};
+  var rPed=await sbGetSel('pedidos','*','&fecha=gte.'+prevIni+'&fecha=lte.'+sem.fin+'&order=fecha.asc,id.asc');
+  var rAntes=await sbGetSel('pedidos','nombre,fecha','&fecha=lt.'+prevIni);
+  var rMay=await sbGetSel('pedidos','*','&tipo_precio=eq.Mayorista&order=fecha.asc,id.asc');
+  var rNext=nb?await sbGetSel('pedidos','*','&fecha=eq.'+nb.entrega):[];
+  var peds,antes,may,next;
+  if(rPed===null||rAntes===null||rMay===null||rNext===null){
+    // Sin conexión o falla de lectura: se usa lo que ya está en memoria y se avisa.
+    res.offline=true;
+    peds=pedidos.filter(function(p){return enRango(p,prevIni,sem.fin);});
+    antes=pedidos.filter(function(p){return p.fecha&&p.fecha<prevIni;});
+    may=pedidos.filter(esPedidoB2B);
+    next=nb?pedidos.filter(function(p){return p.fecha===nb.entrega;}):[];
+  }else{
+    peds=rPed.map(rowToPedido).filter(function(p){return enRango(p,prevIni,sem.fin);});
+    antes=rAntes;
+    may=rMay.map(rowToPedido);
+    next=rNext.map(rowToPedido).filter(function(p){return nb&&p.fecha===nb.entrega;});
+  }
+  var ids={};peds.concat(may).forEach(function(p){ids[p.id]=1;});
+  var idList=Object.keys(ids),movs=[];
+  if(res.offline){movs=movimientosCobro.slice();}
+  else{
+    for(var i=0;i<idList.length;i+=60){
+      var chunk=idList.slice(i,i+60).map(function(x){return '"'+x+'"';}).join(',');
+      var rm=await sbGetSel('movimientos_cobro','*','&pedido_id=in.('+chunk+')');
+      if(rm===null){res.offline=true;movs=movimientosCobro.slice();break;}
+      movs=movs.concat(rm.map(rowToMovimiento));
+    }
+  }
+  var setAntes={};antes.forEach(function(p){var k=normNombreDash(p.nombre);if(k)setAntes[k]=1;});
+  var pActual=peds.filter(function(p){return enRango(p,sem.ini,sem.fin);});
+  var pPrev=peds.filter(function(p){return enRango(p,prevIni,prevFin);});
+  var setAntesActual=Object.assign({},setAntes);
+  pPrev.forEach(function(p){var k=normNombreDash(p.nombre);if(k)setAntesActual[k]=1;});
+  res.cur=calcSemanaInicio(pActual,movs,sem.ini,setAntesActual);
+  res.prev=calcSemanaInicio(pPrev,movs,prevIni,setAntes);
+  // B2B pendiente: todos los pedidos mayoristas con saldo, de cualquier semana, con vencimiento a 7 días.
+  var hoy=fechaISO(new Date());
+  res.b2b=[];
+  may.forEach(function(p){
+    var s=saldoDash(p,movs);
+    if(s.saldo>0&&p.fecha){var vence=sumarDias(p.fecha,7);res.b2b.push({nombre:p.nombre,saldo:s.saldo,fecha:p.fecha,vence:vence,vencido:hoy>vence});}
+  });
+  res.b2b.sort(function(a,b){return a.vence.localeCompare(b.vence);});
+  // Próxima horneada: unidades por producto (los combos ya vienen desarmados en panes).
+  res.horneada={unidades:{},total:0,pedidos:next.length};
+  next.forEach(function(p){
+    if(p.panes)Object.keys(p.panes).forEach(function(k){var n=Number(p.panes[k]);if(n>0){res.horneada.unidades[k]=(res.horneada.unidades[k]||0)+n;res.horneada.total+=n;}});
+  });
+  return res;
+}
+
+async function renderInicio(forzar){
+  var token=++INICIO_TOKEN;
+  var sem=semanaFikaDe(INICIO_OFFSET);
+  INICIO_CARGANDO=true;
+  pintarInicio();
+  try{
+    await cargarConfigInicio();
+    var d=await cargarDatosInicio(sem);
+    if(token!==INICIO_TOKEN)return;
+    INICIO_DATA=d;
+  }catch(e){
+    if(token!==INICIO_TOKEN)return;
+    INICIO_DATA=null;
+  }
+  INICIO_CARGANDO=false;
+  pintarInicio();
+}
+function cambiarSemanaInicio(delta){INICIO_OFFSET+=delta;renderInicio();}
+function irSemanaActualInicio(){INICIO_OFFSET=0;renderInicio();}
+
+// ---- armado visual (createElement + textContent; el mismo código sirve para escritorio y móvil)
+function elDash(tag,cls,txt){var e=document.createElement(tag);if(cls)e.className=cls;if(txt!==undefined&&txt!==null)e.textContent=txt;return e;}
+function tarjetaInicio(num,titulo){var c=elDash('div','card inicio-card');c.setAttribute('data-card',String(num));c.appendChild(elDash('div','f-lbl',titulo));return c;}
+function fmtDifDash(dif,esPeso){
+  var a=Math.abs(dif),t=esPeso?fmtPesoMsg(a):String(Math.round(a*10)/10).replace('.',',');
+  return (dif>0?'+':'−')+t;
+}
+// Diferencia con la semana anterior: flecha + texto; el color acompaña pero nunca va solo.
+// inverso=true cuando subir es "malo" (costos, pendiente) para colorear al revés.
+function lineaCmpDash(cur,prev,hayPrev,esPeso,inverso){
+  if(!hayPrev)return elDash('div','inicio-cmp inicio-cmp-nd','Sin datos de la semana anterior');
+  var dif=Math.round((cur-prev)*10)/10;
+  var cls='inicio-cmp',txt;
+  if(dif===0){txt='＝ Igual que la semana anterior';cls+=' inicio-cmp-eq';}
+  else if(dif>0){txt='▲ '+fmtDifDash(dif,esPeso)+' vs semana anterior';cls+=inverso?' inicio-cmp-mal':' inicio-cmp-bien';}
+  else{txt='▼ '+fmtDifDash(dif,esPeso)+' vs semana anterior';cls+=inverso?' inicio-cmp-bien':' inicio-cmp-mal';}
+  return elDash('div',cls,txt);
+}
+function barraMetaDash(valor,meta){
+  var pct=meta>0?Math.round(valor/meta*100):0;
+  var wrap=elDash('div','inicio-barra');var fill=elDash('div','inicio-barra-fill');fill.style.width=Math.min(100,pct)+'%';wrap.appendChild(fill);
+  return{barra:wrap,pct:pct};
+}
+function sinDatosDash(c,txt){c.appendChild(elDash('div','inicio-nd',txt||'Sin datos'));}
+
+function armarTarjetasInicio(d){
+  var cur=d.cur,prev=d.prev,hayPrev=prev.n>0,cards=[];
+  // 1. Pedidos vs meta
+  var c1=tarjetaInicio(1,'Pedidos de la semana');
+  c1.appendChild(elDash('div','inicio-big',String(cur.n)));
+  var b1=barraMetaDash(cur.n,CFG_INICIO.meta_pedidos_semana);
+  c1.appendChild(b1.barra);
+  c1.appendChild(elDash('div','inicio-sub',b1.pct+'% de la meta ('+CFG_INICIO.meta_pedidos_semana+' pedidos)'));
+  c1.appendChild(lineaCmpDash(cur.n,prev.n,hayPrev,false,false));
+  cards.push(c1);
+  // 2. Unidades vs meta
+  var c2=tarjetaInicio(2,'Unidades de la semana');
+  c2.appendChild(elDash('div','inicio-big',String(cur.unidades)));
+  var b2=barraMetaDash(cur.unidades,CFG_INICIO.meta_unidades_semana);
+  c2.appendChild(b2.barra);
+  c2.appendChild(elDash('div','inicio-sub',b2.pct+'% de la meta ('+CFG_INICIO.meta_unidades_semana+' unidades)'));
+  c2.appendChild(lineaCmpDash(cur.unidades,prev.unidades,hayPrev,false,false));
+  cards.push(c2);
+  // 3. Ticket promedio y unidades por pedido
+  var c3=tarjetaInicio(3,'Ticket promedio');
+  if(cur.n>0){
+    var tk=Math.round(cur.ventas/cur.n),upp=cur.unidades/cur.n;
+    c3.appendChild(elDash('div','inicio-big',fmtPesoMsg(tk)));
+    c3.appendChild(elDash('div','inicio-sub',(Math.round(upp*10)/10).toString().replace('.',',')+' unidades por pedido'));
+    c3.appendChild(lineaCmpDash(tk,hayPrev?Math.round(prev.ventas/prev.n):0,hayPrev,true,false));
+  }else sinDatosDash(c3);
+  cards.push(c3);
+  // 4. Ventas $ y división B2C / B2B
+  var c4=tarjetaInicio(4,'Ventas de la semana');
+  if(cur.n>0){
+    c4.appendChild(elDash('div','inicio-big',fmtPesoMsg(cur.ventas)));
+    c4.appendChild(elDash('div','inicio-sub','B2C '+fmtPesoMsg(cur.ventasB2C)+' · B2B '+fmtPesoMsg(cur.ventasB2B)));
+    c4.appendChild(lineaCmpDash(cur.ventas,prev.ventas,hayPrev,true,false));
+  }else sinDatosDash(c4);
+  cards.push(c4);
+  // 5. Cobrado vs pendiente + B2B pendiente
+  var c5=tarjetaInicio(5,'Cobrado y pendiente');
+  if(cur.n>0){
+    c5.appendChild(elDash('div','inicio-big','Cobrado '+fmtPesoMsg(cur.cobrado)));
+    c5.appendChild(elDash('div','inicio-sub','Pendiente '+fmtPesoMsg(cur.pendiente)+' de '+fmtPesoMsg(cur.ventas)+' vendidos'));
+    c5.appendChild(lineaCmpDash(cur.cobrado,prev.cobrado,hayPrev,true,false));
+  }else sinDatosDash(c5);
+  var bt=elDash('div','inicio-sub-tit','B2B pendiente (todas las semanas, vence a los 7 días de la entrega)');
+  c5.appendChild(bt);
+  if(d.b2b.length===0)c5.appendChild(elDash('div','inicio-sub','Sin pendiente B2B'));
+  else{
+    d.b2b.forEach(function(x){
+      var row=elDash('div','inicio-fila');
+      row.appendChild(elDash('span','inicio-fila-n',nombreVisibleClienta(x.nombre)+' · '+fmtPesoMsg(x.saldo)));
+      var ven=elDash('span','inicio-fila-v','vence '+fechaCorta(x.vence));row.appendChild(ven);
+      if(x.vencido)row.appendChild(elDash('span','inicio-badge-venc','Vencido'));
+      c5.appendChild(row);
+    });
+  }
+  cards.push(c5);
+  // 6. Clientas nuevas
+  var c6=tarjetaInicio(6,'Clientas nuevas');
+  if(cur.n>0){
+    c6.appendChild(elDash('div','inicio-big',String(cur.nuevas.length)));
+    if(cur.nuevas.length>0)c6.appendChild(elDash('div','inicio-sub',cur.nuevas.map(nombreVisibleClienta).join(', ')));
+    else c6.appendChild(elDash('div','inicio-sub','Ninguna clienta con su primer pedido esta semana'));
+    c6.appendChild(lineaCmpDash(cur.nuevas.length,prev.nuevas.length,hayPrev,false,false));
+  }else sinDatosDash(c6);
+  cards.push(c6);
+  // 7. Próxima horneada
+  var c7=tarjetaInicio(7,'Próxima horneada');
+  if(d.nb){
+    var diaH=parseFechaISO(d.nb.horneada).getDay()===1?'lunes':'jueves';
+    c7.appendChild(elDash('div','inicio-sub-tit','Horneada del '+diaH+' '+fechaCorta(d.nb.horneada)+' · entregas '+fechaCorta(d.nb.entrega)));
+    if(d.horneada.total>0){
+      c7.appendChild(elDash('div','inicio-big',d.horneada.total+' unidades'));
+      Object.keys(d.horneada.unidades).forEach(function(k){
+        var row=elDash('div','inicio-fila');
+        row.appendChild(elDash('span','inicio-fila-n',(PROD_NOMBRES[k]||k)));
+        row.appendChild(elDash('span','inicio-fila-v','× '+d.horneada.unidades[k]));
+        c7.appendChild(row);
+      });
+      c7.appendChild(elDash('div','inicio-sub',d.horneada.pedidos+' pedidos'));
+    }else sinDatosDash(c7,'Sin pedidos cargados para esas entregas');
+  }else sinDatosDash(c7);
+  cards.push(c7);
+  // 8. Costo del cadete (estimado) = entregas del viernes
+  var c8=tarjetaInicio(8,'Costo del cadete (estimado)');
+  if(cur.entregasViernes>0){
+    c8.appendChild(elDash('div','inicio-big',fmtPesoMsg(costoCadeteViernes(cur.entregasViernes))));
+    c8.appendChild(elDash('div','inicio-sub',cur.entregasViernes+' entregas el viernes '+fechaCorta(d.sem.ini)+' · base '+fmtPesoMsg(CFG_INICIO.cadete_base)+' hasta '+CFG_INICIO.cadete_base_entregas+' entregas + '+fmtPesoMsg(CFG_INICIO.cadete_extra)+' por cada extra'));
+    c8.appendChild(lineaCmpDash(costoCadeteViernes(cur.entregasViernes),prev.entregasViernes>0?costoCadeteViernes(prev.entregasViernes):0,prev.entregasViernes>0,true,true));
+  }else sinDatosDash(c8,'Sin entregas de cadete el viernes');
+  c8.appendChild(elDash('div','inicio-sub','Los martes reparte Fede: no se cuentan.'));
+  cards.push(c8);
+  // 9. Clientas inactivas (foto de hoy, no depende de la semana elegida)
+  var c9=tarjetaInicio(9,'Clientas inactivas');
+  var mapa={};
+  clientes.forEach(function(c){mapa[c.nombre]=1;});
+  pedidos.forEach(function(p){if(p.nombre)mapa[p.nombre]=1;});
+  var inactivas=segmentarClientes(Object.keys(mapa),'inactivos').length;
+  c9.appendChild(elDash('div','inicio-big',String(inactivas)));
+  c9.appendChild(elDash('div','inicio-sub','Más de '+UMBRAL_INACTIVIDAD_DIAS+' días sin comprar (estado de hoy, sin comparación semanal)'));
+  var bi=elDash('button','btn-ol','Ver en Clientes');bi.style.margin='8px 0 0';
+  bi.onclick=function(){FILTRO_SEG_CLIENTES='inactivos';BUSQUEDA_CLIENTES='';if(ES_MOVIL)showMob('clientes');else showDesk('d-clientes');};
+  c9.appendChild(bi);
+  cards.push(c9);
+  // 10. Margen bruto (se activa con la Etapa 2)
+  var c10=tarjetaInicio(10,'Margen bruto de la semana');
+  c10.appendChild(elDash('div','inicio-nd','Disponible cuando estén cargados los costos'));
+  cards.push(c10);
+  return cards;
+}
+
+function pintarInicio(){
+  var roots=document.querySelectorAll('.inicio-root');
+  var sem=semanaFikaDe(INICIO_OFFSET);
+  roots.forEach(function(root){
+    root.innerHTML='';
+    var bar=elDash('div','inicio-bar');
+    var bPrev=elDash('button','btn-ol','◀');bPrev.style.margin='0';bPrev.title='Semana anterior';bPrev.setAttribute('aria-label','Semana anterior');bPrev.onclick=function(){cambiarSemanaInicio(-1);};
+    var lbl=elDash('div','inicio-sem-lbl',fechaCorta(sem.ini)+' – '+fechaCorta(sem.fin)+(INICIO_OFFSET===0?' (semana en curso)':''));
+    var bNext=elDash('button','btn-ol','▶');bNext.style.margin='0';bNext.title='Semana siguiente';bNext.setAttribute('aria-label','Semana siguiente');bNext.onclick=function(){cambiarSemanaInicio(1);};
+    var bAct=elDash('button','btn-ol','Actualizar');bAct.style.margin='0 0 0 auto';bAct.disabled=INICIO_CARGANDO;bAct.onclick=function(){renderInicio(true);};
+    bar.appendChild(bPrev);bar.appendChild(lbl);bar.appendChild(bNext);
+    if(INICIO_OFFSET!==0){var bHoy=elDash('button','btn-ol','Esta semana');bHoy.style.margin='0';bHoy.onclick=irSemanaActualInicio;bar.appendChild(bHoy);}
+    bar.appendChild(bAct);
+    root.appendChild(bar);
+    if(INICIO_CARGANDO&&!INICIO_DATA){root.appendChild(elDash('div','inicio-nd','Cargando…'));return;}
+    if(!INICIO_DATA){root.appendChild(elDash('div','inicio-nd','Sin datos: no se pudo calcular la semana. Probá "Actualizar".'));return;}
+    var estado=elDash('div','inicio-estado',(INICIO_CARGANDO?'Actualizando… ':'')+'Actualizado '+INICIO_DATA.hora.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})+(INICIO_DATA.offline?' · Sin conexión con el servidor: se muestran los datos guardados en este dispositivo':''));
+    root.appendChild(estado);
+    var grid=elDash('div','inicio-grid');
+    armarTarjetasInicio(INICIO_DATA).forEach(function(c){grid.appendChild(c);});
+    root.appendChild(grid);
+  });
+}
+
+// ---- Bloque "Metas y cadete" en PRECIOS (se edita igual que la tarifa de envío)
+async function editarConfigInicio(key){
+  var lbl=CFG_INICIO_LBL[key]||key;
+  var n=prompt(lbl+'\nActual: '+CFG_INICIO[key],CFG_INICIO[key]);
+  if(n===null)return;
+  n=parseFloat(String(n).replace(/[^0-9.]/g,''));
+  if(isNaN(n)||n<=0){alert('Ingresá un número válido mayor a 0.');return;}
+  var ok=await sbUpsert('config',{key:key,value:String(n)});
+  if(!ok){alert('No se pudo guardar en Supabase. Reintentá.');return;}
+  CFG_INICIO[key]=n;
+  renderMetasCadete();
+  if(INICIO_DATA)pintarInicio();
+}
+function renderMetasCadete(){
+  document.querySelectorAll('.metas-cadete-box').forEach(function(box){
+    box.innerHTML='';
+    Object.keys(CFG_INICIO_LBL).forEach(function(key){
+      var row=elDash('div','inicio-cfg-row');
+      var left=elDash('div');
+      left.appendChild(elDash('div','f-lbl',CFG_INICIO_LBL[key]));
+      var esPeso=(key==='cadete_base'||key==='cadete_extra');
+      left.appendChild(elDash('div','inicio-cfg-val',esPeso?fmtPesoMsg(CFG_INICIO[key]):String(CFG_INICIO[key])));
+      var b=elDash('button','btn-ol','Modificar');b.style.margin='0';
+      (function(k){b.onclick=function(){editarConfigInicio(k);};})(key);
+      row.appendChild(left);row.appendChild(b);box.appendChild(row);
+    });
+  });
+}
+
 // ── NAVEGACION ────────────────────────────────────────────────
-function showMob(id){document.querySelectorAll('.mscreen').forEach(function(s){s.classList.remove('active');});document.querySelectorAll('.mnav').forEach(function(b){b.classList.remove('active');});document.getElementById('ms-'+id).classList.add('active');document.getElementById('mn-'+id).classList.add('active');if(id==='pedidos')renderPedidos();if(id==='semana')renderSemana();if(id==='clientes')renderClientesMob();if(id==='cadete-mob'){refrescarEstadosEntrega().then(renderCadeteMob);renderCadeteMob();}if(id==='historial-mob')renderHistorialMob();if(id==='cobros')renderCobros();if(id==='stock'){renderStock();renderCongelados();}if(id==='compras')renderCompras();if(id==='hoja-ruta-mob')renderHojaRuta();toggleDrawerMob(false);}
+function showMob(id){document.querySelectorAll('.mscreen').forEach(function(s){s.classList.remove('active');});document.querySelectorAll('.mnav').forEach(function(b){b.classList.remove('active');});document.getElementById('ms-'+id).classList.add('active');document.getElementById('mn-'+id).classList.add('active');if(id==='inicio')renderInicio();if(id==='pedidos')renderPedidos();if(id==='semana')renderSemana();if(id==='clientes')renderClientesMob();if(id==='cadete-mob'){refrescarEstadosEntrega().then(renderCadeteMob);renderCadeteMob();}if(id==='historial-mob')renderHistorialMob();if(id==='cobros')renderCobros();if(id==='stock'){renderStock();renderCongelados();}if(id==='compras')renderCompras();if(id==='hoja-ruta-mob')renderHojaRuta();toggleDrawerMob(false);}
 // FASE 9.2: abre/cierra el drawer lateral móvil. Elegir una sección (showMob) lo cierra solo.
 function toggleDrawerMob(abrir){document.body.classList.toggle('drawer-open',!!abrir);}
-function showDesk(id){document.querySelectorAll('.dscreen').forEach(function(s){s.classList.remove('active');});document.querySelectorAll('.dtab').forEach(function(t){t.classList.remove('active');});document.getElementById(id).classList.add('active');document.getElementById('dt-'+id).classList.add('active');if(id==='d-pedidos')renderDeskPedidos();if(id==='d-cadete'){loadApiKey();poblarFechasReparto();renderRepClientes();refrescarEstadosEntrega().then(renderCadete);renderCadete();}if(id==='d-stock'){renderDeskStock();renderCongeladosDesk();}if(id==='d-clientes')renderClientesDesk();if(id==='d-cobros')renderCobrosDesk();if(id==='d-precios')renderPrecios();if(id==='d-historial')renderHistorial();if(id==='d-compras'){renderComprasDesk();renderComprasRealizadasDesk();}if(id==='d-hoja-ruta'){renderHojaRuta();}}
-function abrirFab(){var s=document.querySelector('.mscreen.active').id.replace('ms-','');if(['pedidos','semana','clientes'].includes(s))abrirModalPedido(null);if(s==='compras')abrirModal('modal-compra');}
+function showDesk(id){document.querySelectorAll('.dscreen').forEach(function(s){s.classList.remove('active');});document.querySelectorAll('.dtab').forEach(function(t){t.classList.remove('active');});document.getElementById(id).classList.add('active');document.getElementById('dt-'+id).classList.add('active');if(id==='d-inicio')renderInicio();if(id==='d-pedidos')renderDeskPedidos();if(id==='d-cadete'){loadApiKey();poblarFechasReparto();renderRepClientes();refrescarEstadosEntrega().then(renderCadete);renderCadete();}if(id==='d-stock'){renderDeskStock();renderCongeladosDesk();}if(id==='d-clientes')renderClientesDesk();if(id==='d-cobros')renderCobrosDesk();if(id==='d-precios')renderPrecios();if(id==='d-historial')renderHistorial();if(id==='d-compras'){renderComprasDesk();renderComprasRealizadasDesk();}if(id==='d-hoja-ruta'){renderHojaRuta();}}
+function abrirFab(){var s=document.querySelector('.mscreen.active').id.replace('ms-','');if(['inicio','pedidos','semana','clientes'].includes(s))abrirModalPedido(null);if(s==='compras')abrirModal('modal-compra');}
 
 // ── LOGIN ─────────────────────────────────────────────────────
 
@@ -2300,7 +2758,7 @@ function cargarHistorialLocal(){
 
 // ── MAPEADORES ────────────────────────────────────────────────
 function pedidoToRow(p){return{id:p.id,fika_id:p.fikaId||null,cliente_id:p.clienteId||null,nombre:p.nombre,fecha:p.fecha||null,telefono:p.telefono||null,domicilio:p.domicilio||null,piso:p.piso||null,ciudad:p.ciudad||null,encargado:p.encargado||'Cadete',notas:p.notas||null,pago:p.pago||false,entregado:p.entregado||false,panes:p.panes||{},etiqueta:p._etiqueta||null,tipo_precio:p.tipoPrecio||'Minorista',precio_combo:p.precioCombo||null,combo_nombre:p.comboNombre||null,total_final:(p.totalFinal!==undefined&&p.totalFinal!==null)?p.totalFinal:null,horario_entrega:p.horarioEntrega||null,horario_desde:p.horarioDesde||null,horario_hasta:p.horarioHasta||null,bolsas:(p.bolsas!==undefined&&p.bolsas!==null&&p.bolsas!=='')?p.bolsas:null,envio_tipo:p.envioTipo||null,envio_importe:(p.envioTipo==='pago'&&p.envioImporte>0)?p.envioImporte:(p.envioTipo==='gratis'?0:null),creado_en:p.creadoEn||new Date().toISOString()};}
-function rowToPedido(r){return{id:r.id,fikaId:r.fika_id||null,clienteId:r.cliente_id,nombre:r.nombre,fecha:r.fecha,telefono:r.telefono,domicilio:r.domicilio,piso:r.piso,ciudad:r.ciudad,encargado:r.encargado||'Cadete',notas:r.notas,pago:r.pago||false,entregado:r.entregado||false,panes:r.panes||{},_etiqueta:r.etiqueta,tipoPrecio:r.tipo_precio||'Minorista',precioCombo:r.precio_combo||null,comboNombre:r.combo_nombre||null,totalFinal:(r.total_final!==undefined&&r.total_final!==null)?r.total_final:null,horarioEntrega:r.horario_entrega,horarioDesde:r.horario_desde,horarioHasta:r.horario_hasta,horaEntregado:r.hora_entregado||null,bolsas:(r.bolsas!==undefined&&r.bolsas!==null)?r.bolsas:null,envioTipo:r.envio_tipo||null,envioImporte:(r.envio_importe!==undefined&&r.envio_importe!==null)?Number(r.envio_importe):null,creadoEn:r.creado_en,
+function rowToPedido(r){return{id:r.id,fikaId:r.fika_id||null,clienteId:r.cliente_id,nombre:r.nombre,fecha:r.fecha,telefono:r.telefono,domicilio:r.domicilio,piso:r.piso,ciudad:r.ciudad,encargado:r.encargado||'Cadete',notas:r.notas,pago:r.pago||false,entregado:r.entregado||false,panes:r.panes||{},_etiqueta:r.etiqueta,tipoPrecio:r.tipo_precio||'Minorista',precioCombo:r.precio_combo||null,comboNombre:r.combo_nombre||null,totalFinal:(r.total_final!==undefined&&r.total_final!==null)?r.total_final:null,horarioEntrega:r.horario_entrega,horarioDesde:r.horario_desde,horarioHasta:r.horario_hasta,horaEntregado:r.hora_entregado||null,bolsas:(r.bolsas!==undefined&&r.bolsas!==null&&r.bolsas>0)?r.bolsas:1,envioTipo:r.envio_tipo||null,envioImporte:(r.envio_importe!==undefined&&r.envio_importe!==null)?Number(r.envio_importe):null,creadoEn:r.creado_en,
   // Estado real de entrega que escribe la app del cadete en la misma tabla "pedidos" (no se modifica esa app, solo se lee acá):
   cadeteStatus:r.cadete_status||null,motivoNoEntrega:r.motivo_no_entrega||null,cadetePago:r.cadete_pago||null,edicionHabilitada:r.edicion_habilitada||false};}
 function cobroToRow(c){return{pedido_id:c.pedidoId,nombre:c.nombre,fecha:c.fecha,panes:c.panes||{},pagado:c.pagado||false,fecha_registro:c.fechaRegistro||new Date().toISOString(),fecha_pago:c.fechaPago||null};}
@@ -2498,8 +2956,8 @@ function abrirModalPedido(id){
   document.getElementById('p-dom').disabled=false;document.getElementById('p-dom').style.opacity='1';document.getElementById('p-piso').disabled=false;document.getElementById('p-piso').style.opacity='1';
   document.getElementById('p-total-preview').style.display='none';
   // ITERACIÓN 3: envío por defecto, el importe configurado en PRECIOS (no inventa un precio).
-  document.getElementById('p-envio-tipo').value='';document.getElementById('p-envio-importe').value='';document.getElementById('p-envio-importe').style.display='none';
-  document.getElementById('p-bolsas').value='';
+  _envioOrig={tipo:null,importe:0};document.getElementById('p-envio-tipo').value='gratis';document.getElementById('p-envio-importe').value='0';
+  document.getElementById('p-bolsas').value='1';
   if(id){
     var p=pedidos.find(function(x){return x.id===id;});
     if(p){
@@ -2510,19 +2968,15 @@ function abrirModalPedido(id){
       document.getElementById('p-sobrenombre').value=(cliDelPedido&&cliDelPedido.sobrenombre)||'';
       if(p.domicilio==='Coordinar'){document.getElementById('p-coord').checked=true;toggleCoord();}
       if(p.panes)PRODUCTOS.forEach(function(k){pQtys[k]=p.panes[k]||0;var el=document.getElementById('pq-'+k);if(el)el.textContent=pQtys[k];var row=document.getElementById('pan-item-'+k);if(row&&pQtys[k]>0)row.style.display='';});
+      _envioOrig={tipo:p.envioTipo||null,importe:Number(p.envioImporte)||0};
       document.getElementById('p-envio-tipo').value=p.envioTipo||'';
-      if(p.envioTipo==='pago'){document.getElementById('p-envio-importe').style.display='block';document.getElementById('p-envio-importe').value=p.envioImporte||'';}
-      document.getElementById('p-bolsas').value=(p.bolsas!==undefined&&p.bolsas!==null)?p.bolsas:'';
-    } else {
-      // ITERACIÓN 3 / Fase 4: pedido nuevo, propone el importe de envío configurado en
-      // PRECIOS (si existe) pero sin forzar el tipo — Fede decide si corresponde o no.
-      var envioDef=CONFIG_ENVIO_DEFAULT;
-      if(envioDef>0)document.getElementById('p-envio-importe').value=envioDef;
+      document.getElementById('p-envio-importe').value=p.envioTipo==='pago'?(Number(p.envioImporte)||0):0;
+      document.getElementById('p-bolsas').value=(p.bolsas!==undefined&&p.bolsas!==null&&p.bolsas>0)?p.bolsas:1;
     }
     document.getElementById('mp-title').textContent='Editar pedido';
   } else document.getElementById('mp-title').textContent='Nuevo pedido';
   cerrarModal('modal-det-pedido');abrirModal('modal-pedido');
-  actualizarTotalPreview();
+  pintarEnvioBotones();actualizarTotalPreview();
 }
 
 function toggleCoord(){var dom=document.getElementById('p-dom'),piso=document.getElementById('p-piso'),coord=document.getElementById('p-coord').checked;if(coord){dom.value='Coordinar';dom.disabled=true;dom.style.opacity='0.5';piso.value='';piso.disabled=true;piso.style.opacity='0.5';}else{dom.value='';dom.disabled=false;dom.style.opacity='1';piso.disabled=false;piso.style.opacity='1';}}
@@ -2568,7 +3022,7 @@ async function _guardarPedidoInterno(){
   var nuevoFikaId=pedidoEditId?((pedidos.find(function(x){return x.id===pedidoEditId;})||{}).fikaId||await nextFikaId()):await nextFikaId();
   var envioTipoForm=document.getElementById('p-envio-tipo').value||null;
   var envioImporteForm=envioTipoForm==='pago'?(parseFloat(document.getElementById('p-envio-importe').value)||0):null;
-  var bolsasForm=document.getElementById('p-bolsas').value;bolsasForm=bolsasForm?parseInt(bolsasForm):null;
+  var bolsasForm=parseInt(document.getElementById('p-bolsas').value);if(isNaN(bolsasForm)||bolsasForm<1)bolsasForm=1;
   var p={id:pedidoEditId||Date.now().toString(),fikaId:nuevoFikaId,clienteId:cli?cli.id:null,nombre:nombre,fecha:document.getElementById('p-fecha').value,telefono:document.getElementById('p-tel').value.trim(),domicilio:document.getElementById('p-dom').value.trim(),piso:document.getElementById('p-piso').value.trim(),ciudad:document.getElementById('p-ciudad').value,encargado:document.getElementById('p-enc').value,notas:document.getElementById('p-notas').value.trim(),pago:document.getElementById('p-pago').checked,tipoPrecio:tipoPrecioFinal,precioCombo:precioComboFinal,comboNombre:comboNombreFinal,entregado:pExist?pExist.entregado||false:false,panes:JSON.parse(JSON.stringify(pQtys)),_etiqueta:pExist?pExist._etiqueta:null,envioTipo:envioTipoForm,envioImporte:envioImporteForm,bolsas:bolsasForm,creadoEn:pExist?pExist.creadoEn:new Date().toISOString()};
   // FASE 4.1: se fija el total vigente AHORA, al confirmar el pedido. A partir de acá
   // calcTotalPedido siempre va a devolver este número, sin importar que mañana cambien
@@ -2687,51 +3141,9 @@ function enviarAlias(){
   window.open(url,'_blank');
 }
 
-function enviarMensajePosventa(){
-  var _src=pedidosImportados&&pedidosImportados.length>0?pedidosImportados:pedidos;
-  var p=_src.find(function(x){return x.id===pedidoVerId;})||pedidos.find(function(x){return x.id===pedidoVerId;});
-  if(!p){alert('No se encontró el pedido.');return;}
-  var cli=clientes.find(function(c){return c.nombre.toLowerCase()===(p.nombre||'').toLowerCase();});
-  var sobrenombre=cli&&cli.sobrenombre?cli.sobrenombre.trim():'';
-  var tel=(p.telefono||(cli&&cli.telefono)||'').replace(/\D/g,'');
-  var faltantes=[];
-  if(!sobrenombre)faltantes.push('el sobrenombre del cliente (cargalo en la ficha de Clientes)');
-  if(!tel)faltantes.push('un teléfono válido');
-  if(faltantes.length>0){alert('Para enviar el mensaje posventa falta: '+faltantes.join(' y ')+'.');return;}
-  var msg='Hola '+sobrenombre+'! Soy Fede, de FIKA 🍞 Quería saber cómo te llegó el pedido y qué te parecieron los panes. Tu opinión me ayuda un montón a seguir mejorando.\n\nSi te gustó y podes contarme, me das permiso para subir una captura de tu mensaje a mis historias? Y si no querés, no hay ningún problema, con que me des tu opinión es más que suficiente! 🙌\n\nGracias por la confianza de siempre!';
-  var url='https://wa.me/549'+tel+'?text='+encodeURIComponent(msg);
-  window.open(url,'_blank');
-}
-
-function enviarHorarioVisita(){
-  // Buscar primero en pedidosImportados (donde viven los horarios), luego en pedidos
-  var _src=pedidosImportados&&pedidosImportados.length>0?pedidosImportados:pedidos;
-  var p=_src.find(function(x){return x.id===pedidoVerId;});
-  if(!p)p=pedidos.find(function(x){return x.id===pedidoVerId;});
-  // Si aun no encuentra, buscar por nombre en el modal
-  if(!p||!p.horarioEntrega){
-    var _nm=(document.getElementById('dp-nombre')||{textContent:''}).textContent.split(' ·')[0].trim();
-    var _p2=_src.find(function(x){return x.nombre===_nm;});
-    if(_p2&&_p2.horarioEntrega)p=_p2;
-  }
-  if(!p)return;
-  var _banda=getBandaHoraria(p.horarioEntrega||p.horarioDesde||'');
-  var desde=_banda.desde||p.horarioDesde||p.horarioEntrega||'';
-  var hasta=_banda.hasta||p.horarioHasta||'';
-  if(!desde){alert('No tiene horario asignado aún. Asignálo en CADETE o genéra la ruta en REPARTO.');return;}
-  var nombre=p.nombre.split(' ')[0];
-  var fecha=p.fecha?new Date(p.fecha+'T12:00').toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'}):'';
-  var detalle=getPanesStr(p.panes,' + ');
-  var total=calcTotalPedido(p);
-  var msg='Hola '+nombre+'! Tu pedido FIKA llega mañana entre las '+desde+' y las '+hasta+' hs.';
-  if(detalle)msg+=' Pedido: '+detalle+'.';
-  if(!p.pago&&total>0){msg+=' Total: '+fmtPeso(total)+'. Alias para transferir: fika.pan.';}
-  msg+=' ¡Nos vemos mañana! 🍞';
-  var tel=(p.telefono||'').replace(/\D/g,'');
-  var _enc=encodeURIComponent(msg).replace(/%EF%BF%BD/g,'').replace(/undefined/g,'')+'%F0%9F%8D%9E';
-  var url=tel?'https://wa.me/549'+tel+'?text='+_enc:'https://wa.me/?text='+_enc;
-  window.open(url,'_blank');
-}
+function enviarMensajePosventa(){abrirPostventaWA(pedidoVerId);}
+// Compatibilidad: el antiguo "horario por WhatsApp" ahora es el mismo mensaje de confirmación.
+function enviarHorarioVisita(){abrirMensajePedidoWA(pedidoVerId);}
 
 // ── SEMANA ────────────────────────────────────────────────────
 function getLunes(off){var h=new Date();var dia=h.getDay();var diff=dia===0?-6:1-dia;var l=new Date(h);l.setDate(h.getDate()+diff+off*7);l.setHours(0,0,0,0);return l;}
@@ -3619,7 +4031,7 @@ function renderCadete(){
   var ordenados=cadeteOrden.map(function(id){return filtrados.find(function(p){return p.id===id;});}).filter(Boolean);
   var tbl=document.createElement('table');tbl.className='dtable';
   var thead=tbl.createTHead();var hr=thead.insertRow();
-  ['#','Nombre','Teléfono','Horario','Domicilio','Importe','Estado','Observación',''].forEach(function(h){var th=document.createElement('th');th.textContent=h;hr.appendChild(th);});
+  ['#','Nombre','Teléfono','Horario','Domicilio','Importe','Bolsas','Estado','Observación',''].forEach(function(h){var th=document.createElement('th');th.textContent=h;hr.appendChild(th);});
   var tbody=tbl.createTBody();
   ordenados.forEach(function(p,i){
     var tr=tbody.insertRow();tr.className='cadete-drag';tr.draggable=true;tr.dataset.id=p.id;
@@ -3630,6 +4042,7 @@ function renderCadete(){
     var tdH=tr.insertCell();tdH.style.cssText='color:var(--accent);font-weight:500;white-space:nowrap';tdH.textContent=p.horarioEntrega||'--';
     var tdDom=tr.insertCell();tdDom.textContent=(p.domicilio||'--')+(p.piso?' - '+p.piso:'');if(p.ciudad){var cs=document.createElement('div');cs.style.cssText='font-size:11px;color:var(--text3);margin-top:2px';cs.textContent=p.ciudad;tdDom.appendChild(cs);}
     var tdImp=tr.insertCell();var totalP=calcTotalPedido(p);tdImp.style.cssText='font-size:12px;color:var(--accent);white-space:nowrap';tdImp.textContent=totalP>0?fmtPeso(totalP):'--';
+    var tdBol=tr.insertCell();tdBol.style.whiteSpace='nowrap';tdBol.appendChild(crearControlBolsas(p));
     var tdEst=tr.insertCell();
     // Estado real de entrega, tal como lo dejó la app del cadete (sin modificar esa app, solo leyendo lo que ya escribe en Supabase).
     // "Cancelado" no existe como estado en los datos actuales, así que no se muestra algo que no se puede calcular.
@@ -3641,8 +4054,8 @@ function renderCadete(){
     var tdObs=tr.insertCell();tdObs.style.cssText='font-size:12px;color:var(--text2)';tdObs.textContent=p.notas||'--';
     var tdEdit=tr.insertCell();tdEdit.style.cssText='white-space:nowrap';
     var bEdit=document.createElement('button');bEdit.className='btn-ol';bEdit.style.cssText='margin:0;padding:3px 9px;font-size:11px';bEdit.textContent='Editar';bEdit.onclick=(function(pid){return function(){abrirEditarDomicilio(pid);};})(p.id);tdEdit.appendChild(bEdit);
-    // ITERACIÓN 3 / Fase 7: acceso directo al mensaje de WhatsApp del pedido desde REPARTO.
-    var bWA=document.createElement('button');bWA.className='btn-ol';bWA.style.cssText='margin:0 0 0 4px;padding:3px 9px;font-size:11px';bWA.textContent='💬';bWA.title='Mensaje de pedido por WhatsApp';bWA.onclick=(function(pid){return function(e){e.stopPropagation();abrirMensajePedidoWA(pid);};})(p.id);tdEdit.appendChild(bWA);
+    // ITERACIÓN 4 / Parte 1.3: dos accesos por pedido en REPARTO (confirmación y postventa).
+    tdEdit.appendChild(crearBotonesWA(p.id));
   });
   tabla.innerHTML='';tabla.appendChild(tbl);
   initDrag();
@@ -3817,6 +4230,7 @@ function renderPrecioLista(containerId, tipo){
 }
 
 function renderPrecios(){
+  actualizarTarifaEnvioTxt();renderMetasCadete();
   if(productos.length===0){cargarProductos().then(renderPrecios);return;}
   renderCombos();
   renderPrecioLista('precios-lista','minorista');
@@ -3827,6 +4241,7 @@ function renderPrecios(){
 // mismas funciones de carga/edición (editarPrecioTipo guarda en Supabase igual que en
 // escritorio), apuntando a los contenedores de la pantalla móvil.
 function renderPreciosMob(){
+  actualizarTarifaEnvioTxt();renderMetasCadete();
   if(productos.length===0){cargarProductos().then(renderPreciosMob);return;}
   renderPrecioLista('precios-lista-mob','minorista');
   renderPrecioLista('precios-lista-may-mob','mayorista');
