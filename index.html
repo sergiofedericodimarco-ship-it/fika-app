@@ -2440,7 +2440,7 @@ async function renderInicio(forzar){
   INICIO_CARGANDO=true;
   pintarInicio();
   try{
-    await Promise.all([cargarConfigInicio(),cargarCostos(),cargarStockInsumos().then(function(){return cargarHorneadasRecientes();}).then(function(h){INICIO_HORNEADAS=h;})]);
+    await Promise.all([cargarConfigInicio(),cargarUltimoRespaldo(),cargarCostos(),cargarStockInsumos().then(function(){return cargarHorneadasRecientes();}).then(function(h){INICIO_HORNEADAS=h;})]);
     var d=await cargarDatosInicio(sem);
     if(token!==INICIO_TOKEN)return;
     INICIO_DATA=d;
@@ -2633,8 +2633,10 @@ function pintarInicio(){
     var bAct=elDash('button','btn-ol','Actualizar');bAct.style.margin='0 0 0 auto';bAct.disabled=INICIO_CARGANDO;bAct.onclick=function(){renderInicio(true);};
     bar.appendChild(bPrev);bar.appendChild(lbl);bar.appendChild(bNext);
     if(INICIO_OFFSET!==0){var bHoy=elDash('button','btn-ol','Esta semana');bHoy.style.margin='0';bHoy.onclick=irSemanaActualInicio;bar.appendChild(bHoy);}
+    var bExp=elDash('button','btn-ol','Exportar a Excel');bExp.style.margin='0';bExp.setAttribute('data-accion','exportar-inicio');bExp.onclick=exportarInicio;bar.appendChild(bExp);
     bar.appendChild(bAct);
     root.appendChild(bar);
+    root.appendChild(armarBloqueRespaldo());
     if(INICIO_CARGANDO&&!INICIO_DATA){root.appendChild(elDash('div','inicio-nd','Cargando…'));return;}
     if(!INICIO_DATA){root.appendChild(elDash('div','inicio-nd','Sin datos: no se pudo calcular la semana. Probá "Actualizar".'));return;}
     var estado=elDash('div','inicio-estado',(INICIO_CARGANDO?'Actualizando… ':'')+'Actualizado '+INICIO_DATA.hora.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})+(INICIO_DATA.offline?' · Sin conexión con el servidor: se muestran los datos guardados en este dispositivo':''));
@@ -2835,12 +2837,22 @@ function abrirDialogoDash(titulo,construir){
   construir(body,cerrar);
   return cerrar;
 }
+// Campo decimal: acepta coma o punto (la coma se convierte en punto al escribir), con teclado numérico en el celular.
+function inputDecimal(el){
+  el.type='text';el.inputMode='decimal';el.setAttribute('autocomplete','off');
+  el.addEventListener('input',function(){
+    var v=el.value,n=v.replace(/,/g,'.').replace(/[^0-9.\-]/g,'');
+    var p=n.indexOf('.');if(p>=0)n=n.substring(0,p+1)+n.substring(p+1).replace(/\./g,'');
+    if(n!==v){var pos=el.selectionStart;el.value=n;try{el.setSelectionRange(pos,pos);}catch(e){}}
+  });
+  return el;
+}
 function campoDash(body,label,tipo,valor,opciones){
   var w=elDash('div');w.style.marginBottom='10px';
   w.appendChild(elDash('div','f-lbl',label));
   var el;
   if(tipo==='select'){el=document.createElement('select');el.className='f-in';(opciones||[]).forEach(function(o){var op=document.createElement('option');op.value=o[0];op.textContent=o[1];if(o[0]===valor)op.selected=true;el.appendChild(op);});}
-  else{el=document.createElement('input');el.className='f-in';el.type=tipo||'text';if(tipo==='number'){el.step='any';el.inputMode='decimal';}if(valor!==undefined&&valor!==null)el.value=valor;}
+  else{el=document.createElement('input');el.className='f-in';el.type=tipo||'text';if(tipo==='number')inputDecimal(el);if(valor!==undefined&&valor!==null)el.value=valor;}
   w.appendChild(el);body.appendChild(w);return el;
 }
 function pieDialogo(body,textoOk,onOk,cerrar){
@@ -3030,6 +3042,7 @@ function pintarCostos(){
     var cfg=elDash('div','inicio-bar');
     cfg.appendChild(elDash('div','inicio-sub','Se marca "Margen bajo" si el margen B2C queda debajo de '+CFG_INICIO.alerta_margen_min+'%'));
     var bm=elDash('button','btn-ol','Modificar');bm.style.margin='0';bm.onclick=function(){editarConfigInicio('alerta_margen_min');};cfg.appendChild(bm);
+    var bxc=elDash('button','btn-ol','Exportar a Excel');bxc.style.margin='0';bxc.setAttribute('data-accion','exportar-costos');bxc.onclick=exportarCostos;cfg.appendChild(bxc);
     root.appendChild(cfg);
     // productos
     root.appendChild(elDash('div','sec-lbl','Productos'));
@@ -3362,7 +3375,7 @@ function abrirDialogoHorneada(opc){
       var w=elDash('div','inicio-fila');w.setAttribute('data-prod',k);
       w.appendChild(elDash('span','inicio-fila-n',nombreProductoCosto(k)));
       var sug=elDash('span','inicio-fila-v','');
-      var inp=document.createElement('input');inp.type='number';inp.min='0';inp.step='any';inp.className='f-in';inp.style.cssText='width:90px;margin:0';inp.value=(opc.items&&opc.items[k])||0;
+      var inp=document.createElement('input');inputDecimal(inp);inp.className='f-in';inp.style.cssText='width:90px;margin:0';inp.value=(opc.items&&opc.items[k])||0;
       var tocado=!!opc.items;
       inp.oninput=function(){tocado=true;actualizarResumen();};
       w.appendChild(sug);w.appendChild(inp);lista.appendChild(w);
@@ -3445,7 +3458,8 @@ function pintarStockInsumos(){
       var b2=elDash('button','btn-ol','Hacer conteo');b2.style.margin='0';b2.onclick=abrirDialogoConteo;
       var b3=elDash('button','btn-ol','Horneadas');b3.style.margin='0';b3.onclick=abrirListaHorneadas;
       var b4=elDash('button','btn-ol','Historial de conteos');b4.style.margin='0';b4.onclick=abrirHistorialConteos;
-      acc.appendChild(b1);acc.appendChild(b2);acc.appendChild(b3);acc.appendChild(b4);root.appendChild(acc);
+      var b5=elDash('button','btn-ol','Exportar a Excel');b5.style.margin='0';b5.setAttribute('data-accion','exportar-stock');b5.onclick=exportarStockInsumos;
+      acc.appendChild(b1);acc.appendChild(b2);acc.appendChild(b3);acc.appendChild(b4);acc.appendChild(b5);root.appendChild(acc);
       var tb=elDash('div','inicio-bar');
       var q=document.createElement('input');q.type='search';q.className='f-in stk-q';q.placeholder='Buscar insumo...';q.style.cssText='flex:1;min-width:150px;margin:0';
       q.oninput=function(){STK_FILTRO.q=q.value;pintarStockInsumos();};
@@ -3592,7 +3606,7 @@ function abrirDialogoConteo(){
         cab.appendChild(elDash('div','inicio-sub','Teórico: '+fmtStock(v.stock,i.unidad_base)+(v.tieneConteo?'':' (sin conteo inicial)')));
         w.appendChild(cab);
         var fila=elDash('div');fila.style.cssText='display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px';
-        var inp=document.createElement('input');inp.type='number';inp.step='any';inp.className='f-in';inp.placeholder='Stock real ('+i.unidad_base+')';inp.style.cssText='width:150px;margin:0';
+        var inp=document.createElement('input');inputDecimal(inp);inp.className='f-in';inp.placeholder='Stock real ('+i.unidad_base+')';inp.style.cssText='width:150px;margin:0';
         if(inputs[i.id]!==undefined)inp.value=inputs[i.id];
         var dif=elDash('div','inicio-sub','');
         function act(){
@@ -3704,6 +3718,10 @@ function pintarComprasNuevo(){
     var aviso=elDash('div','ins-aviso');root.appendChild(aviso);
     var bar=elDash('div','inicio-bar');
     var bn=elDash('button','btn-p','+ Nueva compra');bn.style.cssText='margin:0;width:auto;padding:8px 14px';bn.onclick=abrirDialogoCompra;bar.appendChild(bn);
+    var fd=document.createElement('input');fd.type='date';fd.className='f-in cmp-desde';fd.style.cssText='width:auto;margin:0';fd.value=COMPRAS_EXP.desde;fd.title='Desde';fd.setAttribute('aria-label','Exportar desde');fd.onchange=function(){COMPRAS_EXP.desde=fd.value;};
+    var fh=document.createElement('input');fh.type='date';fh.className='f-in cmp-hasta';fh.style.cssText='width:auto;margin:0';fh.value=COMPRAS_EXP.hasta;fh.title='Hasta';fh.setAttribute('aria-label','Exportar hasta');fh.onchange=function(){COMPRAS_EXP.hasta=fh.value;};
+    var bxp=elDash('button','btn-ol','Exportar a Excel');bxp.style.margin='0';bxp.setAttribute('data-accion','exportar-compras');bxp.onclick=exportarCompras;
+    bar.appendChild(elDash('span','inicio-sub','Exportar desde'));bar.appendChild(fd);bar.appendChild(elDash('span','inicio-sub','hasta'));bar.appendChild(fh);bar.appendChild(bxp);
     root.appendChild(bar);
     if(COMPRAS_VISTA.error||STK.error||COSTOS.error){root.appendChild(elDash('div','inicio-nd','No se pudieron leer las compras. ¿Corriste las migraciones de la Etapa 3 en Supabase?'));pintarAvisoCostos();return;}
     if(!COMPRAS_VISTA.cargado){root.appendChild(elDash('div','inicio-nd','Cargando…'));pintarAvisoCostos();return;}
@@ -3853,6 +3871,223 @@ function abrirDialogoCompra(){
       return null;
     },cerrar);
   });
+}
+
+// ── EXPORTAR A EXCEL (respaldo completo y exportaciones de Costos, Stock, Compras e Inicio) ──
+// Usa SheetJS (ya cargado). Reglas: importes y cantidades van como NÚMERO con formato (no texto), las fechas como
+// FECHA de Excel (número de serie + formato dd/mm/aaaa), y los encabezados de las exportaciones en español.
+// El respaldo conserva los nombres reales de las columnas (para poder restaurar) e incluye las filas anuladas.
+// Nunca se exportan claves ni contraseñas: se descartan las claves sensibles de config, las columnas con nombre
+// de contraseña/token y, por las dudas, cualquier celda que contenga la clave de Supabase o la API key de Maps.
+var RESPALDO_FECHA=null,RESPALDO_CARGANDO=false;
+var COMPRAS_EXP={desde:'',hasta:''};
+var EXP_SENSIBLE_COL=/pass|contrase|token|secret|api_?key|credencial/i;
+var EXP_SENSIBLE_CFG=/pass|contrase|token|secret|key|clave|credencial|usuario|user|api/i;
+var EXP_FMT={'$':'"$"#,##0','%':'0.0"%"','n':'#,##0.###','d':'dd/mm/yyyy','dt':'dd/mm/yyyy hh:mm'};
+// [nombre de la hoja, tabla de Supabase, columna para ordenar al paginar]
+var RESPALDO_TABLAS=[['pedidos','pedidos','id'],['clientes','clientes','id'],['movimientos_cobro','movimientos_cobro','id'],['cobros','cobros','pedido_id'],
+  ['productos','productos','id'],['insumos','insumos','id'],['insumo_precios','insumo_precios','id'],['recetas','recetas','id'],['receta_items','receta_items','id'],
+  ['producto_costeo','producto_costeo','producto_id'],['producto_packaging','producto_packaging','id'],['proveedores','proveedores','id'],
+  ['compras','compras_registro','id'],['compra_items','compra_items','id'],['stock_movimientos','stock_movimientos','id'],['horneadas','horneadas','id'],
+  ['horneada_items','horneada_items','id'],['conteos','conteos','id'],['conteo_items','conteo_items','id'],['config','config','key'],
+  ['lista_compras','compras','id'],['compras_realizadas','compras_realizadas','id'],['stock','stock','id'],['combos_precios','combos_precios','id']];
+
+function serialFecha(y,m,d,hh,mm){return (Date.UTC(y,m-1,d)-Date.UTC(1899,11,30))/86400000+((hh||0)*60+(mm||0))/1440;}
+function secretosExport(){
+  var s=[];try{if(typeof SUPA_KEY!=='undefined'&&SUPA_KEY)s.push(String(SUPA_KEY));}catch(e){}
+  try{var k=localStorage.getItem('fika-gmaps-key');if(k)s.push(k);}catch(e){}
+  return s;
+}
+// Convierte un valor a {v,z}: número, texto, booleano o fecha de Excel. t: tipo de columna ('auto' infiere).
+function valorExport(v,t,secretos){
+  if(v===null||v===undefined||v==='')return{v:''};
+  if(t==='d'||t==='dt'||t==='auto'){
+    if(v instanceof Date){return{v:serialFecha(v.getFullYear(),v.getMonth()+1,v.getDate(),t==='d'?0:v.getHours(),t==='d'?0:v.getMinutes()),z:EXP_FMT[t==='d'?'d':'dt']};}
+    if(typeof v==='string'){
+      var m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(v);
+      if(m)return{v:serialFecha(+m[1],+m[2],+m[3]),z:EXP_FMT.d};
+      if(/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}/.test(v)){var dd=new Date(v);if(!isNaN(dd.getTime()))return{v:serialFecha(dd.getFullYear(),dd.getMonth()+1,dd.getDate(),dd.getHours(),dd.getMinutes()),z:EXP_FMT.dt};}
+    }
+  }
+  if(typeof v==='boolean')return{v:v};
+  if(typeof v==='number')return isFinite(v)?{v:v,z:(t==='$'||t==='%'||t==='n')?EXP_FMT[t]:undefined}:{v:''};
+  if(t==='$'||t==='%'||t==='n'){var n=Number(v);return isFinite(n)?{v:n,z:EXP_FMT[t]}:{v:''};}
+  var s=(typeof v==='object')?JSON.stringify(v):String(v);
+  (secretos||[]).forEach(function(x){if(x&&s.indexOf(x)>=0)s=s.split(x).join('[omitido]');});
+  return{v:s.length>32000?s.substring(0,32000):s};
+}
+function dirCeldaExport(r,c){var s='',n=c+1;while(n>0){var m=(n-1)%26;s=String.fromCharCode(65+m)+s;n=Math.floor((n-1)/26);}return s+(r+1);}
+// cols: [{h:'Encabezado',t:'$'|'%'|'n'|'d'|'dt'|'s'|'auto',w:ancho}] · filas: arrays de valores
+function hojaExport(nombre,cols,filas){
+  var sec=secretosExport(),aoa=[cols.map(function(c){return c.h;})],zs=[];
+  filas.forEach(function(f){
+    var fila=[],zf=[];
+    cols.forEach(function(c,i){var x=valorExport(f[i],c.t||'s',sec);fila.push(x.v);zf.push(x.z);});
+    aoa.push(fila);zs.push(zf);
+  });
+  if(filas.length===0)aoa.push(cols.map(function(c,i){return i===0?'(sin filas)':'';}));
+  var ws=XLSX.utils.aoa_to_sheet(aoa);
+  zs.forEach(function(zf,r){zf.forEach(function(z,c){if(z){var cel=ws[dirCeldaExport(r+1,c)];if(cel&&cel.t==='n')cel.z=z;}});});
+  ws['!cols']=cols.map(function(c){return{wch:c.w||Math.max(12,Math.min(40,String(c.h).length+4))};});
+  return{nombre:nombre.substring(0,31),ws:ws};
+}
+function hojaCruda(nombre,rows){
+  var cols=[],vistas={};
+  rows.forEach(function(r){Object.keys(r).forEach(function(k){if(!vistas[k]&&!EXP_SENSIBLE_COL.test(k)){vistas[k]=1;cols.push({h:k,t:'auto'});}});});
+  if(cols.length===0)cols=[{h:'(sin filas)',t:'s'}];
+  return hojaExport(nombre,cols,rows.map(function(r){return cols.map(function(c){return r[c.h];});}));
+}
+function guardarLibroExport(archivo,hojas){
+  var wb=XLSX.utils.book_new();
+  hojas.forEach(function(h){XLSX.utils.book_append_sheet(wb,h.ws,h.nombre);});
+  XLSX.writeFile(wb,archivo);
+}
+function siNo(b){return b?'Sí':'No';}
+function hayXlsx(){if(typeof XLSX==='undefined'){alert('No se pudo cargar la librería de Excel (¿sin internet?). Reintentá.');return false;}return true;}
+
+// ---- RESPALDO COMPLETO
+async function cargarUltimoRespaldo(){
+  var r=await sbGet('config','&key=eq.ultimo_respaldo');
+  if(r&&r.length>0)RESPALDO_FECHA=r[0].value||null;
+}
+function diasDesdeRespaldo(){
+  if(!RESPALDO_FECHA)return null;
+  var a=parseFechaISO(String(RESPALDO_FECHA).substring(0,10)),b=parseFechaISO(fechaISO(new Date()));
+  return Math.round((b.getTime()-a.getTime())/86400000);
+}
+async function descargarRespaldo(){
+  if(RESPALDO_CARGANDO||!hayXlsx())return;
+  RESPALDO_CARGANDO=true;pintarInicio();
+  var hojas=[],fallas=[];
+  try{
+    for(var i=0;i<RESPALDO_TABLAS.length;i++){
+      var t=RESPALDO_TABLAS[i];
+      var rows=await sbGetSel(t[1],'*','&order='+t[2]+'.asc');
+      if(rows===null)rows=await sbGetSel(t[1],'*','');   // por si la tabla no tiene esa columna: se lee igual, sin orden
+      if(rows===null){fallas.push(t[0]);continue;}
+      if(t[1]==='config')rows=rows.filter(function(r){return !EXP_SENSIBLE_CFG.test(String(r.key));});
+      hojas.push(hojaCruda(t[0],rows));
+    }
+    if(hojas.length===0){alert('No se pudo leer ninguna tabla. Revisá la conexión y reintentá.');}
+    else{
+      var hoy=fechaISO(new Date());
+      guardarLibroExport('FIKA_respaldo_'+hoy+'.xlsx',hojas);
+      if(fallas.length===0){
+        var ok=await sbUpsert('config',{key:'ultimo_respaldo',value:hoy});
+        if(ok)RESPALDO_FECHA=hoy;
+      }else alert('Respaldo INCOMPLETO: no se pudieron leer estas tablas: '+fallas.join(', ')+'.\nSi son tablas de la Etapa 3, falta correr sus migraciones. No se registró como último respaldo.');
+    }
+  }catch(e){alert('No se pudo armar el respaldo. Reintentá.');}
+  RESPALDO_CARGANDO=false;pintarInicio();
+}
+function armarBloqueRespaldo(){
+  var box=elDash('div','card inicio-respaldo');
+  var fila=elDash('div','inicio-bar');fila.style.marginBottom='4px';
+  var b=elDash('button','btn-p','Descargar respaldo');b.style.cssText='margin:0;width:auto;padding:8px 14px';b.setAttribute('data-accion','respaldo');
+  b.disabled=RESPALDO_CARGANDO;if(RESPALDO_CARGANDO)b.textContent='Armando respaldo…';
+  b.onclick=descargarRespaldo;fila.appendChild(b);box.appendChild(fila);
+  var n=diasDesdeRespaldo(),txt,viejo=false;
+  if(n===null){txt='Último respaldo: todavía no hiciste ninguno';viejo=true;}
+  else{txt='Último respaldo: '+(n<=0?'hoy':'hace '+n+(n===1?' día':' días'));viejo=n>7;}
+  var l=elDash('div','inicio-sub respaldo-estado',txt);box.appendChild(l);
+  if(viejo){var a=elDash('div','inicio-sub respaldo-aviso','Atención: pasó más de una semana. Descargá un respaldo nuevo.');a.style.color='var(--danger)';box.appendChild(a);box.style.borderColor='var(--danger)';}
+  return box;
+}
+
+// ---- COSTOS
+function exportarCostos(){
+  if(!hayXlsx())return;
+  if(!COSTOS.cargado){alert('Todavía no hay costos cargados.');return;}
+  var fp=PRODUCTOS.filter(function(k){return productoActivo(k);}).map(function(k){
+    var m=margenesProducto(k);
+    if(!m)return [nombreProductoCosto(k),'','','','','','','','','Sin receta asignada'];
+    return [nombreProductoCosto(k),m.costo,m.precio,m.margen,m.pct,m.mayorista,m.margenB2B,m.pctB2B,siNo(m.mayEst),m.bajo?'Margen bajo':''];
+  });
+  var h1=hojaExport('Productos',[{h:'Producto',w:28},{h:'Costo unitario',t:'$'},{h:'Precio minorista (B2C)',t:'$'},{h:'Margen B2C ($)',t:'$'},{h:'Margen B2C (%)',t:'%'},
+    {h:'Precio mayorista (B2B)',t:'$'},{h:'Margen B2B ($)',t:'$'},{h:'Margen B2B (%)',t:'%'},{h:'Mayorista estimado (−30%)'},{h:'Alerta',w:26}],fp);
+  var fc=combos.map(function(c){
+    var r=costoCombo(c);
+    if(!r)return [c.nombre,'','',Number(c.precio)||0,'','','','Sin costo: falta receta de algún producto'];
+    return [c.nombre,r.costo,r.separado,r.precio,r.ahorro,r.margen,r.pct,r.bajo?'Margen bajo':''];
+  });
+  var h2=hojaExport('Combos',[{h:'Combo',w:30},{h:'Costo',t:'$'},{h:'Precio por separado',t:'$'},{h:'Precio del combo',t:'$'},{h:'Ahorro de la clienta',t:'$'},{h:'Margen ($)',t:'$'},{h:'Margen (%)',t:'%'},{h:'Alerta',w:36}],fc);
+  guardarLibroExport('FIKA_costos_'+fechaISO(new Date())+'.xlsx',[h1,h2]);
+}
+
+// ---- STOCK
+async function exportarStockInsumos(){
+  if(!hayXlsx())return;
+  await Promise.all([cargarStockInsumos(),cargarCostos()]);
+  if(STK.error||COSTOS.error){alert('No se pudo leer el stock. ¿Corriste las migraciones de la Etapa 3?');return;}
+  var fs=COSTOS.insumos.filter(insumoLlevaStock).map(function(i){
+    var v=STK.vista[i.id]||{stock:0,ultimo:null},m=i.stock_minimo;
+    return [i.nombre,i.categoria==='packaging'?'Packaging':'Ingrediente',i.unidad_base,v.stock,(m===null||m===undefined||m==='')?'':Number(m),estadoStockInsumo(i).txt,siNo(!!i.es_principal),v.ultimo];
+  });
+  var h1=hojaExport('Stock actual',[{h:'Insumo',w:34},{h:'Categoría'},{h:'Unidad'},{h:'Stock actual',t:'n'},{h:'Stock mínimo',t:'n'},{h:'Estado',w:26},{h:'Principal'},{h:'Último movimiento',t:'d'}],fs);
+  var cs=await sbGetSel('conteos','*','&order=fecha.asc,id.asc'),ci=await sbGetSel('conteo_items','*','&order=id.asc');
+  if(cs===null||ci===null){alert('No se pudo leer el detalle de los conteos.');return;}
+  var fc=[];
+  cs.forEach(function(c){ci.filter(function(x){return x.conteo_id===c.id;}).forEach(function(x){
+    var i=COSTOS.mi[x.insumo_id]||{nombre:x.insumo_id,unidad_base:''};
+    fc.push([c.fecha,i.nombre,i.unidad_base,Number(x.teorico),Number(x.real),Number(x.diferencia),Number(x.valor_diferencia)]);
+  });});
+  var h2=hojaExport('Detalle de conteos',[{h:'Fecha del conteo',t:'d'},{h:'Insumo',w:34},{h:'Unidad'},{h:'Stock teórico',t:'n'},{h:'Stock real',t:'n'},{h:'Diferencia',t:'n'},{h:'Valor de la diferencia',t:'$'}],fc);
+  guardarLibroExport('FIKA_stock_'+fechaISO(new Date())+'.xlsx',[h1,h2]);
+}
+
+// ---- COMPRAS (rango de fechas)
+async function exportarCompras(){
+  if(!hayXlsx())return;
+  var d=COMPRAS_EXP.desde,h=COMPRAS_EXP.hasta;
+  if(d&&h&&d>h){alert('La fecha "desde" no puede ser posterior a "hasta".');return;}
+  await Promise.all([cargarStockInsumos(),cargarCostos()]);
+  var q='&order=fecha.asc,creado.asc'+(d?'&fecha=gte.'+d:'')+(h?'&fecha=lte.'+h:'');
+  var cs=await sbGetSel('compras_registro','*',q);
+  if(cs===null){alert('No se pudieron leer las compras.');return;}
+  if(cs.length===0){alert('No hay compras en ese rango de fechas.');return;}
+  var its=[];
+  for(var i=0;i<cs.length;i+=60){
+    var ids=cs.slice(i,i+60).map(function(c){return '"'+c.id+'"';}).join(',');
+    var r=await sbGetSel('compra_items','*','&compra_id=in.('+ids+')&order=creado.asc');
+    if(r===null){alert('No se pudieron leer las líneas de las compras.');return;}
+    its=its.concat(r);
+  }
+  var fc=cs.map(function(c){return [c.fecha,labelProveedor(proveedorPorId(c.proveedor_id)),c.medio_pago||'',Number(c.total),siNo(c.anulado),c.notas||''];});
+  var h1=hojaExport('Compras',[{h:'Fecha',t:'d'},{h:'Proveedor',w:28},{h:'Medio de pago'},{h:'Total',t:'$'},{h:'Anulada'},{h:'Notas',w:30}],fc);
+  var fl=[];
+  cs.forEach(function(c){its.filter(function(x){return x.compra_id===c.id;}).forEach(function(x){
+    var ins=x.insumo_id?(COSTOS.mi[x.insumo_id]||{nombre:x.insumo_id,unidad_base:''}):null;
+    fl.push([c.fecha,labelProveedor(proveedorPorId(c.proveedor_id)),x.tipo==='insumo'?'Insumo':'Otro gasto',ins?ins.nombre:(x.descripcion||''),x.categoria_gasto||'',
+      x.presentaciones===null?'':Number(x.presentaciones),x.cantidad_por_presentacion===null?'':Number(x.cantidad_por_presentacion),x.cantidad_base===null?'':Number(x.cantidad_base),ins?ins.unidad_base:'',
+      Number(x.total_linea),x.precio_unitario===null?'':Number(x.precio_unitario),x.tipo==='insumo'?siNo(x.es_oferta):'',siNo(c.anulado||x.anulado)]);
+  });});
+  var h2=hojaExport('Líneas de compra',[{h:'Fecha',t:'d'},{h:'Proveedor',w:28},{h:'Tipo'},{h:'Insumo o descripción',w:32},{h:'Categoría del gasto'},{h:'Presentaciones',t:'n'},{h:'Cantidad por presentación',t:'n'},
+    {h:'Cantidad total',t:'n'},{h:'Unidad'},{h:'Total de la línea',t:'$'},{h:'Precio unitario',t:'$'},{h:'Precio de oferta'},{h:'Anulada'}],fl);
+  guardarLibroExport('FIKA_compras_'+(d||'inicio')+'_a_'+(h||'hoy')+'.xlsx',[h1,h2]);
+}
+
+// ---- INICIO (tarjetas de la semana seleccionada)
+function exportarInicio(){
+  if(!hayXlsx())return;
+  var d=INICIO_DATA;
+  if(!d){alert('Todavía no hay datos de la semana. Probá "Actualizar".');return;}
+  var cur=d.cur,prev=d.prev;
+  var f=[['Pedidos',cur.n,prev.n,CFG_INICIO.meta_pedidos_semana,'n'],['Unidades',cur.unidades,prev.unidades,CFG_INICIO.meta_unidades_semana,'n'],
+    ['Ventas',cur.ventas,prev.ventas,'','$'],['Ventas minoristas (B2C)',cur.ventasB2C,prev.ventasB2C,'','$'],['Ventas mayoristas (B2B)',cur.ventasB2B,prev.ventasB2B,'','$'],
+    ['Ticket promedio',cur.n>0?cur.ventas/cur.n:'',prev.n>0?prev.ventas/prev.n:'','','$'],['Cobrado',cur.cobrado,prev.cobrado,'','$'],['Pendiente de cobro',cur.pendiente,prev.pendiente,'','$'],
+    ['Clientas nuevas',cur.nuevas.length,prev.nuevas.length,'','n'],
+    ['Costo del cadete (estimado)',cur.entregasViernes>0?costoCadeteViernes(cur.entregasViernes):'',prev.entregasViernes>0?costoCadeteViernes(prev.entregasViernes):'','','$']];
+  var mg=COSTOS.cargado&&cur.n>0?margenBrutoSemana(d.pedsCur):null,mp=COSTOS.cargado&&prev.n>0?margenBrutoSemana(d.pedsPrev):null;
+  f.push(['Margen bruto (costos de hoy)',mg&&!mg.faltan?mg.margen:'',mp&&!mp.faltan?mp.margen:'','','$']);
+  var filas=f.map(function(x){return [x[0],x[1],x[2],x[3]];});
+  var h1=hojaExport('Resumen',[{h:'Indicador ('+fechaCorta(d.sem.ini)+' a '+fechaCorta(d.sem.fin)+')',w:36},{h:'Semana seleccionada',t:'n'},{h:'Semana anterior',t:'n'},{h:'Meta',t:'n'}],filas);
+  f.forEach(function(x,i){if(x[4]==='$'){[1,2,3].forEach(function(c){var cel=h1.ws[dirCeldaExport(i+1,c)];if(cel&&cel.t==='n')cel.z=EXP_FMT.$;});}});
+  var h2=hojaExport('B2B pendiente',[{h:'Clienta',w:28},{h:'Saldo',t:'$'},{h:'Fecha del pedido',t:'d'},{h:'Vence',t:'d'},{h:'Vencido'}],d.b2b.map(function(x){return [nombreVisibleClienta(x.nombre),x.saldo,x.fecha,x.vence,siNo(x.vencido)];}));
+  var hu=d.horneada?Object.keys(d.horneada.unidades).map(function(k){return [PROD_NOMBRES[k]||k,d.horneada.unidades[k]];}):[];
+  var h3=hojaExport('Próxima horneada',[{h:'Producto'+(d.nb?' (horneada '+fechaCorta(d.nb.horneada)+', entregas '+fechaCorta(d.nb.entrega)+')':''),w:44},{h:'Unidades',t:'n'}],hu);
+  var bajos=STK.cargado?insumosBajoMinimo().map(function(i){return [i.nombre,STK.vista[i.id].stock,Number(i.stock_minimo),i.unidad_base];}):[];
+  var h4=hojaExport('Insumos bajo mínimo',[{h:'Insumo',w:34},{h:'Stock actual',t:'n'},{h:'Stock mínimo',t:'n'},{h:'Unidad'}],bajos);
+  guardarLibroExport('FIKA_inicio_'+d.sem.ini+'_a_'+d.sem.fin+'.xlsx',[h1,h2,h3,h4]);
 }
 
 // ── NAVEGACION ────────────────────────────────────────────────
