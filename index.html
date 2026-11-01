@@ -259,6 +259,14 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
 .inicio-cfg-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--border)}
 .inicio-cfg-val{font-size:15px;color:var(--accent);font-weight:500}
 
+
+/* ETAPA 3: stock de insumos */
+.stk-badge{display:inline-block;border-radius:20px;padding:1px 9px;font-size:10px;font-weight:600;border:0.5px solid var(--border2);margin-top:3px}
+.stk-bien{background:rgba(80,170,110,0.15);color:var(--ok);border-color:rgba(80,170,110,0.4)}
+.stk-mal{background:rgba(224,85,85,0.15);color:var(--danger);border-color:rgba(224,85,85,0.4)}
+.stk-ninguno{background:var(--bg3);color:var(--text3)}
+.stk-fila{margin-bottom:8px}
+.stk-resumen{margin-top:10px}
 /* ETAPA 2: Insumos y Costos */
 .ins-nombre{font-size:14px;color:var(--text);font-weight:500}
 .ins-fila,.cos-fila{margin-bottom:8px}
@@ -394,13 +402,20 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
       <div id="cobros-empty" class="empty" style="display:none"><div class="empty-icon">&#36;</div>Sin cobros pendientes.</div>
     </div>
     <div class="mscreen" id="ms-stock">
+      <div class="seg-tabs" data-seg="stock" style="display:flex;gap:6px;margin-bottom:12px"></div>
+      <div class="seg-new" data-seg="stock"><div class="stk-root"></div></div>
+      <div class="seg-old" data-seg="stock" style="display:none">
       <div class="sec-lbl">Stock en freezer</div>
       <div class="card" id="stock-list"></div>
       <div class="sec-lbl" style="margin-top:14px">❄️ Congelados</div>
       <div id="congelados-list"></div>
       <div id="congelados-empty" class="empty" style="display:none"><div class="empty-icon">❄️</div>Sin stock de congelados.</div>
+      </div>
     </div>
     <div class="mscreen" id="ms-compras">
+      <div class="seg-tabs" data-seg="compras" style="display:flex;gap:6px;margin-bottom:12px"></div>
+      <div class="seg-new" data-seg="compras"><div class="compras-root"></div></div>
+      <div class="seg-old" data-seg="compras" style="display:none">
       <div style="display:flex;gap:6px;margin-bottom:12px">
         <button class="fb active" id="ctab-lista" onclick="switchComprasTab('lista')" style="font-size:11px">Lista</button>
         <button class="fb" id="ctab-historial" onclick="switchComprasTab('historial')" style="font-size:11px">Compras realizadas</button>
@@ -412,6 +427,7 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
       <div id="ctab-historial-content" style="display:none">
         <div id="compras-real-list-mob"></div>
         <div id="compras-real-empty-mob" style="text-align:center;padding:30px;color:var(--text3);font-size:12px;display:none">Sin compras registradas.</div>
+      </div>
       </div>
     </div>
     <div class="mscreen" id="ms-historial-mob">
@@ -590,6 +606,9 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
 
     <!-- STOCK PC -->
     <div class="dscreen" id="d-stock">
+      <div class="seg-tabs" data-seg="stock" style="display:flex;gap:6px;margin-bottom:12px"></div>
+      <div class="seg-new" data-seg="stock"><div class="stk-root"></div></div>
+      <div class="seg-old" data-seg="stock" style="display:none">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
         <div>
           <div class="sec-lbl">Stock en freezer</div>
@@ -603,6 +622,7 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
         <div class="sec-lbl" style="margin-top:16px">❄️ Congelados</div>
         <div class="card" id="desk-congelados-list"></div>
     </div>
+      </div>
     </div>
 
     <!-- CLIENTES PC -->
@@ -746,6 +766,9 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
       </div>
     </div>
     <div class="dscreen" id="d-compras">
+      <div class="seg-tabs" data-seg="compras" style="display:flex;gap:6px;margin-bottom:12px"></div>
+      <div class="seg-new" data-seg="compras"><div class="compras-root"></div></div>
+      <div class="seg-old" data-seg="compras" style="display:none">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
         <div>
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
@@ -763,6 +786,7 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
           <div id="desk-compras-real-list"></div>
           <div id="desk-compras-real-empty" style="text-align:center;padding:20px;color:var(--text3);font-size:12px;display:none">Sin compras registradas.</div>
         </div>
+      </div>
       </div>
     </div>
     <div class="dscreen" id="d-historial">
@@ -2405,10 +2429,8 @@ async function cargarDatosInicio(sem){
   });
   res.b2b.sort(function(a,b){return a.vence.localeCompare(b.vence);});
   // Próxima horneada: unidades por producto (los combos ya vienen desarmados en panes).
-  res.horneada={unidades:{},total:0,pedidos:next.length};
-  next.forEach(function(p){
-    if(p.panes)Object.keys(p.panes).forEach(function(k){var n=Number(p.panes[k]);if(n>0){res.horneada.unidades[k]=(res.horneada.unidades[k]||0)+n;res.horneada.total+=n;}});
-  });
+  var uh=unidadesDePedidos(next);
+  res.horneada={unidades:uh.unidades,total:uh.total,pedidos:next.length};
   return res;
 }
 
@@ -2418,7 +2440,7 @@ async function renderInicio(forzar){
   INICIO_CARGANDO=true;
   pintarInicio();
   try{
-    await Promise.all([cargarConfigInicio(),cargarCostos()]);
+    await Promise.all([cargarConfigInicio(),cargarCostos(),cargarStockInsumos().then(function(){return cargarHorneadasRecientes();}).then(function(h){INICIO_HORNEADAS=h;})]);
     var d=await cargarDatosInicio(sem);
     if(token!==INICIO_TOKEN)return;
     INICIO_DATA=d;
@@ -2536,6 +2558,9 @@ function armarTarjetasInicio(d){
       });
       c7.appendChild(elDash('div','inicio-sub',d.horneada.pedidos+' pedidos'));
     }else sinDatosDash(c7,'Sin pedidos cargados para esas entregas');
+    var bh=elDash('button','btn-p','Confirmar horneada');bh.style.margin='8px 0 0';bh.setAttribute('data-accion','confirmar-horneada');
+    bh.onclick=function(){abrirDialogoHorneada({tipo:diaH,sugBase:d.nb.horneada});};
+    c7.appendChild(bh);
   }else sinDatosDash(c7);
   cards.push(c7);
   // 8. Costo del cadete (estimado) = entregas del viernes
@@ -2576,6 +2601,23 @@ function armarTarjetasInicio(d){
     }
   }
   cards.push(c10);
+  // 11. Insumos bajo mínimo (Etapa 3)
+  var c11=tarjetaInicio(11,'Insumos bajo mínimo');
+  if(STK.error||!STK.cargado)c11.appendChild(elDash('div','inicio-nd','Disponible cuando estén cargadas las tablas de stock'));
+  else{
+    var bajos=insumosBajoMinimo();
+    var hayMin=COSTOS.insumos.some(function(i){return insumoLlevaStock(i)&&i.stock_minimo!==null&&i.stock_minimo!==undefined&&i.stock_minimo!=='';});
+    if(!hayMin)sinDatosDash(c11,'Sin datos: definí el stock mínimo de tus insumos principales');
+    else if(bajos.length===0)c11.appendChild(elDash('div','inicio-sub','Ningún insumo bajo su mínimo'));
+    else{
+      c11.appendChild(elDash('div','inicio-big',String(bajos.length)));
+      bajos.forEach(function(i){var v=STK.vista[i.id];c11.appendChild(elDash('div','inicio-fila',i.nombre+': '+fmtStock(v.stock,i.unidad_base)+' (mínimo '+fmtStock(Number(i.stock_minimo),i.unidad_base)+') · Bajo mínimo'));});
+    }
+    var bs=elDash('button','btn-ol','Ver en Stock');bs.style.margin='8px 0 0';
+    bs.onclick=function(){SEG_TAB.stock='insumos';if(ES_MOVIL)showMob('stock');else showDesk('d-stock');};
+    c11.appendChild(bs);
+  }
+  cards.push(c11);
   return cards;
 }
 
@@ -2597,6 +2639,15 @@ function pintarInicio(){
     if(!INICIO_DATA){root.appendChild(elDash('div','inicio-nd','Sin datos: no se pudo calcular la semana. Probá "Actualizar".'));return;}
     var estado=elDash('div','inicio-estado',(INICIO_CARGANDO?'Actualizando… ':'')+'Actualizado '+INICIO_DATA.hora.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})+(INICIO_DATA.offline?' · Sin conexión con el servidor: se muestran los datos guardados en este dispositivo':''));
     root.appendChild(estado);
+    var sc=INICIO_HORNEADAS===null?null:horneadaSinConfirmar(fechaISO(new Date()),INICIO_HORNEADAS);
+    if(sc){
+      var av=elDash('div','card inicio-aviso-horneada');av.setAttribute('data-aviso','horneada-sin-confirmar');av.style.borderColor='var(--danger)';
+      av.appendChild(elDash('div','inicio-sub-tit','Horneada del '+sc.tipo+' sin confirmar'));
+      av.appendChild(elDash('div','inicio-sub','No confirmaste lo que horneaste el '+fechaCorta(sc.fecha)+'. Hasta que lo confirmes, el stock de insumos no refleja ese consumo.'));
+      var bc=elDash('button','btn-p','Confirmar horneada del '+sc.tipo);bc.style.margin='8px 0 0';
+      bc.onclick=function(){abrirDialogoHorneada({tipo:sc.tipo,fecha:sc.fecha,sugBase:sc.fecha});};
+      av.appendChild(bc);root.appendChild(av);
+    }
     var grid=elDash('div','inicio-grid');
     armarTarjetasInicio(INICIO_DATA).forEach(function(c){grid.appendChild(c);});
     root.appendChild(grid);
@@ -2758,7 +2809,7 @@ async function cambiarPrecioInsumo(id,presentacion,cantidad,precio,origen,compra
   if(!(cantidad>0))return{ok:false,error:'La cantidad de la presentación debe ser mayor a 0.'};
   if(!(precio>=0))return{ok:false,error:'Ingresá un precio válido.'};
   var antes=snapshotCostos(),pu=precio/cantidad;
-  var okH=await sbUpsert('insumo_precios',{id:nuevoIdDash('ip_'),insumo_id:id,fecha:new Date().toISOString(),precio_presentacion:precio,cantidad_presentacion:cantidad,precio_unitario:pu,origen:origen||'manual',compra_id:compraId||null,anulado:false});
+  var okH=await sbUpsert('insumo_precios',{id:nuevoIdDash('ip_'),insumo_id:id,fecha:new Date().toISOString(),precio_presentacion:precio,cantidad_presentacion:cantidad,precio_unitario:pu,origen:origen||'manual',compra_id:compraId||null,presentacion:presentacion||'',anulado:false});
   if(!okH)return{ok:false,error:'No se pudo guardar el historial de precios. No se cambió nada.'};
   var okI=await sbUpsert('insumos',{id:id,presentacion:presentacion,cantidad_presentacion:cantidad,precio_presentacion:precio,precio_unitario:pu});
   if(!okI)return{ok:false,error:'Se registró en el historial pero no se pudo actualizar el insumo. Reintentá.'};
@@ -3167,11 +3218,648 @@ function margenBrutoSemana(peds){
   return{margen:ing-costo,ingresos:ing,costo:costo,pct:ing>0?(ing-costo)/ing*100:null};
 }
 
+// ── ETAPA 3: COMPRAS DE INSUMOS, STOCK, HORNEADAS Y CONTEO ─────
+// Principio: el stock teórico de cada insumo = suma de sus movimientos no anulados (tabla stock_movimientos).
+// Baja con lo que Fede CONFIRMA que horneó (no con los pedidos) y sube con las compras; el conteo del domingo
+// lo ajusta. El stock actual sale de la vista stock_insumos (una fila por insumo), nunca de sumar movimientos en
+// el navegador. Las operaciones (compra, horneada, conteo, anulaciones) se guardan con funciones de Postgres:
+// todo o nada, y un doble clic no duplica. Nada se borra: se anula.
+// La lista de compras vieja ("compras"), el registro anterior ("compras_realizadas") y el stock de productos
+// terminados ("stock") siguen funcionando igual, en pestañas aparte.
+var STK={vista:{},proveedores:[],cargado:false,error:false};
+var STK_FILTRO={ver:'principales',cat:'todas',q:''};
+var SEG_TAB={stock:'insumos',compras:'nuevo'};
+var COMPRAS_VISTA={compras:[],items:{},cargado:false,error:false};
+var INICIO_HORNEADAS=null;
+
+// Llama a una función de Postgres y devuelve {ok,data,error} (para poder mostrar el motivo si falla).
+async function rpcDash(fn,params){
+  try{
+    var r=await fetch(SUPA_URL+'/rpc/'+fn,{method:'POST',headers:sbH(),body:JSON.stringify(params||{})});
+    var t=await r.text(),d=null;try{d=t?JSON.parse(t):null;}catch(e){}
+    if(!r.ok)return{ok:false,error:(d&&(d.message||d.hint))||('Error '+r.status)};
+    return{ok:true,data:d};
+  }catch(e){return{ok:false,error:'Sin conexión con el servidor.'};}
+}
+async function cargarStockInsumos(){
+  var r=await Promise.all([sbGetSel('stock_insumos','*',''),sbGetSel('proveedores','*','&order=nombre.asc')]);
+  if(r[0]===null||r[1]===null){STK.error=true;STK.cargado=false;return false;}
+  STK.vista={};
+  r[0].forEach(function(v){STK.vista[v.insumo_id]={stock:Number(v.stock)||0,tieneConteo:!!v.tiene_conteo,ultimo:v.ultimo_movimiento};});
+  STK.proveedores=r[1];STK.error=false;STK.cargado=true;return true;
+}
+function labelProveedor(p){return !p?'Sin proveedor':(p.nombre&&p.nombre.trim())||(p.direccion&&p.direccion.trim())||'Proveedor sin nombre';}
+function proveedorPorId(id){return STK.proveedores.find(function(p){return p.id===id;});}
+function insumoLlevaStock(i){return !!i&&i.activo!==false&&i.categoria!=='energia'&&i.controla_stock!==false;}
+function fmtStock(n,unidad){
+  var t=fmtCant(n);
+  if(unidad==='unidad')return t+' u';
+  if(unidad==='lote')return t+(Math.abs(n)===1?' lote':' lotes');
+  return t+' '+unidad;
+}
+function fechaCortaISO(s){if(!s)return '—';var p=String(s).substring(0,10).split('-');return p[2]+'/'+p[1]+'/'+p[0];}
+function estadoStockInsumo(i){
+  var v=STK.vista[i.id]||{stock:0,tieneConteo:false};
+  if(!v.tieneConteo)return{txt:'Sin conteo inicial',cls:'ninguno'};
+  if(v.stock<0)return{txt:'Stock negativo, revisar',cls:'mal'};
+  var m=i.stock_minimo;
+  if(m!==null&&m!==undefined&&m!==''&&v.stock<Number(m))return{txt:'Bajo mínimo',cls:'mal'};
+  return{txt:'OK',cls:'bien'};
+}
+function insumosBajoMinimo(){
+  return COSTOS.insumos.filter(function(i){
+    if(!insumoLlevaStock(i))return false;
+    var v=STK.vista[i.id];if(!v||!v.tieneConteo)return false;
+    var m=i.stock_minimo;return m!==null&&m!==undefined&&m!==''&&v.stock<Number(m);
+  });
+}
+function badgeEstadoDash(est){return elDash('span','stk-badge stk-'+est.cls,est.txt);}
+
+// ---- pestañas (mismo código para escritorio y móvil)
+function pintarTabsSeg(clave){
+  var defs={stock:[['insumos','Insumos'],['productos','Productos y freezer']],compras:[['nuevo','Compras de insumos'],['viejo','Lista y registro anterior']]}[clave];
+  document.querySelectorAll('.seg-tabs[data-seg="'+clave+'"]').forEach(function(c){
+    c.innerHTML='';
+    defs.forEach(function(d){
+      var b=elDash('button','fb'+(SEG_TAB[clave]===d[0]?' active':''),d[1]);b.style.fontSize='11px';
+      b.onclick=function(){SEG_TAB[clave]=d[0];pintarTabsSeg(clave);aplicarTabSeg(clave);if(clave==='stock'&&d[0]==='insumos')renderStockInsumos();if(clave==='compras'&&d[0]==='nuevo')renderComprasNuevo();};
+      c.appendChild(b);
+    });
+  });
+}
+function aplicarTabSeg(clave){
+  var nuevo=clave==='stock'?'insumos':'nuevo';
+  document.querySelectorAll('.seg-new[data-seg="'+clave+'"]').forEach(function(e){e.style.display=SEG_TAB[clave]===nuevo?'block':'none';});
+  document.querySelectorAll('.seg-old[data-seg="'+clave+'"]').forEach(function(e){e.style.display=SEG_TAB[clave]===nuevo?'none':'block';});
+}
+
+// ---- consumo de una horneada (recetas con subrecetas expandidas + packaging; energía y agua/romero no mueven stock)
+function consumoDeHorneada(items){
+  var out={},sinReceta=[];
+  function sumar(id,c){var i=COSTOS.mi[id];if(!i||i.categoria==='energia'||i.controla_stock===false)return;out[id]=(out[id]||0)+c;}
+  function receta(rid,mult,pila){
+    if(pila[rid])return;
+    var p2=Object.assign({},pila);p2[rid]=1;
+    (COSTOS.itemsRec[rid]||[]).forEach(function(it){
+      var c=Number(it.cantidad)||0;
+      if(it.insumo_id)sumar(it.insumo_id,mult*c);
+      else if(it.subreceta_id)receta(it.subreceta_id,mult*c,p2);
+    });
+  }
+  items.forEach(function(it){
+    var q=Number(it.cantidad)||0;if(!(q>0))return;
+    var rid=COSTOS.costeoProd[it.producto_id];
+    if(rid&&COSTOS.mr[rid])receta(rid,q/(Number(COSTOS.mr[rid].rinde)||1),{});
+    else sinReceta.push(it.producto_id);
+    (COSTOS.packProd[it.producto_id]||[]).forEach(function(pk){sumar(pk.insumo_id,q*(Number(pk.cantidad)||0));});
+  });
+  Object.keys(out).forEach(function(k){out[k]=Math.round(out[k]*1000000)/1000000;});
+  return{consumo:out,sinReceta:sinReceta};
+}
+// Sugerencia de horneada: la MISMA que muestra la tarjeta 7 (misma consulta, misma suma).
+// lunes -> entregas del martes; jueves -> entregas del viernes (primer martes/viernes desde la fecha).
+function entregaDeHorneada(tipo,f){
+  var dow=tipo==='lunes'?2:(tipo==='jueves'?5:null);
+  if(dow===null||!f)return null;
+  var d=parseFechaISO(f);
+  while(d.getDay()!==dow)d.setDate(d.getDate()+1);
+  return fechaISO(d);
+}
+function tipoHorneadaDe(f){var dow=parseFechaISO(f).getDay();return dow===1?'lunes':(dow===4?'jueves':'otro');}
+async function pedidosDeEntrega(f){
+  var r=await sbGetSel('pedidos','*','&fecha=eq.'+f);
+  if(r===null)return{peds:pedidos.filter(function(p){return p.fecha===f;}),offline:true};
+  return{peds:r.map(rowToPedido).filter(function(p){return p.fecha===f;}),offline:false};
+}
+function unidadesDePedidos(peds){
+  var u={},total=0;
+  peds.forEach(function(p){
+    if(p.panes)Object.keys(p.panes).forEach(function(k){var n=Number(p.panes[k]);if(n>0){u[k]=(u[k]||0)+n;total+=n;}});
+  });
+  return{unidades:u,total:total,pedidos:peds.length};
+}
+async function sugeridoHorneada(tipo,f){
+  var e=entregaDeHorneada(tipo,f);
+  if(!e)return{unidades:{},total:0,pedidos:0,entrega:null};
+  var r=await pedidosDeEntrega(e);
+  var u=unidadesDePedidos(r.peds);u.entrega=e;return u;
+}
+
+// ---- diálogo CONFIRMAR HORNEADA
+function abrirDialogoHorneada(opc){
+  opc=opc||{};
+  var hoy=fechaISO(new Date());
+  var tipoIni=opc.tipo||((proximaHorneada()?tipoHorneadaDe(proximaHorneada().horneada):'otro'));
+  abrirDialogoDash(opc.editarId?'Editar horneada':'Confirmar horneada',function(body,cerrar){
+    var fFecha=campoDash(body,'Fecha','date',opc.fecha||hoy);
+    var fTipo=campoDash(body,'Tipo de horneada','select',tipoIni,[['lunes','Lunes (entregas del martes)'],['jueves','Jueves (entregas del viernes)'],['otro','Otro (ej. mermeladas)']]);
+    var fNotas=campoDash(body,'Notas (opcional)','text',opc.notas||'');
+    var info=elDash('div','inicio-sub','');body.appendChild(info);
+    body.appendChild(elDash('div','inicio-sub-tit','Lo que realmente horneaste (corregí cada cantidad, incluido lo que salió mal)'));
+    var filas={};
+    var lista=elDash('div');body.appendChild(lista);
+    PRODUCTOS.filter(function(k){return productoActivo(k)||(opc.items&&opc.items[k]>0);}).forEach(function(k){
+      var w=elDash('div','inicio-fila');w.setAttribute('data-prod',k);
+      w.appendChild(elDash('span','inicio-fila-n',nombreProductoCosto(k)));
+      var sug=elDash('span','inicio-fila-v','');
+      var inp=document.createElement('input');inp.type='number';inp.min='0';inp.step='any';inp.className='f-in';inp.style.cssText='width:90px;margin:0';inp.value=(opc.items&&opc.items[k])||0;
+      var tocado=!!opc.items;
+      inp.oninput=function(){tocado=true;actualizarResumen();};
+      w.appendChild(sug);w.appendChild(inp);lista.appendChild(w);
+      filas[k]={inp:inp,sug:sug,sugerido:0,tocado:function(){return tocado;},setSugerido:function(n){this.sugerido=n;sug.textContent='sugerido '+n;if(!tocado)inp.value=n;}};
+    });
+    var resumen=elDash('div');resumen.className='stk-resumen';body.appendChild(resumen);
+    function items(){return Object.keys(filas).map(function(k){return{producto_id:k,cantidad:parseFloat(filas[k].inp.value)||0,cantidad_sugerida:filas[k].sugerido};});}
+    function actualizarResumen(){
+      resumen.innerHTML='';
+      var r=consumoDeHorneada(items());
+      resumen.appendChild(elDash('div','inicio-sub-tit','Consumo de insumos que se va a descontar'));
+      var ids=Object.keys(r.consumo).sort(function(a,b){return (COSTOS.mi[a].nombre||'').localeCompare(COSTOS.mi[b].nombre||'');});
+      if(ids.length===0)resumen.appendChild(elDash('div','inicio-sub','Todavía no cargaste cantidades.'));
+      ids.forEach(function(id){var i=COSTOS.mi[id];resumen.appendChild(elDash('div','inicio-fila',i.nombre+': −'+fmtStock(r.consumo[id],i.unidad_base)));});
+      if(r.sinReceta.length>0)resumen.appendChild(elDash('div','inicio-sub',"Sin receta asignada (no descuenta ingredientes): "+r.sinReceta.map(nombreProductoCosto).join(', ')));
+    }
+    var usarBase=!!opc.sugBase;
+    async function cargarSugerido(){
+      if(opc.editarId){Object.keys(filas).forEach(function(k){filas[k].setSugerido((opc.sugeridos&&opc.sugeridos[k])||0);});actualizarResumen();return;}
+      info.textContent='Calculando sugerencia…';
+      var s=await sugeridoHorneada(fTipo.value,usarBase?opc.sugBase:fFecha.value);
+      Object.keys(filas).forEach(function(k){filas[k].setSugerido(s.unidades[k]||0);});
+      info.textContent=s.entrega?('Sugerencia: pedidos con entrega el '+fechaCorta(s.entrega)+' ('+s.pedidos+' pedidos, '+s.total+' unidades).'):'Sin sugerencia para este tipo: cargá las cantidades a mano.';
+      actualizarResumen();
+    }
+    fFecha.onchange=function(){usarBase=false;cargarSugerido();};fTipo.onchange=function(){usarBase=false;cargarSugerido();};
+    cargarSugerido();
+    pieDialogo(body,opc.editarId?'Guardar cambios':'Confirmar horneada',async function(){
+      if(!fFecha.value)return 'Ingresá la fecha.';
+      var its=items(),total=its.reduce(function(a,x){return a+x.cantidad;},0);
+      if(!(total>0))return 'Cargá al menos un producto horneado.';
+      if(its.some(function(x){return x.cantidad<0;}))return 'Hay una cantidad negativa.';
+      var r=consumoDeHorneada(its);
+      var payload={
+        horneada:{id:nuevoIdDash('hr_'),fecha:fFecha.value,tipo:fTipo.value,notas:fNotas.value.trim()},
+        items:its.filter(function(x){return x.cantidad>0||x.cantidad_sugerida>0;}).map(function(x){return{id:nuevoIdDash('hi_'),producto_id:x.producto_id,cantidad:x.cantidad,cantidad_sugerida:x.cantidad_sugerida};}),
+        movimientos:Object.keys(r.consumo).map(function(id){return{id:nuevoIdDash('sm_'),insumo_id:id,cantidad:-r.consumo[id],notas:'Horneada '+fTipo.value};})
+      };
+      var res=opc.editarId?await rpcDash('reemplazar_horneada',{p_anular:opc.editarId,p:payload}):await rpcDash('registrar_horneada',{p:payload});
+      if(!res.ok)return 'No se pudo guardar la horneada: '+res.error;
+      await refrescarDespuesDeStock();
+      return null;
+    },cerrar);
+  });
+}
+async function refrescarDespuesDeStock(){
+  await Promise.all([cargarStockInsumos(),cargarCostos()]);
+  if(document.querySelector('.stk-root'))pintarStockInsumos();
+  if(typeof pintarInicio==='function'&&INICIO_DATA){INICIO_HORNEADAS=await cargarHorneadasRecientes();pintarInicio();}
+}
+async function cargarHorneadasRecientes(){
+  return await sbGetSel('horneadas','*','&anulado=eq.false&fecha=gte.'+sumarDias(fechaISO(new Date()),-10));
+}
+// Aviso del Inicio: pasó el día de horneada (lunes/jueves, desde las 00:00 del día siguiente) sin horneada confirmada de ese tipo.
+function horneadaSinConfirmar(hoy,hs){
+  if(hs===null||hs===undefined)return null;
+  for(var i=1;i<=7;i++){
+    var f=sumarDias(hoy,-i),dow=parseFechaISO(f).getDay();
+    if(dow===1||dow===4){
+      var tipo=dow===1?'lunes':'jueves';
+      var lim=sumarDias(f,3);
+      var ok=hs.some(function(h){return h.tipo===tipo&&h.anulado!==true&&h.fecha>=f&&h.fecha<=lim;});
+      return ok?null:{tipo:tipo,fecha:f};
+    }
+  }
+  return null;
+}
+
+// ---- STOCK DE INSUMOS
+function renderStockInsumos(){
+  Promise.all([cargarStockInsumos(),cargarCostos()]).then(pintarStockInsumos);
+  pintarStockInsumos();
+}
+function pintarStockInsumos(){
+  document.querySelectorAll('.stk-root').forEach(function(root){
+    if(!root.querySelector('.stk-lista')){
+      root.innerHTML='';
+      var acc=elDash('div','inicio-bar');
+      var b1=elDash('button','btn-p','Confirmar horneada');b1.style.cssText='margin:0;width:auto;padding:8px 14px';b1.onclick=function(){abrirDialogoHorneada({});};
+      var b2=elDash('button','btn-ol','Hacer conteo');b2.style.margin='0';b2.onclick=abrirDialogoConteo;
+      var b3=elDash('button','btn-ol','Horneadas');b3.style.margin='0';b3.onclick=abrirListaHorneadas;
+      var b4=elDash('button','btn-ol','Historial de conteos');b4.style.margin='0';b4.onclick=abrirHistorialConteos;
+      acc.appendChild(b1);acc.appendChild(b2);acc.appendChild(b3);acc.appendChild(b4);root.appendChild(acc);
+      var tb=elDash('div','inicio-bar');
+      var q=document.createElement('input');q.type='search';q.className='f-in stk-q';q.placeholder='Buscar insumo...';q.style.cssText='flex:1;min-width:150px;margin:0';
+      q.oninput=function(){STK_FILTRO.q=q.value;pintarStockInsumos();};
+      var sv=document.createElement('select');sv.className='f-in stk-ver';sv.style.cssText='width:auto;margin:0';
+      [['principales','Principales'],['todos','Todos']].forEach(function(o){var op=document.createElement('option');op.value=o[0];op.textContent=o[1];sv.appendChild(op);});
+      sv.onchange=function(){STK_FILTRO.ver=sv.value;pintarStockInsumos();};
+      var sc=document.createElement('select');sc.className='f-in stk-cat';sc.style.cssText='width:auto;margin:0';
+      [['todas','Todas las categorías'],['ingrediente','Ingredientes'],['packaging','Packaging']].forEach(function(o){var op=document.createElement('option');op.value=o[0];op.textContent=o[1];sc.appendChild(op);});
+      sc.onchange=function(){STK_FILTRO.cat=sc.value;pintarStockInsumos();};
+      tb.appendChild(q);tb.appendChild(sv);tb.appendChild(sc);root.appendChild(tb);
+      root.appendChild(elDash('div','stk-lista'));
+    }
+    var cont=root.querySelector('.stk-lista');cont.innerHTML='';
+    if(STK.error||COSTOS.error){cont.appendChild(elDash('div','inicio-nd','No se pudo leer el stock de insumos. ¿Corriste las migraciones de la Etapa 3 en Supabase?'));return;}
+    var q2=STK_FILTRO.q.trim().toLowerCase();
+    var lista=COSTOS.insumos.filter(function(i){
+      if(!insumoLlevaStock(i))return false;
+      if(STK_FILTRO.ver==='principales'&&!i.es_principal)return false;
+      if(STK_FILTRO.cat!=='todas'&&i.categoria!==STK_FILTRO.cat)return false;
+      return !q2||(i.nombre||'').toLowerCase().indexOf(q2)>=0;
+    });
+    if(lista.length===0){cont.appendChild(elDash('div','inicio-nd',STK_FILTRO.ver==='principales'?'No hay insumos principales con esos filtros. Probá con "Todos".':'Ningún insumo coincide.'));return;}
+    lista.forEach(function(i){
+      var v=STK.vista[i.id]||{stock:0},est=estadoStockInsumo(i);
+      var card=elDash('div','card stk-fila');card.setAttribute('data-insumo',i.id);card.style.cursor='pointer';
+      var top=elDash('div');top.style.cssText='display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap';
+      var izq=elDash('div');izq.appendChild(elDash('div','ins-nombre',i.nombre));
+      var m=i.stock_minimo;
+      izq.appendChild(elDash('div','inicio-sub','Stock mínimo: '+((m!==null&&m!==undefined&&m!=='')?fmtStock(Number(m),i.unidad_base):'sin definir')));
+      top.appendChild(izq);
+      var der=elDash('div');der.style.cssText='text-align:right';
+      der.appendChild(elDash('div','cos-val stk-cant',fmtStock(v.stock,i.unidad_base)));
+      der.appendChild(badgeEstadoDash(est));
+      top.appendChild(der);card.appendChild(top);
+      (function(id){card.onclick=function(){abrirDetalleStock(id);};})(i.id);
+      cont.appendChild(card);
+    });
+  });
+}
+async function abrirDetalleStock(id){
+  var i=COSTOS.mi[id];if(!i)return;
+  abrirDialogoDash(i.nombre,async function(body,cerrar){
+    var v=STK.vista[id]||{stock:0},est=estadoStockInsumo(i);
+    body.appendChild(elDash('div','inicio-big',fmtStock(v.stock,i.unidad_base)));
+    body.appendChild(badgeEstadoDash(est));
+    var fMin=campoDash(body,'Stock mínimo ('+i.unidad_base+'; vacío = sin alerta)','number',(i.stock_minimo===null||i.stock_minimo===undefined)?'':i.stock_minimo);
+    var lab=document.createElement('label');lab.style.cssText='font-size:12px;color:var(--text2);display:flex;align-items:center;gap:6px;margin-bottom:8px';
+    var ck=document.createElement('input');ck.type='checkbox';ck.checked=!!i.es_principal;lab.appendChild(ck);lab.appendChild(document.createTextNode('Insumo principal (aparece en la lista corta y en el conteo)'));body.appendChild(lab);
+    pieDialogo(body,'Guardar',async function(){
+      var mv=fMin.value.trim()===''?null:parseFloat(fMin.value);
+      if(mv!==null&&!(mv>=0))return 'El stock mínimo debe ser un número válido.';
+      var ok=await sbUpsert('insumos',{id:id,stock_minimo:mv,es_principal:ck.checked});
+      if(!ok)return 'No se pudo guardar. Reintentá.';
+      i.stock_minimo=mv;i.es_principal=ck.checked;pintarStockInsumos();
+      if(typeof pintarInicio==='function'&&INICIO_DATA)pintarInicio();
+      return null;
+    },cerrar);
+    body.appendChild(elDash('div','inicio-sub-tit','Últimas compras'));
+    var cc=elDash('div');cc.appendChild(elDash('div','inicio-sub','Cargando…'));body.appendChild(cc);
+    body.appendChild(elDash('div','inicio-sub-tit','Movimientos'));
+    var mm=elDash('div');mm.appendChild(elDash('div','inicio-sub','Cargando…'));body.appendChild(mm);
+    var its=await sbGetSel('compra_items','*','&insumo_id=eq.'+encodeURIComponent(id)+'&anulado=eq.false&order=creado.desc');
+    cc.innerHTML='';
+    if(its===null)cc.appendChild(elDash('div','inicio-sub','No se pudieron leer las compras.'));
+    else if(its.length===0)cc.appendChild(elDash('div','inicio-sub','Sin compras registradas.'));
+    else{
+      var ult=its.slice(0,8),ids=ult.map(function(x){return '"'+x.compra_id+'"';}).join(',');
+      var cs=await sbGetSel('compras_registro','*','&id=in.('+ids+')')||[];
+      ult.forEach(function(x){
+        var c=cs.find(function(y){return y.id===x.compra_id;})||{};
+        cc.appendChild(elDash('div','inicio-fila',fechaCortaISO(c.fecha)+' · '+labelProveedor(proveedorPorId(c.proveedor_id))+' · '+fmtCant(x.presentaciones)+' × '+fmtCant(x.cantidad_por_presentacion)+' '+i.unidad_base+' · '+fmtPesoMsg(x.total_linea)+' · '+fmtPrecioU(x.precio_unitario)+'/'+i.unidad_base+(x.es_oferta?' (oferta)':'')));
+      });
+    }
+    var mv2=await sbGetSel('stock_movimientos','*','&insumo_id=eq.'+encodeURIComponent(id)+'&order=fecha.desc,creado.desc');
+    mm.innerHTML='';
+    if(mv2===null)mm.appendChild(elDash('div','inicio-sub','No se pudieron leer los movimientos.'));
+    else if(mv2.length===0)mm.appendChild(elDash('div','inicio-sub','Sin movimientos.'));
+    else mv2.slice(0,60).forEach(function(m){
+      var tl={compra:'Compra',horneada:'Horneada',ajuste_conteo:'Ajuste de conteo'}[m.tipo]||m.tipo;
+      var c=Number(m.cantidad);
+      var f=elDash('div','inicio-fila',fechaCortaISO(m.fecha)+' · '+tl+(m.notas?' ('+m.notas+')':'')+' · '+(c>0?'+':'−')+fmtStock(Math.abs(c),i.unidad_base)+(m.anulado?' · anulado':''));
+      if(m.anulado)f.style.textDecoration='line-through';
+      mm.appendChild(f);
+    });
+  });
+}
+
+// ---- lista de horneadas (anular / editar = anular y volver a confirmar)
+async function abrirListaHorneadas(){
+  abrirDialogoDash('Horneadas',async function(body,cerrar){
+    var cont=elDash('div','inicio-sub','Cargando…');body.appendChild(cont);
+    var hs=await sbGetSel('horneadas','*','&order=fecha.desc,creado.desc');
+    cont.remove();
+    if(hs===null){body.appendChild(elDash('div','inicio-nd','No se pudieron leer las horneadas.'));return;}
+    if(hs.length===0){body.appendChild(elDash('div','inicio-nd','Todavía no confirmaste horneadas.'));return;}
+    var ult=hs.slice(0,25);
+    var its=await sbGetSel('horneada_items','*','&horneada_id=in.('+ult.map(function(h){return '"'+h.id+'"';}).join(',')+')')||[];
+    ult.forEach(function(h){
+      var card=elDash('div','card');card.setAttribute('data-horneada',h.id);
+      var mis=its.filter(function(x){return x.horneada_id===h.id;});
+      card.appendChild(elDash('div','ins-nombre',fechaCortaISO(h.fecha)+' · '+h.tipo+(h.anulado?' · ANULADA':'')));
+      card.appendChild(elDash('div','inicio-sub',mis.map(function(x){return nombreProductoCosto(x.producto_id)+' × '+fmtCant(x.cantidad);}).join(', ')||'Sin ítems'));
+      if(h.anulado)card.style.opacity='0.55';
+      else{
+        var bar=elDash('div');bar.style.cssText='display:flex;gap:6px;margin-top:6px';
+        var be=elDash('button','btn-ol','Editar (anula y vuelve a confirmar)');be.style.margin='0';
+        be.onclick=function(){
+          var items={},sug={};mis.forEach(function(x){items[x.producto_id]=Number(x.cantidad);sug[x.producto_id]=Number(x.cantidad_sugerida)||0;});
+          cerrar();abrirDialogoHorneada({editarId:h.id,tipo:h.tipo,fecha:h.fecha,notas:h.notas,items:items,sugeridos:sug});
+        };
+        var ba=elDash('button','btn-ol','Anular');ba.style.margin='0';
+        ba.onclick=async function(){
+          if(!confirm('¿Anular esta horneada? Se devuelven los insumos al stock.'))return;
+          ba.disabled=true;
+          var r=await rpcDash('anular_horneada',{p_id:h.id});
+          if(!r.ok){alert('No se pudo anular: '+r.error);ba.disabled=false;return;}
+          cerrar();await refrescarDespuesDeStock();
+        };
+        bar.appendChild(be);bar.appendChild(ba);card.appendChild(bar);
+      }
+      body.appendChild(card);
+    });
+  });
+}
+
+// ---- CONTEO DEL DOMINGO
+function abrirDialogoConteo(){
+  abrirDialogoDash('Conteo de insumos',function(body,cerrar){
+    var fFecha=campoDash(body,'Fecha del conteo','date',fechaISO(new Date()));
+    var verTodos=false;
+    var bt=elDash('button','btn-ol','Ver todos');bt.style.margin='0 0 8px';
+    body.appendChild(elDash('div','inicio-sub','Cargá el stock real (en kg, lt o unidades; con decimales). Los que dejes vacíos no se ajustan.'));
+    body.appendChild(bt);
+    var lista=elDash('div');body.appendChild(lista);
+    var tot=elDash('div','inicio-sub-tit','');body.appendChild(tot);
+    var inputs={};
+    function pintarFilas(){
+      lista.innerHTML='';
+      COSTOS.insumos.filter(function(i){return insumoLlevaStock(i)&&(verTodos||i.es_principal);}).forEach(function(i){
+        var v=STK.vista[i.id]||{stock:0,tieneConteo:false};
+        var w=elDash('div','card');w.setAttribute('data-insumo',i.id);
+        var cab=elDash('div');cab.style.cssText='display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap';
+        cab.appendChild(elDash('div','ins-nombre',i.nombre));
+        cab.appendChild(elDash('div','inicio-sub','Teórico: '+fmtStock(v.stock,i.unidad_base)+(v.tieneConteo?'':' (sin conteo inicial)')));
+        w.appendChild(cab);
+        var fila=elDash('div');fila.style.cssText='display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px';
+        var inp=document.createElement('input');inp.type='number';inp.step='any';inp.className='f-in';inp.placeholder='Stock real ('+i.unidad_base+')';inp.style.cssText='width:150px;margin:0';
+        if(inputs[i.id]!==undefined)inp.value=inputs[i.id];
+        var dif=elDash('div','inicio-sub','');
+        function act(){
+          inputs[i.id]=inp.value;
+          var r=parseFloat(inp.value);
+          if(inp.value===''||isNaN(r)){dif.textContent='';}
+          else{var d=r-v.stock,val=d*(Number(i.precio_unitario)||0);dif.textContent='Diferencia: '+(d>0?'+':d<0?'−':'')+fmtStock(Math.abs(d),i.unidad_base)+' = '+(val<0?'−':'')+fmtPesoMsg(Math.abs(val));}
+          totalizar();
+        }
+        inp.oninput=act;fila.appendChild(inp);fila.appendChild(dif);w.appendChild(fila);lista.appendChild(w);act();
+      });
+    }
+    function totalizar(){
+      var n=0,falt=0,sob=0;
+      COSTOS.insumos.forEach(function(i){
+        var r=parseFloat(inputs[i.id]);if(inputs[i.id]===undefined||inputs[i.id]===''||isNaN(r))return;n++;
+        var v=STK.vista[i.id]||{stock:0,tieneConteo:false};if(!v.tieneConteo)return;
+        var val=(r-v.stock)*(Number(i.precio_unitario)||0);if(val<0)falt+=-val;else sob+=val;
+      });
+      tot.textContent=n+' insumos contados · faltante '+fmtPesoMsg(falt)+' · sobrante '+fmtPesoMsg(sob);
+    }
+    bt.onclick=function(){verTodos=!verTodos;bt.textContent=verTodos?'Ver solo principales':'Ver todos';pintarFilas();};
+    pintarFilas();totalizar();
+    pieDialogo(body,'Guardar conteo',async function(){
+      if(!fFecha.value)return 'Ingresá la fecha.';
+      var its=[];
+      for(var k in inputs){
+        if(inputs[k]===''||inputs[k]===undefined)continue;
+        var r=parseFloat(inputs[k]);if(isNaN(r)||r<0)return 'Revisá el stock real: hay un valor inválido.';
+        its.push({id:nuevoIdDash('cn_'),mov_id:nuevoIdDash('sm_'),insumo_id:k,real:r});
+      }
+      if(its.length===0)return 'Cargá el stock real de al menos un insumo.';
+      var res=await rpcDash('registrar_conteo',{p:{conteo:{id:nuevoIdDash('ct_'),fecha:fFecha.value,notas:''},items:its}});
+      if(!res.ok)return 'No se pudo guardar el conteo: '+res.error;
+      var salida=(res.data&&res.data.items)||[];
+      await refrescarDespuesDeStock();
+      cerrar();
+      mostrarResumenConteo(salida);
+      return null;
+    },cerrar);
+  });
+}
+// El primer conteo de un insumo es su stock inicial: no cuenta como faltante ni sobrante.
+function resumenConteo(items){
+  var falt=0,sob=0,ini=[],cmp=[];
+  items.forEach(function(x){
+    if(x.primer_conteo){ini.push(x);return;}
+    var v=Number(x.valor_diferencia)||0;if(v<0)falt+=-v;else sob+=v;cmp.push(x);
+  });
+  cmp.sort(function(a,b){return Math.abs(b.valor_diferencia)-Math.abs(a.valor_diferencia);});
+  return{faltante:falt,sobrante:sob,top:cmp.filter(function(x){return Number(x.valor_diferencia)!==0;}).slice(0,3),inicial:ini};
+}
+function mostrarResumenConteo(items){
+  var r=resumenConteo(items);
+  abrirDialogoDash('Resumen del conteo',function(body,cerrar){
+    body.appendChild(elDash('div','inicio-big','Faltante '+fmtPesoMsg(r.faltante)));
+    body.appendChild(elDash('div','inicio-sub','Sobrante '+fmtPesoMsg(r.sobrante)));
+    body.appendChild(elDash('div','inicio-sub-tit','Mayores diferencias'));
+    if(r.top.length===0)body.appendChild(elDash('div','inicio-sub','Sin diferencias.'));
+    r.top.forEach(function(x){
+      var i=COSTOS.mi[x.insumo_id]||{nombre:x.insumo_id,unidad_base:''};var d=Number(x.diferencia),val=Number(x.valor_diferencia);
+      body.appendChild(elDash('div','inicio-fila',i.nombre+': '+(d>0?'+':'−')+fmtStock(Math.abs(d),i.unidad_base)+' = '+(val<0?'−':'')+fmtPesoMsg(Math.abs(val))));
+    });
+    if(r.inicial.length>0)body.appendChild(elDash('div','inicio-sub',r.inicial.length+' insumo'+(r.inicial.length===1?'':'s')+' quedaron cargados como stock inicial (primer conteo): no cuentan como faltante ni sobrante.'));
+    var b=elDash('button','btn-p','Cerrar');b.onclick=cerrar;body.appendChild(b);
+  });
+}
+async function abrirHistorialConteos(){
+  abrirDialogoDash('Historial de conteos',async function(body,cerrar){
+    var cont=elDash('div','inicio-sub','Cargando…');body.appendChild(cont);
+    var cs=await sbGetSel('conteos','*','&order=fecha.desc,creado.desc');
+    cont.remove();
+    if(cs===null){body.appendChild(elDash('div','inicio-nd','No se pudo leer el historial.'));return;}
+    if(cs.length===0){body.appendChild(elDash('div','inicio-nd','Todavía no hiciste conteos.'));return;}
+    var its=await sbGetSel('conteo_items','*','&conteo_id=in.('+cs.slice(0,25).map(function(c){return '"'+c.id+'"';}).join(',')+')')||[];
+    cs.slice(0,25).forEach(function(c){
+      var mis=its.filter(function(x){return x.conteo_id===c.id;});
+      var card=elDash('div','card');card.setAttribute('data-conteo',c.id);
+      var tot=mis.reduce(function(a,x){return a+(Number(x.valor_diferencia)||0);},0);
+      card.appendChild(elDash('div','ins-nombre',fechaCortaISO(c.fecha)+' · '+mis.length+' insumos · diferencia '+(tot<0?'−':'')+fmtPesoMsg(Math.abs(tot))));
+      mis.forEach(function(x){
+        var i=COSTOS.mi[x.insumo_id]||{nombre:x.insumo_id,unidad_base:''};var d=Number(x.diferencia);
+        card.appendChild(elDash('div','inicio-fila',i.nombre+': teórico '+fmtStock(Number(x.teorico),i.unidad_base)+' · real '+fmtStock(Number(x.real),i.unidad_base)+' · '+(d>0?'+':d<0?'−':'')+fmtStock(Math.abs(d),i.unidad_base)));
+      });
+      body.appendChild(card);
+    });
+  });
+}
+
+// ---- COMPRAS DE INSUMOS
+function renderComprasNuevo(){
+  Promise.all([cargarStockInsumos(),cargarCostos(),cargarComprasVista()]).then(pintarComprasNuevo);
+  pintarComprasNuevo();
+}
+async function cargarComprasVista(){
+  var cs=await sbGetSel('compras_registro','*','&order=fecha.desc,creado.desc');
+  if(cs===null){COMPRAS_VISTA.error=true;COMPRAS_VISTA.cargado=false;return false;}
+  var ult=cs.slice(0,40),its={};
+  if(ult.length>0){
+    var r=await sbGetSel('compra_items','*','&compra_id=in.('+ult.map(function(c){return '"'+c.id+'"';}).join(',')+')&order=creado.asc');
+    if(r===null){COMPRAS_VISTA.error=true;return false;}
+    r.forEach(function(x){(its[x.compra_id]=its[x.compra_id]||[]).push(x);});
+  }
+  COMPRAS_VISTA.compras=ult;COMPRAS_VISTA.items=its;COMPRAS_VISTA.error=false;COMPRAS_VISTA.cargado=true;return true;
+}
+function pintarComprasNuevo(){
+  document.querySelectorAll('.compras-root').forEach(function(root){
+    root.innerHTML='';
+    var aviso=elDash('div','ins-aviso');root.appendChild(aviso);
+    var bar=elDash('div','inicio-bar');
+    var bn=elDash('button','btn-p','+ Nueva compra');bn.style.cssText='margin:0;width:auto;padding:8px 14px';bn.onclick=abrirDialogoCompra;bar.appendChild(bn);
+    root.appendChild(bar);
+    if(COMPRAS_VISTA.error||STK.error||COSTOS.error){root.appendChild(elDash('div','inicio-nd','No se pudieron leer las compras. ¿Corriste las migraciones de la Etapa 3 en Supabase?'));pintarAvisoCostos();return;}
+    if(!COMPRAS_VISTA.cargado){root.appendChild(elDash('div','inicio-nd','Cargando…'));pintarAvisoCostos();return;}
+    if(COMPRAS_VISTA.compras.length===0)root.appendChild(elDash('div','inicio-nd','Todavía no cargaste compras de insumos.'));
+    COMPRAS_VISTA.compras.forEach(function(c){
+      var card=elDash('div','card compra-card');card.setAttribute('data-compra',c.id);
+      if(c.anulado)card.style.opacity='0.55';
+      var cab=elDash('div');cab.style.cssText='display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap';
+      var izq=elDash('div');
+      izq.appendChild(elDash('div','ins-nombre',fechaCortaISO(c.fecha)+' · '+labelProveedor(proveedorPorId(c.proveedor_id))+(c.anulado?' · ANULADA':'')));
+      izq.appendChild(elDash('div','inicio-sub',(c.medio_pago||'sin medio de pago')+(c.notas?' · '+c.notas:'')));
+      cab.appendChild(izq);cab.appendChild(elDash('div','cos-val',fmtPesoMsg(Number(c.total))));
+      card.appendChild(cab);
+      (COMPRAS_VISTA.items[c.id]||[]).forEach(function(x){
+        if(x.tipo==='insumo'){
+          var i=COSTOS.mi[x.insumo_id]||{nombre:x.insumo_id,unidad_base:''};
+          card.appendChild(elDash('div','inicio-fila',i.nombre+' · '+fmtCant(x.presentaciones)+' × '+fmtCant(x.cantidad_por_presentacion)+' '+i.unidad_base+' = '+fmtCant(x.cantidad_base)+' '+i.unidad_base+' · '+fmtPesoMsg(Number(x.total_linea))+' · '+fmtPrecioU(x.precio_unitario)+'/'+i.unidad_base+(x.es_oferta?' · oferta (no actualizó el costo)':'')));
+        }else card.appendChild(elDash('div','inicio-fila',(x.descripcion||'Otro gasto')+' ('+(x.categoria_gasto||'otros')+') · '+fmtPesoMsg(Number(x.total_linea))));
+      });
+      if(!c.anulado){
+        var ba=elDash('button','btn-ol','Anular compra');ba.style.margin='8px 0 0';
+        (function(cid,btn){btn.onclick=function(){anularCompra(cid,btn);};})(c.id,ba);
+        card.appendChild(ba);
+      }
+      root.appendChild(card);
+    });
+    pintarAvisoCostos();
+  });
+}
+async function anularCompra(id,btn){
+  if(!confirm('¿Anular esta compra? Se anulan sus líneas y el stock que sumó, y si había fijado el precio de un insumo, el precio vuelve al anterior.'))return;
+  if(btn)btn.disabled=true;
+  var antes=snapshotCostos();
+  var r=await rpcDash('anular_compra',{p_id:id});
+  if(!r.ok){alert('No se pudo anular la compra: '+r.error);if(btn)btn.disabled=false;return;}
+  await Promise.all([cargarStockInsumos(),cargarCostos(),cargarComprasVista()]);
+  var cambios=diffCostos(antes,snapshotCostos());
+  COSTOS_AVISO=cambios.map(function(c){return c.nombre+': '+fmtPesoMsg(c.antes)+' → '+fmtPesoMsg(c.despues);});
+  if(COSTOS_AVISO.length>0)COSTOS_AVISO.unshift('Se anuló la compra y volvieron los precios anteriores:');
+  pintarComprasNuevo();
+}
+// Arma lo que se guarda: cálculo en la app, guardado todo-o-nada en la función registrar_compra.
+function armarPayloadCompra(h,lineas){
+  var cid=nuevoIdDash('cp_'),t0=Date.now(),n=0,total=0,items=[],precios=[],movs=[];
+  lineas.forEach(function(l){
+    total+=l.total_linea;
+    if(l.tipo==='insumo'){
+      var base=l.presentaciones*l.cantidad_por_presentacion,pu=base>0?l.total_linea/base:0;
+      items.push({id:nuevoIdDash('ci_'),tipo:'insumo',insumo_id:l.insumo_id,presentaciones:l.presentaciones,cantidad_por_presentacion:l.cantidad_por_presentacion,cantidad_base:base,total_linea:l.total_linea,precio_unitario:pu,es_oferta:!!l.es_oferta});
+      movs.push({id:nuevoIdDash('sm_'),insumo_id:l.insumo_id,cantidad:base});
+      if(!l.es_oferta)precios.push({id:nuevoIdDash('ip_'),insumo_id:l.insumo_id,fecha:new Date(t0+(n++)).toISOString(),precio_presentacion:l.presentaciones>0?l.total_linea/l.presentaciones:0,cantidad_presentacion:l.cantidad_por_presentacion,precio_unitario:pu,presentacion:l.presentacion||''});
+    }else{
+      items.push({id:nuevoIdDash('ci_'),tipo:'otro_gasto',descripcion:l.descripcion,categoria_gasto:l.categoria_gasto,total_linea:l.total_linea,es_oferta:false});
+    }
+  });
+  var p={compra:{id:cid,fecha:h.fecha,proveedor_id:h.proveedor_id||null,medio_pago:h.medio_pago||null,total:total,notas:h.notas||''},items:items,precios:precios,movimientos:movs};
+  if(h.proveedor_nuevo)p.proveedor=h.proveedor_nuevo;
+  return p;
+}
+function abrirDialogoCompra(){
+  abrirDialogoDash('Nueva compra',function(body,cerrar){
+    var fFecha=campoDash(body,'Fecha','date',fechaISO(new Date()));
+    var opsProv=[['','Sin proveedor']].concat(STK.proveedores.filter(function(p){return p.activo!==false;}).map(function(p){return [p.id,labelProveedor(p)];})).concat([['__nuevo','+ Nuevo proveedor…']]);
+    var fProv=campoDash(body,'Proveedor (opcional)','select','',opsProv);
+    var wNuevo=elDash('div');wNuevo.style.display='none';body.appendChild(wNuevo);
+    var fPN=campoDash(wNuevo,'Nombre del proveedor (opcional)','text','');
+    var fPD=campoDash(wNuevo,'Dirección (opcional)','text','');
+    fProv.onchange=function(){wNuevo.style.display=fProv.value==='__nuevo'?'block':'none';};
+    var fMedio=campoDash(body,'Medio de pago','select','efectivo',[['efectivo','Efectivo'],['transferencia','Transferencia']]);
+    var fNotas=campoDash(body,'Notas (opcional)','text','');
+    body.appendChild(elDash('div','inicio-sub-tit','Líneas de la compra'));
+    var cont=elDash('div');body.appendChild(cont);
+    var lineas=[];
+    var totalEl=elDash('div','inicio-big','Total $0');
+    function totalizar(){var t=0;lineas.forEach(function(l){if(!l.quitada)t+=parseFloat(l.get().total)||0;});totalEl.textContent='Total '+fmtPesoMsg(t);}
+    function agregarLineaInsumo(){
+      var w=elDash('div','card compra-linea');w.setAttribute('data-linea','insumo');
+      var ops=[['','Elegí un insumo…']].concat(COSTOS.insumos.filter(function(i){return i.activo!==false;}).map(function(i){return [i.id,i.nombre];}));
+      var sel=campoDash(w,'Insumo','select','',ops);
+      var fPr=campoDash(w,'Presentación','text','');
+      var fN=campoDash(w,'Cantidad de presentaciones','number','1');
+      var fC=campoDash(w,'Cantidad por presentación','number','');
+      var fT=campoDash(w,'Total pagado de la línea ($)','number','');
+      var lab=document.createElement('label');lab.style.cssText='font-size:12px;color:var(--text2);display:flex;align-items:center;gap:6px;margin-bottom:6px';
+      var ck=document.createElement('input');ck.type='checkbox';lab.appendChild(ck);lab.appendChild(document.createTextNode('Precio de oferta, no actualizar costo'));w.appendChild(lab);
+      var calc=elDash('div','inicio-sub','');w.appendChild(calc);
+      var bq=elDash('button','btn-ol','Quitar línea');bq.style.margin='6px 0 0';w.appendChild(bq);
+      var L={quitada:false,get:function(){return{tipo:'insumo',insumo_id:sel.value,presentacion:fPr.value.trim(),presentaciones:parseFloat(fN.value),cantidad_por_presentacion:parseFloat(fC.value),total:fT.value,es_oferta:ck.checked};}};
+      function act(){
+        var n=parseFloat(fN.value),c=parseFloat(fC.value),t=parseFloat(fT.value),i=COSTOS.mi[sel.value];
+        if(i&&n>0&&c>0&&t>=0)calc.textContent='= '+fmtCant(n*c)+' '+i.unidad_base+' · '+fmtPrecioU(t/(n*c))+' por '+i.unidad_base+(ck.checked?' (no cambia el costo)':'');
+        else calc.textContent='';
+        totalizar();
+      }
+      sel.onchange=function(){var i=COSTOS.mi[sel.value];if(i){fPr.value=i.presentacion||'';fC.value=i.cantidad_presentacion;}act();};
+      [fN,fC,fT].forEach(function(f){f.oninput=act;});ck.onchange=act;
+      bq.onclick=function(){L.quitada=true;w.style.display='none';totalizar();};
+      cont.appendChild(w);lineas.push(L);
+    }
+    function agregarLineaGasto(){
+      var w=elDash('div','card compra-linea');w.setAttribute('data-linea','otro_gasto');
+      var fD=campoDash(w,'Descripción (ej. detergente)','text','');
+      var fG=campoDash(w,'Categoría','select','otros',[['limpieza','Limpieza'],['mantenimiento','Mantenimiento'],['otros','Otros']]);
+      var fT=campoDash(w,'Importe ($)','number','');
+      w.appendChild(elDash('div','inicio-sub','No toca el stock.'));
+      var bq=elDash('button','btn-ol','Quitar línea');bq.style.margin='6px 0 0';w.appendChild(bq);
+      var L={quitada:false,get:function(){return{tipo:'otro_gasto',descripcion:fD.value.trim(),categoria_gasto:fG.value,total:fT.value};}};
+      fT.oninput=totalizar;bq.onclick=function(){L.quitada=true;w.style.display='none';totalizar();};
+      cont.appendChild(w);lineas.push(L);
+    }
+    var bar=elDash('div','inicio-bar');
+    var b1=elDash('button','btn-ol','+ Insumo');b1.style.margin='0';b1.onclick=agregarLineaInsumo;
+    var b2=elDash('button','btn-ol','+ Otro gasto');b2.style.margin='0';b2.onclick=agregarLineaGasto;
+    bar.appendChild(b1);bar.appendChild(b2);body.appendChild(bar);
+    body.appendChild(totalEl);
+    agregarLineaInsumo();
+    pieDialogo(body,'Guardar compra',async function(){
+      if(!fFecha.value)return 'Ingresá la fecha.';
+      var ls=[];
+      for(var k=0;k<lineas.length;k++){
+        var l=lineas[k];if(l.quitada)continue;var g=l.get(),t=parseFloat(g.total);
+        if(g.tipo==='insumo'){
+          if(!g.insumo_id)return 'Elegí el insumo en todas las líneas (o quitá la línea vacía).';
+          if(!(g.presentaciones>0)||!(g.cantidad_por_presentacion>0))return 'Revisá la cantidad de presentaciones y la cantidad por presentación.';
+          if(!(t>=0))return 'Ingresá el total pagado de cada línea de insumo.';
+        }else{
+          if(!g.descripcion)return 'Poné una descripción al otro gasto.';
+          if(!(t>0))return 'Ingresá el importe del otro gasto.';
+        }
+        g.total_linea=t;ls.push(g);
+      }
+      if(ls.length===0)return 'Agregá al menos una línea.';
+      var h={fecha:fFecha.value,medio_pago:fMedio.value,notas:fNotas.value.trim(),proveedor_id:fProv.value&&fProv.value!=='__nuevo'?fProv.value:null};
+      if(fProv.value==='__nuevo'){var pid=nuevoIdDash('pv_');h.proveedor_id=pid;h.proveedor_nuevo={id:pid,nombre:fPN.value.trim(),direccion:fPD.value.trim()};}
+      var payload=armarPayloadCompra(h,ls);
+      var antes=snapshotCostos();
+      var r=await rpcDash('registrar_compra',{p:payload});
+      if(!r.ok)return 'No se pudo guardar la compra: '+r.error;
+      await Promise.all([cargarStockInsumos(),cargarCostos(),cargarComprasVista()]);
+      var cambios=diffCostos(antes,snapshotCostos());
+      COSTOS_AVISO=cambios.map(function(c){return c.nombre+': '+fmtPesoMsg(c.antes)+' → '+fmtPesoMsg(c.despues);});
+      if(COSTOS_AVISO.length>0){
+        var nombres=payload.precios.map(function(p){return (COSTOS.mi[p.insumo_id]||{}).nombre;}).filter(Boolean);
+        COSTOS_AVISO.unshift('Cambió el costo de '+nombres.join(', ')+':');
+      }
+      pintarComprasNuevo();
+      return null;
+    },cerrar);
+  });
+}
+
 // ── NAVEGACION ────────────────────────────────────────────────
-function showMob(id){document.querySelectorAll('.mscreen').forEach(function(s){s.classList.remove('active');});document.querySelectorAll('.mnav').forEach(function(b){b.classList.remove('active');});document.getElementById('ms-'+id).classList.add('active');document.getElementById('mn-'+id).classList.add('active');if(id==='inicio')renderInicio();if(id==='insumos')renderInsumos();if(id==='costos')renderCostos();if(id==='pedidos')renderPedidos();if(id==='semana')renderSemana();if(id==='clientes')renderClientesMob();if(id==='cadete-mob'){refrescarEstadosEntrega().then(renderCadeteMob);renderCadeteMob();}if(id==='historial-mob')renderHistorialMob();if(id==='cobros')renderCobros();if(id==='stock'){renderStock();renderCongelados();}if(id==='compras')renderCompras();if(id==='hoja-ruta-mob')renderHojaRuta();toggleDrawerMob(false);}
+function showMob(id){document.querySelectorAll('.mscreen').forEach(function(s){s.classList.remove('active');});document.querySelectorAll('.mnav').forEach(function(b){b.classList.remove('active');});document.getElementById('ms-'+id).classList.add('active');document.getElementById('mn-'+id).classList.add('active');if(id==='inicio')renderInicio();if(id==='insumos')renderInsumos();if(id==='costos')renderCostos();if(id==='pedidos')renderPedidos();if(id==='semana')renderSemana();if(id==='clientes')renderClientesMob();if(id==='cadete-mob'){refrescarEstadosEntrega().then(renderCadeteMob);renderCadeteMob();}if(id==='historial-mob')renderHistorialMob();if(id==='cobros')renderCobros();if(id==='stock'){renderStock();renderCongelados();pintarTabsSeg('stock');aplicarTabSeg('stock');if(SEG_TAB.stock==='insumos')renderStockInsumos();}if(id==='compras'){renderCompras();pintarTabsSeg('compras');aplicarTabSeg('compras');if(SEG_TAB.compras==='nuevo')renderComprasNuevo();}if(id==='hoja-ruta-mob')renderHojaRuta();toggleDrawerMob(false);}
 // FASE 9.2: abre/cierra el drawer lateral móvil. Elegir una sección (showMob) lo cierra solo.
 function toggleDrawerMob(abrir){document.body.classList.toggle('drawer-open',!!abrir);}
-function showDesk(id){document.querySelectorAll('.dscreen').forEach(function(s){s.classList.remove('active');});document.querySelectorAll('.dtab').forEach(function(t){t.classList.remove('active');});document.getElementById(id).classList.add('active');document.getElementById('dt-'+id).classList.add('active');if(id==='d-inicio')renderInicio();if(id==='d-insumos')renderInsumos();if(id==='d-costos')renderCostos();if(id==='d-pedidos')renderDeskPedidos();if(id==='d-cadete'){loadApiKey();poblarFechasReparto();renderRepClientes();refrescarEstadosEntrega().then(renderCadete);renderCadete();}if(id==='d-stock'){renderDeskStock();renderCongeladosDesk();}if(id==='d-clientes')renderClientesDesk();if(id==='d-cobros')renderCobrosDesk();if(id==='d-precios')renderPrecios();if(id==='d-historial')renderHistorial();if(id==='d-compras'){renderComprasDesk();renderComprasRealizadasDesk();}if(id==='d-hoja-ruta'){renderHojaRuta();}}
+function showDesk(id){document.querySelectorAll('.dscreen').forEach(function(s){s.classList.remove('active');});document.querySelectorAll('.dtab').forEach(function(t){t.classList.remove('active');});document.getElementById(id).classList.add('active');document.getElementById('dt-'+id).classList.add('active');if(id==='d-inicio')renderInicio();if(id==='d-insumos')renderInsumos();if(id==='d-costos')renderCostos();if(id==='d-pedidos')renderDeskPedidos();if(id==='d-cadete'){loadApiKey();poblarFechasReparto();renderRepClientes();refrescarEstadosEntrega().then(renderCadete);renderCadete();}if(id==='d-stock'){renderDeskStock();renderCongeladosDesk();pintarTabsSeg('stock');aplicarTabSeg('stock');if(SEG_TAB.stock==='insumos')renderStockInsumos();}if(id==='d-clientes')renderClientesDesk();if(id==='d-cobros')renderCobrosDesk();if(id==='d-precios')renderPrecios();if(id==='d-historial')renderHistorial();if(id==='d-compras'){renderComprasDesk();renderComprasRealizadasDesk();pintarTabsSeg('compras');aplicarTabSeg('compras');if(SEG_TAB.compras==='nuevo')renderComprasNuevo();}if(id==='d-hoja-ruta'){renderHojaRuta();}}
 function abrirFab(){var s=document.querySelector('.mscreen.active').id.replace('ms-','');if(['inicio','pedidos','semana','clientes'].includes(s))abrirModalPedido(null);if(s==='compras')abrirModal('modal-compra');}
 
 // ── LOGIN ─────────────────────────────────────────────────────
