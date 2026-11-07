@@ -897,6 +897,13 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
       <div class="f-lbl" style="margin-bottom:8px">Cantidad de bolsas</div>
       <input class="f-in" type="number" id="p-bolsas" min="1" step="1" value="1">
     </div>
+    <!-- PAQUETE AJUSTES: precio especial por pan defectuoso u otro motivo; vale solo para este pedido. -->
+    <div class="card" style="margin-bottom:10px">
+      <div class="f-lbl" style="margin-bottom:8px">Total ajustado de este pedido (opcional)</div>
+      <input class="f-in" type="text" inputmode="decimal" autocomplete="off" id="p-total-ajustado" oninput="actualizarAjusteHint()" placeholder="Dejalo vacío para cobrar el precio de lista">
+      <input class="f-in" type="text" id="p-ajuste-motivo" maxlength="200" placeholder="Observación (ej: pan con defecto)" style="margin-top:6px">
+      <div id="p-ajuste-hint" style="font-size:12px;color:var(--muted);margin-top:6px"></div>
+    </div>
     <div id="p-total-preview" style="text-align:right;font-size:13px;color:var(--accent);margin-bottom:10px;display:none"></div>
     <button class="btn-p" id="btn-guardar-pedido" onclick="guardarPedido()">Guardar pedido</button>
   </div>
@@ -2387,6 +2394,45 @@ function saldoDash(p,movs){
   return{cobrado:cob,saldo:Math.max(0,tot-cob)};
 }
 function costoCadeteViernes(n){return CFG_INICIO.cadete_base+Math.max(0,n-CFG_INICIO.cadete_base_entregas)*CFG_INICIO.cadete_extra;}
+// ── ADICIONAL DEL CADETE (de onda, por ejemplo los días de lluvia) ──
+// Es aparte del pago base, se carga con la fecha del viernes al que corresponde (Fede lo carga el domingo) y solo cuenta ese viernes.
+var ADIC={lista:[],cargado:false,error:false};
+async function cargarAdicionales(){
+  var r=await sbGetSel('cadete_adicionales','*','&order=fecha.desc,creado.desc');
+  if(r===null){ADIC.error=true;ADIC.cargado=false;return false;}
+  ADIC.lista=r;ADIC.cargado=true;ADIC.error=false;return true;
+}
+function adicionalesDelViernes(fecha){return ADIC.lista.filter(function(x){return !x.anulado&&String(x.fecha).substring(0,10)===fecha;});}
+function adicionalCadete(fecha){return adicionalesDelViernes(fecha).reduce(function(a,x){return a+(Number(x.importe)||0);},0);}
+function sugeridoAdicional(entregas){return Math.round(costoCadeteViernes(entregas)*0.3/100)*100;}
+function entregasCadeteDelDia(fecha){return pedidos.filter(function(p){return p.fecha===fecha&&esEntregaCadete(p);}).length;}
+function abrirDialogoAdicionalCadete(fechaDef,entregasDef,alGuardar){
+  abrirDialogoDash('Adicional del cadete',function(body,cerrar){
+    body.appendChild(elDash('div','inicio-sub','Es un extra "de onda" (por ejemplo por lluvia), aparte del pago base. Se carga con la fecha del viernes al que corresponde.'));
+    var fFecha=campoDash(body,'Viernes al que corresponde','date',fechaDef);
+    var hint=elDash('div','inicio-sub');hint.setAttribute('data-sugerido','1');body.appendChild(hint);
+    var fImp=campoDash(body,'Importe del adicional','importe','');
+    var fNota=campoDash(body,'Nota (opcional)','text','');
+    var tocado=false;fImp.addEventListener('input',function(){tocado=true;});
+    function actualizar(){
+      var n=(fFecha.value===fechaDef&&entregasDef!==null&&entregasDef!==undefined)?entregasDef:entregasCadeteDelDia(fFecha.value);
+      if(n>0){var sg=sugeridoAdicional(n);hint.textContent='Pago de ese día: '+fmtPesoMsg(costoCadeteViernes(n))+' ('+n+' entregas) · sugerido 30 %: '+fmtPesoMsg(sg);if(!tocado)fImp.value=sg.toLocaleString('es-AR');}
+      else hint.textContent='No hay entregas de cadete cargadas ese día: ingresá el importe a mano.';
+    }
+    fFecha.addEventListener('change',actualizar);actualizar();
+    pieDialogo(body,'Guardar adicional',async function(){
+      var f=fFecha.value;if(!f)return 'Elegí la fecha.';
+      var dt=new Date(f+'T12:00:00');if(dt.getDay()!==5)return 'La fecha tiene que ser un viernes (el adicional se carga al día al que corresponde).';
+      var imp=parseImporte(fImp.value);if(isNaN(imp)||!(imp>0))return 'Ingresá un importe mayor a 0.';
+      var row={id:nuevoIdDash('adc_'),fecha:f,importe:imp,anulado:false};var nota=fNota.value.trim();if(nota)row.nota=nota;
+      var ok=await sbUpsert('cadete_adicionales',row);
+      if(!ok)return 'No se pudo guardar. ¿Corriste la migración nueva en Supabase?';
+      ADIC.lista.unshift(row);ADIC.cargado=true;ADIC.error=false;
+      if(alGuardar)alGuardar();
+      return null;
+    },cerrar);
+  });
+}
 function calcSemanaInicio(peds,movs,ini,nombresAntes){
   var r={n:peds.length,unidades:0,ventas:0,ventasB2C:0,ventasB2B:0,cobrado:0,pendiente:0,nuevas:[],entregasViernes:0};
   var vistos={};
@@ -2429,6 +2475,7 @@ async function cargarDatosInicio(sem){
   var rArchMay=await sbGetSel('pedidos_archivo','*','&tipo_precio=eq.Mayorista&order=fecha.asc,id.asc');
   res.archivoOk=(rArch!==null&&rArchAntes!==null&&rArchMay!==null);
   await cargarSalidas();
+  await cargarAdicionales();
   var peds,antes,may,next;
   if(rPed===null||rAntes===null||rMay===null||rNext===null){
     // Sin conexión o falla de lectura: se usa lo que ya está en memoria y se avisa.
@@ -2615,11 +2662,28 @@ function armarTarjetasInicio(d){
   cards.push(c7);
   // 8. Costo del cadete (estimado) = entregas del viernes
   var c8=tarjetaInicio(8,'Costo del cadete (estimado)');
+  var adicSem=adicionalCadete(d.sem.ini);
   if(cur.entregasViernes>0){
-    c8.appendChild(elDash('div','inicio-big',fmtPesoMsg(costoCadeteViernes(cur.entregasViernes))));
+    c8.appendChild(elDash('div','inicio-big',fmtPesoMsg(costoCadeteViernes(cur.entregasViernes)+adicSem)));
     c8.appendChild(elDash('div','inicio-sub',cur.entregasViernes+' entregas el viernes '+fechaCorta(d.sem.ini)+' · base '+fmtPesoMsg(CFG_INICIO.cadete_base)+' hasta '+CFG_INICIO.cadete_base_entregas+' entregas + '+fmtPesoMsg(CFG_INICIO.cadete_extra)+' por cada extra'));
     c8.appendChild(lineaCmpDash(costoCadeteViernes(cur.entregasViernes),prev.entregasViernes>0?costoCadeteViernes(prev.entregasViernes):0,prev.entregasViernes>0,true,true));
-  }else sinDatosDash(c8,'Sin entregas de cadete el viernes');
+  }else sinDatosDash(c8,adicSem>0?'Sin entregas de cadete el viernes (solo hay adicional cargado)':'Sin entregas de cadete el viernes');
+  if(adicSem>0||ADIC.error){
+    if(ADIC.error)c8.appendChild(elDash('div','inicio-nd','No se pudo leer el adicional. ¿Corriste la migración nueva en Supabase?'));
+    else{
+      c8.appendChild(elDash('div','inicio-sub','Incluye adicional de '+fmtPesoMsg(adicSem)+' (aparte del pago base; la comparación con la semana anterior es solo del pago base).'));
+      adicionalesDelViernes(d.sem.ini).forEach(function(x){
+        var fl=elDash('div','inicio-fila');fl.setAttribute('data-adicional',x.id);
+        fl.appendChild(document.createTextNode('Adicional '+fmtPesoMsg(Number(x.importe))+(x.nota?' · '+x.nota:'')));
+        var ba=elDash('button','btn-ol','Anular');ba.style.cssText='margin:0 0 0 8px;padding:2px 8px;font-size:11px';ba.setAttribute('data-accion','anular-adicional');
+        (function(id,b){b.onclick=async function(){if(!confirm('¿Anular este adicional?'))return;b.disabled=true;var ok=await sbUpsert('cadete_adicionales',{id:id,anulado:true});if(!ok){alert('No se pudo anular.');b.disabled=false;return;}var a=ADIC.lista.find(function(z){return z.id===id;});if(a)a.anulado=true;renderInicio();};})(x.id,ba);
+        fl.appendChild(ba);c8.appendChild(fl);
+      });
+    }
+  }
+  var bAd=elDash('button','btn-ol','+ Adicional del día');bAd.style.margin='8px 0 0';bAd.setAttribute('data-accion','nuevo-adicional');
+  bAd.onclick=function(){abrirDialogoAdicionalCadete(d.sem.ini,cur.entregasViernes,function(){renderInicio();});};
+  c8.appendChild(bAd);
   c8.appendChild(elDash('div','inicio-sub','Los martes reparte Fede: no se cuentan.'));
   cards.push(c8);
   // 9. Clientas inactivas (foto de hoy, no depende de la semana elegida)
@@ -2773,7 +2837,7 @@ function renderMetasCadete(){
 // Los precios de insumos nunca se pisan: cada cambio inserta una fila en insumo_precios (historial) y
 // actualiza insumos.precio_unitario. cambiarPrecioInsumo() queda lista para que en la Etapa 3 las compras
 // la llamen con origen 'compra'. Nada se borra: se anula (anulado) o se desactiva (activo).
-var COSTOS={insumos:[],recetas:[],items:[],costeo:[],pack:[],cargado:false,error:false,mi:{},mr:{},itemsRec:{},costeoProd:{},packProd:{}};
+var COSTOS={insumos:[],recetas:[],pruebas:[],items:[],costeo:[],pack:[],cargado:false,error:false,mi:{},mr:{},itemsRec:{},costeoProd:{},packProd:{}};
 var COSTOS_AVISO=[];
 var INS_FILTRO={q:'',cat:'todas',inactivos:false};
 var INS_HIST={},INS_HIST_ABIERTO={},COS_ABIERTO={};
@@ -2789,7 +2853,7 @@ async function cargarCostos(){
     sbGetSel('producto_packaging','*','&anulado=eq.false')
   ]);
   if(r.some(function(x){return x===null;})){COSTOS.error=true;COSTOS.cargado=false;return false;}
-  COSTOS.error=false;COSTOS.insumos=r[0];COSTOS.recetas=r[1];COSTOS.items=r[2].filter(function(x){return !x.anulado;});COSTOS.costeo=r[3];COSTOS.pack=r[4].filter(function(x){return !x.anulado;});
+  COSTOS.error=false;COSTOS.insumos=r[0];COSTOS.recetas=r[1].filter(function(x){return !x.es_prueba;});COSTOS.pruebas=r[1].filter(function(x){return !!x.es_prueba&&x.activo!==false;});COSTOS.items=r[2].filter(function(x){return !x.anulado;});COSTOS.costeo=r[3];COSTOS.pack=r[4].filter(function(x){return !x.anulado;});
   indexarCostos();
   COSTOS.cargado=COSTOS.insumos.length>0&&COSTOS.recetas.length>0;
   return true;
@@ -2797,7 +2861,7 @@ async function cargarCostos(){
 function indexarCostos(){
   COSTOS.mi={};COSTOS.mr={};COSTOS.itemsRec={};COSTOS.costeoProd={};COSTOS.packProd={};
   COSTOS.insumos.forEach(function(i){COSTOS.mi[i.id]=i;});
-  COSTOS.recetas.forEach(function(x){COSTOS.mr[x.id]=x;});
+  COSTOS.recetas.forEach(function(x){COSTOS.mr[x.id]=x;});(COSTOS.pruebas||[]).forEach(function(x){COSTOS.mr[x.id]=x;});
   COSTOS.items.forEach(function(it){(COSTOS.itemsRec[it.receta_id]=COSTOS.itemsRec[it.receta_id]||[]).push(it);});
   COSTOS.costeo.forEach(function(c){COSTOS.costeoProd[c.producto_id]=c.receta_id;});
   COSTOS.pack.forEach(function(pk){(COSTOS.packProd[pk.producto_id]=COSTOS.packProd[pk.producto_id]||[]).push(pk);});
@@ -2814,6 +2878,73 @@ function costoLoteReceta(rid,pila){
     else if(it.subreceta_id)tot+=c*costoLoteReceta(it.subreceta_id,Object.assign({},pila));
   });
   return tot;
+}
+
+// ---- % panadero y recetas de prueba (paquete de ajustes)
+// Base = suma de las harinas de la receta (insumos en kg cuyo nombre empieza con "harina"). El gluten puro u otro insumo en kg es un ingrediente más, con su % sobre esa base.
+function esHarinaInsumo(id){var i=COSTOS.mi[id];return !!i&&i.unidad_base==='kg'&&/^harina/i.test(i.nombre||'');}
+function basePanadera(items){return items.reduce(function(a,it){return a+(it.insumo_id&&esHarinaInsumo(it.insumo_id)?(Number(it.cantidad)||0):0);},0);}
+function pctPanadero(it,base){
+  if(!it.insumo_id||!(base>0))return null;
+  var i=COSTOS.mi[it.insumo_id];if(!i||i.unidad_base!=='kg')return null;
+  return (Number(it.cantidad)||0)/base*100;
+}
+function fmtPctPan(v){return v===null?'—':(Math.round(v*10)/10).toLocaleString('es-AR')+' %';}
+// Costo de una receta (real o de prueba) por unidad vendida, para un producto dado.
+function costoUnitarioConReceta(rid,pid){
+  var rc=COSTOS.mr[rid];if(!rc)return null;
+  return costoLoteReceta(rid)/(Number(rc.rinde)||1)+(pid?costoPackagingProducto(pid):0);
+}
+function productosDeReceta(rid){return Object.keys(COSTOS.costeoProd).filter(function(pid){return COSTOS.costeoProd[pid]===rid;});}
+// Arma el comparativo real vs prueba dentro de "cont".
+function armarComparativoPrueba(cont,pr){
+  var real=COSTOS.mr[pr.origen_id];if(!real)return;
+  var tabla=elDash('div','cos-comp');tabla.setAttribute('data-comparativo',pr.id);
+  tabla.appendChild(elDash('div','inicio-sub-tit','Comparación: '+real.nombre+' (real) vs prueba'));
+  function fila(lbl,a,b,dif){
+    var f=elDash('div','inicio-fila');f.appendChild(elDash('span','inicio-fila-n',lbl));
+    f.appendChild(elDash('span','inicio-fila-v',a+'  →  '+b+(dif?'  ('+dif+')':'')));tabla.appendChild(f);
+  }
+  var cr=costoLoteReceta(real.id),cp=costoLoteReceta(pr.id);
+  function dif(x,y){var d=y-x;return (d>=0?'+':'−')+fmtPesoMsg(Math.abs(d));}
+  fila('Costo del lote',fmtPesoMsg(cr),fmtPesoMsg(cp),dif(cr,cp));
+  var prods=productosDeReceta(real.id);
+  if(prods.length===0)tabla.appendChild(elDash('div','inicio-sub','Esta receta no tiene un producto asignado, por eso no se calcula el margen.'));
+  prods.forEach(function(pid){
+    var ur=costoUnitarioConReceta(real.id,pid),up=costoUnitarioConReceta(pr.id,pid),pp=productoPrecios(pid);
+    tabla.appendChild(elDash('div','inicio-sub-tit',nombreProductoCosto(pid)));
+    fila('Costo unitario',fmtPesoMsg(ur),fmtPesoMsg(up),dif(ur,up));
+    if(pp.precio>0){
+      var mr=pp.precio-ur,mp=pp.precio-up;
+      fila('Margen $ (precio '+fmtPesoMsg(pp.precio)+')',fmtPesoMsg(mr),fmtPesoMsg(mp),dif(mr,mp));
+      fila('Margen %',fmtPct(mr/pp.precio*100),fmtPct(mp/pp.precio*100),'');
+    }
+  });
+  tabla.appendChild(elDash('div','inicio-sub','La receta de prueba no mueve el stock ni los costos reales hasta que la pases a real.'));
+  cont.appendChild(tabla);
+}
+async function crearRecetaPrueba(rid){
+  var rc=COSTOS.mr[rid];if(!rc)return 'Receta no encontrada.';
+  var nid=nuevoIdDash('rp_');
+  var ok=await sbUpsert('recetas',{id:nid,nombre:'Prueba: '+rc.nombre,rinde:Number(rc.rinde)||1,es_base:false,activo:true,es_prueba:true,origen_id:rid});
+  if(!ok)return 'No se pudo crear la receta de prueba. ¿Corriste la migración nueva en Supabase?';
+  var its=(COSTOS.itemsRec[rid]||[]).map(function(it){return {id:nuevoIdDash('ri_'),receta_id:nid,insumo_id:it.insumo_id||null,subreceta_id:it.subreceta_id||null,cantidad:Number(it.cantidad)||0,anulado:false};});
+  if(its.length){var ok2=its.length===1?await sbUpsert('receta_items',its[0]):await sbUpsert('receta_items',its);if(!ok2)return 'Se creó la prueba pero no se copiaron los ítems. Reintentá.';}
+  await cargarCostos();pintarCostos();return null;
+}
+async function promoverRecetaPrueba(pid){
+  var pr=COSTOS.mr[pid];if(!pr||!pr.origen_id||!COSTOS.mr[pr.origen_id])return 'La receta original ya no existe.';
+  var oid=pr.origen_id,filas=[];
+  (COSTOS.itemsRec[oid]||[]).forEach(function(it){filas.push({id:it.id,receta_id:oid,insumo_id:it.insumo_id||null,subreceta_id:it.subreceta_id||null,cantidad:Number(it.cantidad)||0,anulado:true});});
+  (COSTOS.itemsRec[pid]||[]).forEach(function(it){filas.push({id:nuevoIdDash('ri_'),receta_id:oid,insumo_id:it.insumo_id||null,subreceta_id:it.subreceta_id||null,cantidad:Number(it.cantidad)||0,anulado:false});});
+  if(filas.length){var ok=filas.length===1?await sbUpsert('receta_items',filas[0]):await sbUpsert('receta_items',filas);if(!ok)return 'No se pudo pasar la receta a real. Reintentá.';}
+  if(Number(pr.rinde)!==Number(COSTOS.mr[oid].rinde)){if(!await sbUpsert('recetas',{id:oid,rinde:Number(pr.rinde)||1}))return 'Se copiaron los ítems pero no el rinde. Reintentá.';}
+  if(!await sbUpsert('recetas',{id:pid,activo:false}))return 'La receta pasó a real pero la prueba no se pudo cerrar. Reintentá.';
+  await cargarCostos();pintarCostos();return null;
+}
+async function descartarRecetaPrueba(pid){
+  if(!await sbUpsert('recetas',{id:pid,activo:false}))return 'No se pudo descartar. Reintentá.';
+  await cargarCostos();pintarCostos();return null;
 }
 function costoPackagingProducto(pid){
   return (COSTOS.packProd[pid]||[]).reduce(function(a,pk){return a+(Number(pk.cantidad)||0)*precioInsumoU(pk.insumo_id);},0);
@@ -3202,6 +3333,19 @@ function pintarCostos(){
       var be=elDash('button','btn-ol','Editar receta');be.style.margin='0';(function(id){be.onclick=function(){abrirEditorReceta(id);};})(rc.id);
       cab.appendChild(be);card.appendChild(cab);root.appendChild(card);
     });
+    var prs=(COSTOS.pruebas||[]).filter(function(x){return x.activo!==false;});
+    if(prs.length){
+      root.appendChild(elDash('div','sec-lbl','Recetas de prueba (no afectan costos ni stock)'));
+      prs.forEach(function(pr){
+        var card=elDash('div','card cos-fila');card.setAttribute('data-receta-prueba',pr.id);
+        var cab=elDash('div');cab.style.cssText='display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap';
+        var izq=elDash('div');izq.appendChild(elDash('div','ins-nombre',pr.nombre));
+        izq.appendChild(elDash('div','inicio-sub','Rinde '+fmtCant(pr.rinde)+' · Costo del lote '+fmtPesoMsg(costoLoteReceta(pr.id))));
+        cab.appendChild(izq);
+        var bp=elDash('button','btn-ol','Editar prueba');bp.style.margin='0';(function(id){bp.onclick=function(){abrirEditorReceta(id);};})(pr.id);
+        cab.appendChild(bp);card.appendChild(cab);armarComparativoPrueba(card,pr);root.appendChild(card);
+      });
+    }
   });
 }
 function armarDesglose(cont,pid){
@@ -3255,7 +3399,20 @@ function abrirEditorReceta(rid){
     var fRinde=campoDash(body,'Rinde (unidades vendibles por lote; 1 si es una base)','number',rc.rinde);
     body.appendChild(elDash('div','inicio-sub-tit','Ítems (cantidad por lote, en la unidad base del insumo; las subrecetas en lotes)'));
     var filas=[];
+    if(rc.es_prueba)armarComparativoPrueba(body,rc);
+    var lblBase=elDash('div','inicio-sub');lblBase.setAttribute('data-base-pan','1');body.appendChild(lblBase);
     var lista=elDash('div');body.appendChild(lista);
+    function itemDeFila(f){return {insumo_id:f.it.insumo_id,cantidad:parseFloat(f.inp.value)||0};}
+    function baseActual(){return filas.reduce(function(a,f){return a+(!f.quitada&&f.it.insumo_id&&esHarinaInsumo(f.it.insumo_id)?(parseFloat(f.inp.value)||0):0);},0);}
+    function refrescarPct(salvo){
+      var b=baseActual();
+      lblBase.textContent=b>0?'Base panadera (suma de harinas): '+fmtCant(b)+' kg = 100 %':'Esta receta no tiene harinas: no se calcula el % panadero.';
+      filas.forEach(function(f){
+        if(f===salvo||!f.pi)return;
+        var v=f.quitada?null:pctPanadero(itemDeFila(f),b);
+        f.pi.value=(v===null)?'':String(Math.round(v*10)/10);
+      });
+    }
     function nombreItem(it){
       if(it.insumo_id){var i=COSTOS.mi[it.insumo_id];return (i?i.nombre:it.insumo_id)+(i?' ('+i.unidad_base+')':'');}
       var s=COSTOS.mr[it.subreceta_id];return 'Subreceta: '+(s?s.nombre:it.subreceta_id);
@@ -3266,11 +3423,25 @@ function abrirEditorReceta(rid){
       w.appendChild(elDash('span','inicio-fila-n',nombreItem(it)));
       var inp=document.createElement('input');inputDecimal(inp);inp.className='f-in';inp.value=it.cantidad;inp.style.cssText='width:110px;margin:0';
       var bq=elDash('button','btn-ol','Quitar');bq.style.margin='0';
-      bq.onclick=function(){fila.quitada=!fila.quitada;w.style.opacity=fila.quitada?'0.4':'1';bq.textContent=fila.quitada?'Deshacer':'Quitar';};
-      w.appendChild(inp);w.appendChild(bq);lista.appendChild(w);fila.inp=inp;fila.el=w;filas.push(fila);
+      bq.onclick=function(){fila.quitada=!fila.quitada;w.style.opacity=fila.quitada?'0.4':'1';bq.textContent=fila.quitada?'Deshacer':'Quitar';refrescarPct(null);};
+      var insu=it.insumo_id?COSTOS.mi[it.insumo_id]:null,aplicaPct=!!insu&&insu.unidad_base==='kg';
+      var pi=null;
+      if(aplicaPct){
+        pi=document.createElement('input');inputDecimal(pi);pi.className='f-in';pi.style.cssText='width:70px;margin:0';pi.setAttribute('data-pct',it.id);pi.setAttribute('aria-label','% panadero');pi.placeholder='%';
+        pi.addEventListener('input',function(){
+          var pc=parseFloat(pi.value);if(!(pc>=0))return;
+          var b=baseActual(),esH=esHarinaInsumo(it.insumo_id),q;
+          if(esH){var otras=b-(parseFloat(inp.value)||0);if(!(otras>0)||pc>=100)return;q=pc*otras/(100-pc);}
+          else{if(!(b>0))return;q=pc*b/100;}
+          inp.value=String(Math.round(q*10000)/10000);refrescarPct(fila);
+        });
+      }
+      inp.addEventListener('input',function(){refrescarPct(null);});
+      w.appendChild(inp);if(pi)w.appendChild(pi);w.appendChild(bq);lista.appendChild(w);fila.inp=inp;fila.pi=pi;fila.el=w;filas.push(fila);refrescarPct(null);
     }
     (COSTOS.itemsRec[rid]||[]).forEach(function(it){agregarFila(it,false);});
-    body.appendChild(elDash('div','inicio-sub-tit','Agregar ítem'));
+    refrescarPct(null);
+    body.appendChild(elDash('div','inicio-sub-tit','Agregar ítem (si es gluten u otro ingrediente nuevo, primero crealo en Insumos)'));
     var opts=[['','Elegí un insumo o subreceta…']];
     COSTOS.insumos.filter(function(i){return i.activo!==false;}).forEach(function(i){opts.push(['i:'+i.id,i.nombre+' ('+i.unidad_base+')']);});
     COSTOS.recetas.filter(function(r){return r.es_base&&r.id!==rid&&r.activo!==false;}).forEach(function(r){opts.push(['r:'+r.id,'Subreceta: '+r.nombre]);});
@@ -3288,6 +3459,26 @@ function abrirEditorReceta(rid){
       fSel.value='';fQ.value='';
     };
     body.appendChild(bAdd);body.appendChild(errAdd);
+    var errPr=elDash('div');errPr.style.cssText='color:var(--danger);font-size:12px';
+    var bar=elDash('div');bar.style.cssText='display:flex;gap:8px;flex-wrap:wrap;margin:6px 0';
+    function accion(txt,attr,fn,conf){
+      var b=elDash('button','btn-ol',txt);b.style.margin='0';b.setAttribute('data-accion',attr);
+      b.onclick=async function(){
+        if(conf&&!window.confirm(conf))return;
+        b.disabled=true;errPr.textContent='';
+        var e=await fn();
+        if(e){errPr.textContent=e;b.disabled=false;}else cerrar();
+      };
+      bar.appendChild(b);
+    }
+    if(rc.es_prueba){
+      accion('Pasar a receta real','promover-prueba',function(){return promoverRecetaPrueba(rid);},'Esto reemplaza los ítems de la receta real por los de esta prueba. ¿Seguimos?');
+      accion('Descartar prueba','descartar-prueba',function(){return descartarRecetaPrueba(rid);},'¿Descartar esta receta de prueba?');
+    }else if(!rc.es_base){
+      accion('Crear receta de prueba (copia)','crear-prueba',function(){return crearRecetaPrueba(rid);});
+    }
+    body.appendChild(elDash('div','inicio-sub','Las acciones de prueba trabajan con la receta guardada: guardá antes los cambios que hayas hecho.'));
+    body.appendChild(bar);body.appendChild(errPr);
     pieDialogo(body,'Guardar receta',async function(){
       var rinde=parseFloat(fRinde.value);
       if(!(rinde>0))return 'El rinde debe ser mayor a 0.';
@@ -3835,6 +4026,14 @@ async function cargarComprasVista(){
   }
   COMPRAS_VISTA.compras=ult;COMPRAS_VISTA.items=its;COMPRAS_VISTA.error=false;COMPRAS_VISTA.cargado=true;return true;
 }
+function inversionesDelMes(){
+  var hoy=new Date(),pref=hoy.getFullYear()+'-'+('0'+(hoy.getMonth()+1)).slice(-2),tot=0;
+  (COMPRAS_VISTA.compras||[]).forEach(function(c){
+    if(c.anulado||c.estado==='borrador'||String(c.fecha||'').slice(0,7)!==pref)return;
+    (COMPRAS_VISTA.items[c.id]||[]).forEach(function(x){if(!x.anulado&&x.tipo==='otro_gasto'&&x.categoria_gasto==='equipamiento')tot+=Number(x.total_linea)||0;});
+  });
+  return tot;
+}
 function pintarComprasNuevo(){
   document.querySelectorAll('.compras-root').forEach(function(root){
     root.innerHTML='';
@@ -3849,6 +4048,8 @@ function pintarComprasNuevo(){
     if(COMPRAS_VISTA.error||STK.error||COSTOS.error){root.appendChild(elDash('div','inicio-nd','No se pudieron leer las compras. ¿Corriste las migraciones de la Etapa 3 en Supabase?'));pintarAvisoCostos();return;}
     if(!COMPRAS_VISTA.cargado){root.appendChild(elDash('div','inicio-nd','Cargando…'));pintarAvisoCostos();return;}
     if(COMPRAS_VISTA.compras.length===0)root.appendChild(elDash('div','inicio-nd','Todavía no cargaste compras de insumos.'));
+    var invMes=inversionesDelMes();
+    if(invMes>0){var ci=elDash('div','card');ci.setAttribute('data-inversiones','1');ci.appendChild(elDash('div','ins-nombre','Inversiones del mes: '+fmtPesoMsg(invMes)));ci.appendChild(elDash('div','inicio-sub','Equipamiento y compras que no son insumos. Salen de la caja, pero no se cuentan como costo de producir. (Suma de las últimas 40 compras cargadas.)'));root.appendChild(ci);}
     COMPRAS_VISTA.compras.forEach(function(c){
       var card=elDash('div','card compra-card');card.setAttribute('data-compra',c.id);
       if(c.anulado)card.style.opacity='0.55';
@@ -3864,7 +4065,7 @@ function pintarComprasNuevo(){
         if(x.tipo==='insumo'){
           var i=COSTOS.mi[x.insumo_id]||{nombre:x.insumo_id,unidad_base:''};
           card.appendChild(elDash('div','inicio-fila',i.nombre+(x.marca?' ('+x.marca+')':'')+' · '+fmtCant(x.presentaciones)+' × '+fmtCant(x.cantidad_por_presentacion)+' '+i.unidad_base+' = '+fmtCant(x.cantidad_base)+' '+i.unidad_base+' · '+fmtPesoMsg(Number(x.total_linea))+' · '+fmtPrecioU(x.precio_unitario)+'/'+i.unidad_base+(x.es_oferta?' · oferta (no actualizó el costo)':'')));
-        }else card.appendChild(elDash('div','inicio-fila',(x.descripcion||'Otro gasto')+' ('+(x.categoria_gasto||'otros')+') · '+fmtPesoMsg(Number(x.total_linea))));
+        }else card.appendChild(elDash('div','inicio-fila',(x.descripcion||'Otra compra')+' ('+(x.categoria_gasto==='equipamiento'?'INVERSIÓN · equipamiento':(x.categoria_gasto||'otros'))+') · '+fmtPesoMsg(Number(x.total_linea))));
       });
       if(!c.anulado){
         var acc=elDash('div');acc.style.cssText='display:flex;gap:8px;flex-wrap:wrap;margin-top:8px';
@@ -4001,7 +4202,7 @@ function abrirDialogoCompra(opc){
       d=d||{};
       var w=elDash('div','card compra-linea');w.setAttribute('data-linea','otro_gasto');
       var fD=campoDash(w,'Descripción (ej. detergente)','text',d.descripcion||'');
-      var fG=campoDash(w,'Categoría','select',d.categoria_gasto||'otros',[['limpieza','Limpieza'],['mantenimiento','Mantenimiento'],['otros','Otros']]);
+      var fG=campoDash(w,'Categoría','select',d.categoria_gasto||'otros',[['equipamiento','Equipamiento / inversión (mesa, contenedor, máquina…)'],['limpieza','Limpieza'],['mantenimiento','Mantenimiento'],['otros','Otros']]);
       var fT=campoDash(w,'Importe ($)','importe',d.total_linea!==undefined?String(d.total_linea).replace('.',','):'');
       w.appendChild(elDash('div','inicio-sub','No toca el stock.'));
       var bq=elDash('button','btn-ol','Quitar línea');bq.style.margin='6px 0 0';w.appendChild(bq);
@@ -4011,7 +4212,7 @@ function abrirDialogoCompra(opc){
     }
     var bar=elDash('div','inicio-bar');
     var b1=elDash('button','btn-ol','+ Insumo');b1.style.margin='0';b1.onclick=function(){agregarLineaInsumo();};
-    var b2=elDash('button','btn-ol','+ Otro gasto');b2.style.margin='0';b2.onclick=function(){agregarLineaGasto();};
+    var b2=elDash('button','btn-ol','+ Otra compra (equipamiento, limpieza…)');b2.style.margin='0';b2.onclick=function(){agregarLineaGasto();};
     bar.appendChild(b1);bar.appendChild(b2);body.appendChild(bar);
     body.appendChild(totalEl);
     if(edit){
@@ -4027,6 +4228,8 @@ function abrirDialogoCompra(opc){
       for(var k=0;k<lineas.length;k++){
         var l=lineas[k];if(l.quitada)continue;var g=l.get(),t=g.total_num;
         if(g.tipo==='insumo'){
+          // Una línea de insumo totalmente vacía se ignora si la compra tiene otra compra/gasto (ej. solo equipamiento).
+          if(!g.insumo_id&&!(t>0)&&lineas.some(function(z){return !z.quitada&&z.get().tipo!=='insumo';}))continue;
           if(!g.insumo_id)return{error:'Elegí el insumo en todas las líneas (o quitá la línea vacía).'};
           if(!(g.presentaciones>0)||!(g.cantidad_por_presentacion>0))return{error:'Revisá la cantidad de unidades y la cantidad por unidad.'};
           if(!(t>=0))return{error:'Ingresá el precio por unidad de cada línea de insumo.'};
@@ -4280,7 +4483,7 @@ function exportarInicio(){
     ['Ventas',cur.ventas,prev.ventas,'','$'],['Ventas minoristas (B2C)',cur.ventasB2C,prev.ventasB2C,'','$'],['Ventas mayoristas (B2B)',cur.ventasB2B,prev.ventasB2B,'','$'],
     ['Ticket promedio',cur.n>0?cur.ventas/cur.n:'',prev.n>0?prev.ventas/prev.n:'','','$'],['Cobrado',cur.cobrado,prev.cobrado,'','$'],['Pendiente de cobro',cur.pendiente,prev.pendiente,'','$'],
     ['Clientas nuevas',cur.nuevas.length,prev.nuevas.length,'','n'],
-    ['Costo del cadete (estimado)',cur.entregasViernes>0?costoCadeteViernes(cur.entregasViernes):'',prev.entregasViernes>0?costoCadeteViernes(prev.entregasViernes):'','','$']];
+    ['Costo del cadete (estimado, con adicional)',cur.entregasViernes>0?costoCadeteViernes(cur.entregasViernes)+adicionalCadete(d.sem.ini):'',prev.entregasViernes>0?costoCadeteViernes(prev.entregasViernes):'','','$']];
   var mg=COSTOS.cargado&&cur.n>0?margenBrutoSemana(d.pedsCur):null,mp=COSTOS.cargado&&prev.n>0?margenBrutoSemana(d.pedsPrev):null;
   f.push(['Margen bruto (costos de hoy)',mg&&!mg.faltan?mg.margen:'',mp&&!mp.faltan?mp.margen:'','','$']);
   var filas=f.map(function(x){return [x[0],x[1],x[2],x[3]];});
@@ -4611,8 +4814,8 @@ function cargarHistorialLocal(){
 }
 
 // ── MAPEADORES ────────────────────────────────────────────────
-function pedidoToRow(p){return{id:p.id,fika_id:p.fikaId||null,cliente_id:p.clienteId||null,nombre:p.nombre,fecha:p.fecha||null,telefono:p.telefono||null,domicilio:p.domicilio||null,piso:p.piso||null,ciudad:p.ciudad||null,encargado:p.encargado||'Cadete',notas:p.notas||null,pago:p.pago||false,entregado:p.entregado||false,panes:p.panes||{},etiqueta:p._etiqueta||null,tipo_precio:p.tipoPrecio||'Minorista',precio_combo:p.precioCombo||null,combo_nombre:p.comboNombre||null,total_final:(p.totalFinal!==undefined&&p.totalFinal!==null)?p.totalFinal:null,horario_entrega:p.horarioEntrega||null,horario_desde:p.horarioDesde||null,horario_hasta:p.horarioHasta||null,bolsas:(p.bolsas!==undefined&&p.bolsas!==null&&p.bolsas!=='')?p.bolsas:null,envio_tipo:p.envioTipo||null,envio_importe:(p.envioTipo==='pago'&&p.envioImporte>0)?p.envioImporte:(p.envioTipo==='gratis'?0:null),creado_en:p.creadoEn||new Date().toISOString()};}
-function rowToPedido(r){return{id:r.id,fikaId:r.fika_id||null,clienteId:r.cliente_id,nombre:r.nombre,fecha:r.fecha,telefono:r.telefono,domicilio:r.domicilio,piso:r.piso,ciudad:r.ciudad,encargado:r.encargado||'Cadete',notas:r.notas,pago:r.pago||false,entregado:r.entregado||false,panes:r.panes||{},_etiqueta:r.etiqueta,tipoPrecio:r.tipo_precio||'Minorista',precioCombo:r.precio_combo||null,comboNombre:r.combo_nombre||null,totalFinal:(r.total_final!==undefined&&r.total_final!==null)?r.total_final:null,horarioEntrega:r.horario_entrega,horarioDesde:r.horario_desde,horarioHasta:r.horario_hasta,horaEntregado:r.hora_entregado||null,bolsas:(r.bolsas!==undefined&&r.bolsas!==null&&r.bolsas>0)?r.bolsas:1,envioTipo:r.envio_tipo||null,envioImporte:(r.envio_importe!==undefined&&r.envio_importe!==null)?Number(r.envio_importe):null,creadoEn:r.creado_en,
+function pedidoToRow(p){var r={id:p.id,fika_id:p.fikaId||null,cliente_id:p.clienteId||null,nombre:p.nombre,fecha:p.fecha||null,telefono:p.telefono||null,domicilio:p.domicilio||null,piso:p.piso||null,ciudad:p.ciudad||null,encargado:p.encargado||'Cadete',notas:p.notas||null,pago:p.pago||false,entregado:p.entregado||false,panes:p.panes||{},etiqueta:p._etiqueta||null,tipo_precio:p.tipoPrecio||'Minorista',precio_combo:p.precioCombo||null,combo_nombre:p.comboNombre||null,total_final:(p.totalFinal!==undefined&&p.totalFinal!==null)?p.totalFinal:null,horario_entrega:p.horarioEntrega||null,horario_desde:p.horarioDesde||null,horario_hasta:p.horarioHasta||null,bolsas:(p.bolsas!==undefined&&p.bolsas!==null&&p.bolsas!=='')?p.bolsas:null,envio_tipo:p.envioTipo||null,envio_importe:(p.envioTipo==='pago'&&p.envioImporte>0)?p.envioImporte:(p.envioTipo==='gratis'?0:null),creado_en:p.creadoEn||new Date().toISOString()};if((p.totalLista!==undefined&&p.totalLista!==null)||p.ajusteLimpiar){r.total_lista=(p.totalLista!==undefined&&p.totalLista!==null)?p.totalLista:null;r.ajuste_motivo=p.ajusteMotivo||null;}return r;}
+function rowToPedido(r){return{id:r.id,fikaId:r.fika_id||null,clienteId:r.cliente_id,nombre:r.nombre,fecha:r.fecha,telefono:r.telefono,domicilio:r.domicilio,piso:r.piso,ciudad:r.ciudad,encargado:r.encargado||'Cadete',notas:r.notas,pago:r.pago||false,entregado:r.entregado||false,panes:r.panes||{},_etiqueta:r.etiqueta,tipoPrecio:r.tipo_precio||'Minorista',precioCombo:r.precio_combo||null,comboNombre:r.combo_nombre||null,totalFinal:(r.total_final!==undefined&&r.total_final!==null)?r.total_final:null,horarioEntrega:r.horario_entrega,horarioDesde:r.horario_desde,horarioHasta:r.horario_hasta,horaEntregado:r.hora_entregado||null,bolsas:(r.bolsas!==undefined&&r.bolsas!==null&&r.bolsas>0)?r.bolsas:1,envioTipo:r.envio_tipo||null,envioImporte:(r.envio_importe!==undefined&&r.envio_importe!==null)?Number(r.envio_importe):null,totalLista:(r.total_lista!==undefined&&r.total_lista!==null)?Number(r.total_lista):null,ajusteMotivo:r.ajuste_motivo||null,creadoEn:r.creado_en,
   // Estado real de entrega que escribe la app del cadete en la misma tabla "pedidos" (no se modifica esa app, solo se lee acá):
   cadeteStatus:r.cadete_status||null,motivoNoEntrega:r.motivo_no_entrega||null,cadetePago:r.cadete_pago||null,edicionHabilitada:r.edicion_habilitada||false};}
 function cobroToRow(c){return{pedido_id:c.pedidoId,nombre:c.nombre,fecha:c.fecha,panes:c.panes||{},pagado:c.pagado||false,fecha_registro:c.fechaRegistro||new Date().toISOString(),fecha_pago:c.fechaPago||null};}
@@ -4639,7 +4842,9 @@ async function guardarPedidoSupa(p){
     panes:row.panes,etiqueta:row.etiqueta,horario_entrega:row.horario_entrega,
     horario_desde:row.horario_desde,horario_hasta:row.horario_hasta,creado_en:row.creado_en,
     fika_id:row.fika_id,tipo_precio:row.tipo_precio};
-  return await sbUpsert('pedidos',rowSafe);
+  var okSafe=await sbUpsert('pedidos',rowSafe);
+  if(okSafe&&p.totalLista!==undefined&&p.totalLista!==null)alert('El pedido se guardó, pero SIN el ajuste de precio: falta correr la migración nueva en Supabase. Cuando la corras, volvé a guardar el pedido.');
+  return okSafe;
 }
 async function eliminarPedidoSupa(id){pedidos=pedidos.filter(function(x){return x.id!==id;});guardar();try{await anularSalidasDePedido(id);}catch(e){}await sbDelete('pedidos','id',id);}
 
@@ -4756,6 +4961,14 @@ function actualizarDatalist(){}
 // autocomplete manejado por buscarSugerencias/elegirCliente
 
 // ── TOTAL PREVIEW EN FORMULARIO ───────────────────────────────
+var _ajusteListaPreview=0;
+function actualizarAjusteHint(){
+  var h=document.getElementById('p-ajuste-hint'),f=document.getElementById('p-total-ajustado');if(!h||!f)return;
+  var v=parseImporte(f.value);
+  if(f.value.trim()===''||isNaN(v)){h.textContent=_ajusteListaPreview>0?'Precio de lista: '+fmtPeso(_ajusteListaPreview):'';return;}
+  var d=v-_ajusteListaPreview;
+  h.textContent='Precio de lista: '+fmtPeso(_ajusteListaPreview)+' · se cobra '+fmtPeso(v)+(d===0?' (sin ajuste)':' ('+(d<0?'descuento de ':'recargo de ')+fmtPeso(Math.abs(d))+')');
+}
 function actualizarTotalPreview(){
   if(productos.length===0)return;
   var nombre=document.getElementById('p-nombre')?document.getElementById('p-nombre').value.trim():'';
@@ -4772,6 +4985,7 @@ function actualizarTotalPreview(){
     return;
   }
   var total=calcTotal(pQtys,nombre,tipoPrecio)+envioImpP;
+  _ajusteListaPreview=total;actualizarAjusteHint();
   var tp=document.getElementById('p-total-preview');
   if(total>0){tp.textContent='Total: '+fmtPeso(total)+(envioImpP>0?' (incluye envío '+fmtPeso(envioImpP)+')':'');tp.style.display='block';}
   else tp.style.display='none';
@@ -4811,6 +5025,7 @@ function abrirModalPedido(id){
   document.getElementById('p-fecha').value='';document.getElementById('p-ciudad').value='';document.getElementById('p-enc').value='Cadete';document.getElementById('p-pago').checked=false;document.getElementById('p-coord').checked=false;if(document.getElementById('p-tipo-precio'))document.getElementById('p-tipo-precio').value='Minorista';
   document.getElementById('p-dom').disabled=false;document.getElementById('p-dom').style.opacity='1';document.getElementById('p-piso').disabled=false;document.getElementById('p-piso').style.opacity='1';
   document.getElementById('p-total-preview').style.display='none';
+  document.getElementById('p-total-ajustado').value='';document.getElementById('p-ajuste-motivo').value='';document.getElementById('p-ajuste-hint').textContent='';
   // ITERACIÓN 3: envío por defecto, el importe configurado en PRECIOS (no inventa un precio).
   _envioOrig={tipo:null,importe:0};document.getElementById('p-envio-tipo').value='gratis';document.getElementById('p-envio-importe').value='0';
   document.getElementById('p-bolsas').value='1';
@@ -4824,6 +5039,7 @@ function abrirModalPedido(id){
       document.getElementById('p-sobrenombre').value=(cliDelPedido&&cliDelPedido.sobrenombre)||'';
       setComoForm(cliDelPedido);
       cargarObsequiosDelPedido(id);
+      if(p.totalLista!==undefined&&p.totalLista!==null){document.getElementById('p-total-ajustado').value=Number(p.totalFinal).toLocaleString('es-AR',{maximumFractionDigits:2});document.getElementById('p-ajuste-motivo').value=p.ajusteMotivo||'';}
       if(p.domicilio==='Coordinar'){document.getElementById('p-coord').checked=true;toggleCoord();}
       if(p.panes)PRODUCTOS.forEach(function(k){pQtys[k]=p.panes[k]||0;var el=document.getElementById('pq-'+k);if(el)el.textContent=pQtys[k];var row=document.getElementById('pan-item-'+k);if(row&&pQtys[k]>0)row.style.display='';});
       _envioOrig={tipo:p.envioTipo||null,importe:Number(p.envioImporte)||0};
@@ -4877,6 +5093,8 @@ async function _guardarPedidoInterno(){
   var tipoPrecioFinal=usarCombo?'Combo':tipoPrecioActual;
   var precioComboFinal=usarCombo?comboDetectado.precio:null;
   var comboNombreFinal=usarCombo?comboDetectado.nombre:null;
+  var ajTxt=document.getElementById('p-total-ajustado').value.trim(),ajVal=null,ajMotivo=document.getElementById('p-ajuste-motivo').value.trim();
+  if(ajTxt!==''){ajVal=parseImporte(ajTxt);if(isNaN(ajVal)||ajVal<0){alert('El total ajustado no es válido. Revisalo o dejalo vacío.');return;}}
   var nuevoFikaId=pedidoEditId?((pedidos.find(function(x){return x.id===pedidoEditId;})||{}).fikaId||await nextFikaId()):await nextFikaId();
   var envioTipoForm=document.getElementById('p-envio-tipo').value||null;
   var envioImporteForm=envioTipoForm==='pago'?(parseFloat(document.getElementById('p-envio-importe').value)||0):null;
@@ -4886,6 +5104,8 @@ async function _guardarPedidoInterno(){
   // calcTotalPedido siempre va a devolver este número, sin importar que mañana cambien
   // los precios de la lista o los precios especiales del cliente.
   p.totalFinal=calcTotalPedidoLive(p);
+  if(ajVal!==null&&Math.round(ajVal*100)!==Math.round(p.totalFinal*100)){p.totalLista=p.totalFinal;p.totalFinal=ajVal;p.ajusteMotivo=ajMotivo||null;}
+  else if(pExist&&pExist.totalLista!==undefined&&pExist.totalLista!==null){p.ajusteLimpiar=true;}
   if(pedidoEditId){var idx=pedidos.findIndex(function(x){return x.id===pedidoEditId;});if(idx>=0)pedidos[idx]=p;}else pedidos.unshift(p);
   await guardarPedidoSupa(p);
   await sincronizarObsequiosPedido(p);
@@ -4959,6 +5179,7 @@ function verPedido(id){
   function drow(lbl,val,color){var r=document.createElement('div');r.className='det-row';var l=document.createElement('span');l.className='det-lbl';l.textContent=lbl;var v=document.createElement('span');v.className='det-val';v.textContent=val;if(color)v.style.color=color;r.appendChild(l);r.appendChild(v);c1.appendChild(r);}
   drow('Fecha entrega',fs);drow('Teléfono',p.telefono||'--');drow('Domicilio',(p.domicilio||'--')+(p.piso?' - '+p.piso:''));drow('Ciudad',p.ciudad||'--');drow('Encargado',p.encargado||'Cadete');drow('Pago',p.pago?'Realizado':'Pendiente',p.pago?'var(--ok)':'var(--danger)');
   if(total>0)drow('Total',fmtPeso(total),'var(--accent)');
+  if(p.totalLista!==undefined&&p.totalLista!==null){drow('Precio de lista',fmtPeso(p.totalLista));drow('Ajuste',(total-p.totalLista<0?'−':'+')+fmtPeso(Math.abs(total-p.totalLista))+(p.ajusteMotivo?' · '+p.ajusteMotivo:''),'var(--warn,var(--accent))');}
   if(p.horarioDesde&&p.horarioHasta)drow('Ventana prometida',p.horarioDesde+' a '+p.horarioHasta);
   var _punt=calcPuntualidad(p);if(_punt)drow('Puntualidad',_punt.label,_punt.color);
   cont.appendChild(c1);
