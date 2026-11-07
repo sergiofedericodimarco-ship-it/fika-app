@@ -334,6 +334,7 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
     <button class="mnav" onclick="showMob('precios-mob')" id="mn-precios-mob">Precios</button>
     <button class="mnav" onclick="showMob('costos')" id="mn-costos">Costos</button>
     <button class="mnav" onclick="showMob('compras')" id="mn-compras">Compras</button>
+    <button class="mnav" onclick="showMob('caja')" id="mn-caja">Caja</button>
     <button class="mnav" onclick="showMob('semana')" id="mn-semana">Semana</button>
   </div>
   <div id="mob-screens">
@@ -414,6 +415,7 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
       <div id="congelados-empty" class="empty" style="display:none"><div class="empty-icon">❄️</div>Sin stock de congelados.</div>
       </div>
     </div>
+    <div class="mscreen" id="ms-caja"><div class="caja-root"></div></div>
     <div class="mscreen" id="ms-compras">
       <div class="seg-tabs" data-seg="compras" style="display:flex;gap:6px;margin-bottom:12px"></div>
       <div class="seg-new" data-seg="compras"><div class="compras-root"></div></div>
@@ -507,6 +509,7 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
     <button class="dtab" onclick="showDesk('d-precios')" id="dt-d-precios"><span class="dtab-label">Precios</span></button>
     <button class="dtab" onclick="showDesk('d-costos')" id="dt-d-costos"><span class="dtab-label">Costos</span></button>
     <button class="dtab" onclick="showDesk('d-compras')" id="dt-d-compras"><span class="dtab-label">Compras</span></button>
+    <button class="dtab" onclick="showDesk('d-caja')" id="dt-d-caja"><span class="dtab-label">Caja</span></button>
   </nav>
   <div id="desk-main">
   <div id="desk-header">
@@ -768,6 +771,7 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
         </div>
       </div>
     </div>
+    <div class="dscreen" id="d-caja"><div class="caja-root"></div></div>
     <div class="dscreen" id="d-compras">
       <div class="seg-tabs" data-seg="compras" style="display:flex;gap:6px;margin-bottom:12px"></div>
       <div class="seg-new" data-seg="compras"><div class="compras-root"></div></div>
@@ -1092,6 +1096,7 @@ initLayout();
     cargarOrdenCadetePersistido(),
     cargarConfigInicio(),
     cargarSalidas(),
+    cargarCaja(),
     cargarCostos()
   ]);
   // ITERACIÓN 3 / Fase 5: recién acá "productos" (con su columna activo/inactivo) ya
@@ -4297,7 +4302,7 @@ var RESPALDO_TABLAS=[['pedidos','pedidos','id'],['clientes','clientes','id'],['m
   ['producto_costeo','producto_costeo','producto_id'],['producto_packaging','producto_packaging','id'],['proveedores','proveedores','id'],
   ['compras','compras_registro','id'],['compra_items','compra_items','id'],['stock_movimientos','stock_movimientos','id'],['horneadas','horneadas','id'],
   ['horneada_items','horneada_items','id'],['conteos','conteos','id'],['conteo_items','conteo_items','id'],['config','config','key'],
-  ['salidas_producto','salidas_producto','id'],['lista_compras','compras','id'],['compras_realizadas','compras_realizadas','id'],['stock','stock','id'],['combos_precios','combos_precios','id']];
+  ['salidas_producto','salidas_producto','id'],['cadete_adicionales','cadete_adicionales','id'],['caja_conciliaciones','caja_conciliaciones','id'],['caja_movimientos','caja_movimientos','id'],['gastos_fijos','gastos_fijos','id'],['lista_compras','compras','id'],['compras_realizadas','compras_realizadas','id'],['stock','stock','id'],['combos_precios','combos_precios','id']];
 
 function serialFecha(y,m,d,hh,mm){return (Date.UTC(y,m-1,d)-Date.UTC(1899,11,30))/86400000+((hh||0)*60+(mm||0))/1440;}
 function secretosExport(){
@@ -4498,6 +4503,321 @@ function exportarInicio(){
   guardarLibroExport('FIKA_inicio_'+d.sem.ini+'_a_'+d.sem.fin+'.xlsx',[h1,h2,h3,h4]);
 }
 
+// ── ETAPA 5 (A): CAJA, CONCILIACIÓN SEMANAL, APORTES/RETIROS, DÓLARES Y GASTOS FIJOS ──
+// Tres cuentas: banco y efectivo (pesos) y dólares. El saldo "esperado" sale del último conteo real (conciliación) más lo que
+// pasó después: cobros por medio de pago, compras, aportes, retiros, compra de dólares y gastos fijos. Los domingos Fede cuenta
+// lo que realmente hay y la app muestra la diferencia. Nada se borra: se anula. La primera conciliación es la apertura.
+var CAJA={concs:[],movs:[],fijos:[],compras:[],cargado:false,error:false};
+var CAJA_CUENTAS=[['banco','Cuenta bancaria'],['efectivo','Efectivo'],['usd','Dólares']];
+function nombreCuenta(c){var x=CAJA_CUENTAS.find(function(a){return a[0]===c;});return x?x[1]:c;}
+function fmtCuenta(cuenta,v){return cuenta==='usd'?('US$ '+(Math.round(v*100)/100).toLocaleString('es-AR')):fmtPesoMsg(v);}
+async function cargarCaja(){
+  var r=await Promise.all([sbGetSel('caja_conciliaciones','*','&order=fecha.asc'),sbGetSel('caja_movimientos','*','&order=fecha.asc,creado.asc'),sbGetSel('gastos_fijos','*','&order=nombre.asc')]);
+  if(r.some(function(x){return x===null;})){CAJA.error=true;CAJA.cargado=false;return false;}
+  CAJA.concs=r[0].filter(function(c){return !c.anulado;});CAJA.movs=r[1];CAJA.fijos=r[2];
+  var ult=CAJA.concs[0];
+  if(ult){
+    var cs=await sbGetSel('compras_registro','id,fecha,medio_pago,total,estado,anulado,creado','&fecha=gte.'+fechaISO(new Date(ult.fecha)));
+    CAJA.compras=cs===null?[]:cs;
+  }else CAJA.compras=[];
+  CAJA.error=false;CAJA.cargado=true;actualizarBadgeCaja();return true;
+}
+function ultimaConciliacion(){return CAJA.concs.length?CAJA.concs[CAJA.concs.length-1]:null;}
+// ¿Algo de fecha "d" (AAAA-MM-DD) creado en "cre" cae dentro del período (desde, hasta]?
+function enPeriodoCaja(d,cre,desdeTs,hastaTs){
+  d=String(d).substring(0,10);var dd=fechaISO(new Date(desdeTs)),hh=fechaISO(new Date(hastaTs));
+  var creMs=cre?new Date(cre).getTime():null;
+  var despues=d>dd||(d===dd&&(creMs===null||creMs>new Date(desdeTs).getTime()));
+  var antes=d<hh||(d===hh&&(creMs===null||creMs<=new Date(hastaTs).getTime()));
+  return despues&&antes;
+}
+// Devuelve, por cuenta, el saldo del último conteo, los movimientos del período y el saldo esperado.
+function calcularCaja(hastaTs){
+  var u=ultimaConciliacion();if(!u)return null;
+  hastaTs=hastaTs||new Date().toISOString();
+  var out={};
+  CAJA_CUENTAS.forEach(function(c){out[c[0]]={base:Number(u['saldo_'+c[0]])||0,items:[],esperado:0};});
+  function add(cuenta,lbl,imp,ref){out[cuenta].items.push({lbl:lbl,imp:imp,ref:ref||null});}
+  movimientosCobro.forEach(function(m){
+    if(m.anulado||!m.fecha)return;
+    var t=new Date(m.fecha).getTime();if(!(t>new Date(u.fecha).getTime()&&t<=new Date(hastaTs).getTime()))return;
+    var medio=String(m.medioPago||'').toLowerCase();
+    if(medio==='efectivo')add('efectivo','Cobros en efectivo',m.importe);
+    else if(medio==='transferencia')add('banco','Cobros por transferencia',m.importe);
+  });
+  CAJA.compras.forEach(function(c){
+    if(c.anulado||c.estado==='borrador'||!enPeriodoCaja(c.fecha,c.creado,u.fecha,hastaTs))return;
+    var medio=String(c.medio_pago||'').toLowerCase();
+    if(medio==='efectivo')add('efectivo','Compras en efectivo',-Number(c.total),c.id);
+    else if(medio==='transferencia')add('banco','Compras por transferencia',-Number(c.total),c.id);
+  });
+  CAJA.movs.forEach(function(m){
+    if(m.anulado||!enPeriodoCaja(m.fecha,m.creado,u.fecha,hastaTs))return;
+    var lbl={aporte:'Aportes',retiro:'Retiros',compra_usd:'Compra de dólares',gasto_fijo:'Gastos fijos',pago_tarjeta:'Pago de tarjeta',otro:'Otros'}[m.tipo]||m.tipo;
+    add(m.cuenta,lbl,(m.sentido==='entra'?1:-1)*Number(m.importe),m.id);
+  });
+  CAJA_CUENTAS.forEach(function(c){var o=out[c[0]];o.esperado=o.base+o.items.reduce(function(a,x){return a+x.imp;},0);});
+  return out;
+}
+function agruparItemsCaja(items){var g={};items.forEach(function(x){g[x.lbl]=(g[x.lbl]||0)+x.imp;});return Object.keys(g).map(function(k){return {lbl:k,imp:g[k]};});}
+// Gastos fijos: estado según la fecha de hoy.
+function estadoGastoFijo(g){
+  if(!g.activo||!g.venc_desde)return {estado:'inactivo',txt:g.activo?'sin fecha':'pausado'};
+  var hoy=fechaISO(new Date()),desde=String(g.venc_desde).substring(0,10),hasta=String(g.venc_hasta||g.venc_desde).substring(0,10);
+  var dias=function(a,b){return Math.round((new Date(b+'T12:00:00')-new Date(a+'T12:00:00'))/86400000);};
+  if(hoy>hasta)return {estado:'vencido',txt:'VENCIDO hace '+dias(hasta,hoy)+' d'};
+  if(hoy>=desde)return {estado:'ahora',txt:'Toca pagarlo ahora (hasta el '+fechaCortaISO(hasta)+')'};
+  var f=dias(hoy,desde);
+  if(f<=5)return {estado:'pronto',txt:'Empieza en '+f+(f===1?' día':' días')};
+  return {estado:'lejos',txt:'Desde el '+fechaCortaISO(desde)};
+}
+function cantidadAlertasCaja(){return CAJA.fijos.filter(function(g){var e=estadoGastoFijo(g).estado;return e==='vencido'||e==='ahora'||e==='pronto';}).length;}
+function actualizarBadgeCaja(){
+  var n=cantidadAlertasCaja(),el=document.querySelector('#dt-d-caja .dtab-label'),em=document.getElementById('mn-caja');
+  if(el)el.textContent='Caja'+(n?' ('+n+')':'');if(em)em.textContent='Caja'+(n?' ('+n+')':'');
+}
+function sumarMesesISO(iso,n,dia){
+  var p=iso.split('-'),y=Number(p[0]),m=Number(p[1])-1+n;y+=Math.floor(m/12);m=((m%12)+12)%12;
+  var ult=new Date(y,m+1,0).getDate(),d=Math.min(dia,ult);
+  return y+'-'+('0'+(m+1)).slice(-2)+'-'+('0'+d).slice(-2);
+}
+function idCaja(pref){return nuevoIdDash(pref);}
+async function guardarMovCaja(m){
+  var row={id:idCaja('cm_'),fecha:m.fecha,tipo:m.tipo,cuenta:m.cuenta,sentido:m.sentido,importe:m.importe,anulado:false};
+  ['cotizacion','grupo','gasto_fijo_id','concepto','nota'].forEach(function(k){if(m[k]!==undefined&&m[k]!==null&&m[k]!=='')row[k]=m[k];});
+  return row;
+}
+async function insertarMovsCaja(filas){
+  var ok=filas.length===1?await sbUpsert('caja_movimientos',filas[0]):await sbUpsert('caja_movimientos',filas);
+  if(!ok)return false;
+  var ahora=new Date().toISOString();filas.forEach(function(f){f.creado=f.creado||ahora;CAJA.movs.push(f);});
+  return true;
+}
+function renderCaja(){
+  cargarCaja().then(pintarCaja);pintarCaja();
+}
+function pintarCaja(){
+  document.querySelectorAll('.caja-root').forEach(function(root){
+    root.innerHTML='';
+    root.appendChild(elDash('div','sec-lbl','Caja'));
+    if(CAJA.error){root.appendChild(elDash('div','inicio-nd','No se pudo leer la caja. ¿Corriste MIGRACION_ETAPA5_CAJA.sql en Supabase?'));return;}
+    if(!CAJA.cargado){root.appendChild(elDash('div','inicio-nd','Cargando…'));return;}
+    var u=ultimaConciliacion();
+    if(!u){pintarAperturaCaja(root);return;}
+    var calc=calcularCaja();
+    // saldos
+    var card=elDash('div','card');card.setAttribute('data-caja-saldos','1');
+    card.appendChild(elDash('div','inicio-sub','Saldo esperado ahora, a partir del conteo del '+new Date(u.fecha).toLocaleString('es-AR',{dateStyle:'short',timeStyle:'short'})+(u.es_apertura?' (punto de partida)':'')));
+    CAJA_CUENTAS.forEach(function(c){
+      var o=calc[c[0]],bloque=elDash('div','caja-cuenta');bloque.setAttribute('data-cuenta',c[0]);
+      var cab=elDash('div','inicio-fila');cab.appendChild(elDash('span','inicio-fila-n',c[1]));cab.appendChild(elDash('span','inicio-fila-v',fmtCuenta(c[0],o.esperado)));bloque.appendChild(cab);
+      var sub=elDash('div','inicio-sub','Conteo anterior '+fmtCuenta(c[0],o.base));bloque.appendChild(sub);
+      agruparItemsCaja(o.items).forEach(function(g){bloque.appendChild(elDash('div','inicio-sub',(g.imp>=0?'+ ':'− ')+g.lbl+': '+fmtCuenta(c[0],Math.abs(g.imp))));});
+      card.appendChild(bloque);
+    });
+    root.appendChild(card);
+    var bar=elDash('div','inicio-bar');
+    function boton(txt,attr,fn,primario){var b=elDash('button',primario?'btn-p':'btn-ol',txt);b.style.cssText='margin:0'+(primario?';width:auto;padding:8px 14px':'');b.setAttribute('data-accion',attr);b.onclick=fn;bar.appendChild(b);}
+    boton('Conciliar (contar la caja)','conciliar',function(){abrirDialogoConciliar();},true);
+    boton('+ Aporte','aporte',function(){abrirDialogoAporteRetiro('aporte');});
+    boton('+ Retiro','retiro',function(){abrirDialogoAporteRetiro('retiro');});
+    boton('Comprar dólares','comprar-usd',abrirDialogoCompraUsd);
+    root.appendChild(bar);
+    // última conciliación con diferencia
+    var conc=CAJA.concs.filter(function(c){return !c.es_apertura;});
+    if(conc.length){
+      var lc=conc[conc.length-1],dif=elDash('div','card');dif.setAttribute('data-caja-ultima-conc','1');
+      dif.appendChild(elDash('div','inicio-sub-tit','Última conciliación: '+new Date(lc.fecha).toLocaleString('es-AR',{dateStyle:'short',timeStyle:'short'})));
+      var dd=lc.diferencias||null;
+      CAJA_CUENTAS.forEach(function(c){dif.appendChild(elDash('div','inicio-fila',nombreCuenta(c[0])+': contaste '+fmtCuenta(c[0],Number(lc['saldo_'+c[0]])||0)));});
+      if(lc.nota)dif.appendChild(elDash('div','inicio-sub',lc.nota));
+      root.appendChild(dif);
+    }
+    // movimientos del período
+    root.appendChild(elDash('div','sec-lbl','Movimientos de caja desde el último conteo'));
+    var mv=CAJA.movs.filter(function(m){return !m.anulado&&enPeriodoCaja(m.fecha,m.creado,u.fecha,new Date().toISOString());});
+    if(mv.length===0)root.appendChild(elDash('div','inicio-nd','Todavía no cargaste aportes, retiros ni otros movimientos.'));
+    else{
+      var cm=elDash('div','card');
+      mv.slice().reverse().forEach(function(m){
+        var f=elDash('div','inicio-fila');f.setAttribute('data-mov-caja',m.id);
+        f.appendChild(document.createTextNode(fechaCortaISO(m.fecha)+' · '+({aporte:'Aporte',retiro:'Retiro',compra_usd:'Compra de dólares',gasto_fijo:'Gasto fijo',pago_tarjeta:'Pago de tarjeta',otro:'Otro'}[m.tipo])+' · '+nombreCuenta(m.cuenta)+' · '+(m.sentido==='entra'?'+':'−')+fmtCuenta(m.cuenta,Number(m.importe))+(m.concepto?' · '+m.concepto:'')+(m.cotizacion?' · cotización '+fmtPesoMsg(Number(m.cotizacion)):'')));
+        var ba=elDash('button','btn-ol','Anular');ba.style.cssText='margin:0 0 0 8px;padding:2px 8px;font-size:11px';ba.setAttribute('data-accion','anular-mov-caja');
+        (function(mov,b){b.onclick=async function(){
+          if(!confirm('¿Anular este movimiento?'+(mov.grupo?' (la compra de dólares se anula completa)':'')))return;
+          b.disabled=true;var ids=CAJA.movs.filter(function(z){return mov.grupo?z.grupo===mov.grupo:z.id===mov.id;});
+          var ok=true;for(var i=0;i<ids.length;i++){if(!await sbUpsert('caja_movimientos',{id:ids[i].id,anulado:true}))ok=false;else ids[i].anulado=true;}
+          if(!ok)alert('No se pudo anular todo. Reintentá.');pintarCaja();};})(m,ba);
+        f.appendChild(ba);cm.appendChild(f);
+      });
+      root.appendChild(cm);
+    }
+    pintarGastosFijos(root);
+    var hist=CAJA.concs.slice().reverse();
+    if(hist.length>1){
+      root.appendChild(elDash('div','sec-lbl','Historial de conteos'));
+      var ch=elDash('div','card');
+      hist.slice(0,12).forEach(function(c){ch.appendChild(elDash('div','inicio-fila',new Date(c.fecha).toLocaleDateString('es-AR')+(c.es_apertura?' (apertura)':'')+' · banco '+fmtPesoMsg(Number(c.saldo_banco))+' · efectivo '+fmtPesoMsg(Number(c.saldo_efectivo))+' · US$ '+(Number(c.saldo_usd)||0)));});
+      root.appendChild(ch);
+    }
+  });
+}
+function pintarAperturaCaja(root){
+  var card=elDash('div','card');card.setAttribute('data-caja-apertura','1');
+  card.appendChild(elDash('div','ins-nombre','Punto de partida de la caja'));
+  card.appendChild(elDash('div','inicio-sub','Cargá lo que hay hoy en cada cuenta. A partir de ahí la app va sumando cobros, compras, aportes, retiros y gastos fijos, y cada domingo comparás con lo que realmente contás.'));
+  var fF=campoDash(card,'Fecha y hora del conteo','datetime-local','2026-11-06T21:15');
+  var fB=campoDash(card,'Saldo de la cuenta bancaria ($)','importe','35.500');
+  var fE=campoDash(card,'Efectivo ($)','importe','47.900');
+  var fU=campoDash(card,'Dólares (US$, dejalo en 0 si todavía no lo sabés)','importe','0');
+  var err=elDash('div','dlg-err');err.style.cssText='color:var(--danger);font-size:12px;min-height:16px';card.appendChild(err);
+  var b=elDash('button','btn-p','Guardar punto de partida');b.setAttribute('data-accion','guardar-apertura');b.style.marginTop='6px';
+  var en=false;
+  b.onclick=async function(){
+    if(en)return;en=true;b.disabled=true;err.textContent='';
+    var vb=parseImporte(fB.value),ve=parseImporte(fE.value),vu=parseImporte(fU.value);
+    if(!fF.value||isNaN(vb)||isNaN(ve)||isNaN(vu)){err.textContent='Revisá la fecha y los tres saldos.';en=false;b.disabled=false;return;}
+    var row={id:idCaja('cc_'),fecha:new Date(fF.value).toISOString(),saldo_banco:vb,saldo_efectivo:ve,saldo_usd:vu,es_apertura:true,anulado:false};
+    var ok=await sbUpsert('caja_conciliaciones',row);
+    if(!ok){err.textContent='No se pudo guardar. ¿Corriste la migración de la Etapa 5?';en=false;b.disabled=false;return;}
+    await cargarCaja();pintarCaja();
+  };
+  card.appendChild(b);root.appendChild(card);
+}
+function abrirDialogoConciliar(){
+  abrirDialogoDash('Conciliar la caja',function(body,cerrar){
+    var u=ultimaConciliacion();
+    var ahoraLocal=function(){var d=new Date();return fechaISO(d)+'T'+('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);};
+    body.appendChild(elDash('div','inicio-sub','Contá lo que realmente hay. Si hay diferencia con lo esperado, la ves acá y el conteo nuevo pasa a ser el punto de partida.'));
+    var fF=campoDash(body,'Fecha y hora del conteo','datetime-local',ahoraLocal());
+    var campos={};
+    var info=elDash('div');
+    CAJA_CUENTAS.forEach(function(c){
+      campos[c[0]]=campoDash(body,(c[0]==='usd'?'Dólares (US$) que hay':c[1]+' ($) que hay'),'importe','');
+      var l=elDash('div','inicio-sub');l.setAttribute('data-esperado',c[0]);body.appendChild(l);
+    });
+    var fN=campoDash(body,'Nota (opcional)','text','');
+    function recalcular(){
+      var calc=calcularCaja(fF.value?new Date(fF.value).toISOString():null);
+      CAJA_CUENTAS.forEach(function(c){
+        var l=body.querySelector('[data-esperado="'+c[0]+'"]'),v=parseImporte(campos[c[0]].value),esp=calc[c[0]].esperado;
+        var txt='Esperado: '+fmtCuenta(c[0],esp);
+        if(!isNaN(v)&&campos[c[0]].value.trim()!==''){var d=v-esp;txt+=' · '+(Math.abs(d)<0.005?'coincide':(d>0?'sobran ':'faltan ')+fmtCuenta(c[0],Math.abs(d)));}
+        l.textContent=txt;
+      });
+    }
+    Object.keys(campos).forEach(function(k){campos[k].addEventListener('input',recalcular);});fF.addEventListener('change',recalcular);recalcular();
+    pieDialogo(body,'Guardar conciliación',async function(){
+      if(!fF.value)return 'Ingresá la fecha y hora.';
+      if(new Date(fF.value).getTime()<=new Date(u.fecha).getTime())return 'La fecha tiene que ser posterior al último conteo.';
+      var v={};for(var i=0;i<CAJA_CUENTAS.length;i++){var k=CAJA_CUENTAS[i][0];v[k]=parseImporte(campos[k].value);if(isNaN(v[k]))return 'Completá los tres saldos (si no tenés dólares, poné 0).';}
+      var row={id:idCaja('cc_'),fecha:new Date(fF.value).toISOString(),saldo_banco:v.banco,saldo_efectivo:v.efectivo,saldo_usd:v.usd,es_apertura:false,anulado:false};
+      var n=fN.value.trim();if(n)row.nota=n;
+      if(!await sbUpsert('caja_conciliaciones',row))return 'No se pudo guardar. Reintentá.';
+      await cargarCaja();pintarCaja();return null;
+    },cerrar);
+  });
+}
+var RETIRO_MOTIVOS=[['ganancia','Ganancia (a mi bolsillo)'],['personal','Compras personales'],['otro','Otro']];
+function abrirDialogoAporteRetiro(tipo){
+  var esAp=tipo==='aporte';
+  abrirDialogoDash(esAp?'Ingreso de dinero (aporte)':'Retiro de dinero',function(body,cerrar){
+    body.appendChild(elDash('div','inicio-sub',esAp?'Plata tuya que ponés en el negocio (por ejemplo para pagar una compra).':'Plata que sacás del negocio para vos. No cuenta como gasto del negocio.'));
+    var fF=campoDash(body,'Fecha','date',fechaISO(new Date()));
+    var fC=campoDash(body,esAp?'A qué cuenta entra':'De qué cuenta sale','select','banco',[['banco','Cuenta bancaria'],['efectivo','Efectivo']]);
+    var fI=campoDash(body,'Importe ($)','importe','');
+    var fM=esAp?null:campoDash(body,'Motivo','select','ganancia',RETIRO_MOTIVOS);
+    var fN=campoDash(body,'Nota (opcional)','text','');
+    pieDialogo(body,esAp?'Guardar aporte':'Guardar retiro',async function(){
+      var imp=parseImporte(fI.value);if(isNaN(imp)||!(imp>0))return 'Ingresá un importe mayor a 0.';
+      if(!fF.value)return 'Ingresá la fecha.';
+      var mot=fM?(RETIRO_MOTIVOS.find(function(a){return a[0]===fM.value;})||[])[1]:'Aporte';
+      var m=await guardarMovCaja({fecha:fF.value,tipo:tipo,cuenta:fC.value,sentido:esAp?'entra':'sale',importe:imp,concepto:mot,nota:fN.value.trim()});
+      if(!await insertarMovsCaja([m]))return 'No se pudo guardar. ¿Corriste la migración de la Etapa 5?';
+      pintarCaja();return null;
+    },cerrar);
+  });
+}
+function abrirDialogoCompraUsd(){
+  abrirDialogoDash('Comprar dólares',function(body,cerrar){
+    body.appendChild(elDash('div','inicio-sub','Sale pesos de una cuenta y entran dólares a la cuenta en dólares del negocio.'));
+    var fF=campoDash(body,'Fecha','date',fechaISO(new Date()));
+    var fC=campoDash(body,'Pagaste con','select','banco',[['banco','Cuenta bancaria'],['efectivo','Efectivo']]);
+    var fP=campoDash(body,'Pesos que pagaste ($)','importe','');
+    var fU=campoDash(body,'Dólares que recibiste (US$)','importe','');
+    var hint=elDash('div','inicio-sub');hint.setAttribute('data-cotizacion','1');body.appendChild(hint);
+    function rec(){var p=parseImporte(fP.value),u=parseImporte(fU.value);hint.textContent=(p>0&&u>0)?'Cotización: '+fmtPesoMsg(p/u)+' por dólar':'';}
+    fP.addEventListener('input',rec);fU.addEventListener('input',rec);
+    pieDialogo(body,'Guardar compra de dólares',async function(){
+      var p=parseImporte(fP.value),u=parseImporte(fU.value);
+      if(isNaN(p)||!(p>0)||isNaN(u)||!(u>0))return 'Completá los pesos y los dólares (mayores a 0).';
+      if(!fF.value)return 'Ingresá la fecha.';
+      var g=idCaja('gr_'),cot=p/u;
+      var a=await guardarMovCaja({fecha:fF.value,tipo:'compra_usd',cuenta:fC.value,sentido:'sale',importe:p,cotizacion:cot,grupo:g,concepto:'Compra de dólares'});
+      var b=await guardarMovCaja({fecha:fF.value,tipo:'compra_usd',cuenta:'usd',sentido:'entra',importe:u,cotizacion:cot,grupo:g,concepto:'Compra de dólares'});
+      if(!await insertarMovsCaja([a,b]))return 'No se pudo guardar. Reintentá.';
+      pintarCaja();return null;
+    },cerrar);
+  });
+}
+function pintarGastosFijos(root){
+  root.appendChild(elDash('div','sec-lbl','Gastos fijos'));
+  var bn=elDash('button','btn-ol','+ Nuevo gasto fijo');bn.style.cssText='margin:0 0 8px';bn.setAttribute('data-accion','nuevo-gasto-fijo');bn.onclick=function(){abrirDialogoGastoFijo(null);};root.appendChild(bn);
+  if(CAJA.fijos.length===0){root.appendChild(elDash('div','inicio-nd','Sin gastos fijos cargados.'));return;}
+  CAJA.fijos.slice().sort(function(a,b){return String(a.venc_desde||'9').localeCompare(String(b.venc_desde||'9'));}).forEach(function(g){
+    var e=estadoGastoFijo(g),card=elDash('div','card');card.setAttribute('data-gasto-fijo',g.id);
+    if(e.estado==='vencido')card.style.borderColor='var(--danger)';else if(e.estado==='ahora'||e.estado==='pronto')card.style.borderColor='var(--accent)';
+    var cab=elDash('div');cab.style.cssText='display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap';
+    var izq=elDash('div');izq.appendChild(elDash('div','ins-nombre',g.nombre+' · '+(g.moneda==='USD'?'US$ '+Number(g.importe):fmtPesoMsg(Number(g.importe)))+(g.cada_meses>1?' cada '+g.cada_meses+' meses':' por mes')));
+    izq.appendChild(elDash('div','inicio-sub',e.txt+' · sale de: '+nombreCuenta(g.cuenta)));cab.appendChild(izq);
+    var der=elDash('div');der.style.cssText='display:flex;gap:6px';
+    if(g.activo&&g.venc_desde){var bp=elDash('button','btn-p','Registrar pago');bp.style.cssText='margin:0;width:auto;padding:6px 12px';bp.setAttribute('data-accion','pagar-gasto-fijo');(function(x){bp.onclick=function(){abrirDialogoPagoFijo(x);};})(g);der.appendChild(bp);}
+    var be=elDash('button','btn-ol','Editar');be.style.margin='0';be.setAttribute('data-accion','editar-gasto-fijo');(function(x){be.onclick=function(){abrirDialogoGastoFijo(x);};})(g);der.appendChild(be);
+    cab.appendChild(der);card.appendChild(cab);root.appendChild(card);
+  });
+}
+function abrirDialogoPagoFijo(g){
+  abrirDialogoDash('Registrar pago: '+g.nombre,function(body,cerrar){
+    var fF=campoDash(body,'Fecha de pago','date',fechaISO(new Date()));
+    var fI=campoDash(body,'Importe ('+(g.moneda==='USD'?'US$':'$')+')','importe',Number(g.importe).toLocaleString('es-AR'));
+    var fC=campoDash(body,'Sale de','select',g.cuenta,CAJA_CUENTAS);
+    pieDialogo(body,'Registrar pago',async function(){
+      var imp=parseImporte(fI.value);if(isNaN(imp)||!(imp>0))return 'Ingresá un importe mayor a 0.';
+      if(!fF.value)return 'Ingresá la fecha.';
+      var m=await guardarMovCaja({fecha:fF.value,tipo:'gasto_fijo',cuenta:fC.value,sentido:'sale',importe:imp,gasto_fijo_id:g.id,concepto:g.nombre});
+      if(!await insertarMovsCaja([m]))return 'No se pudo guardar el pago. Reintentá.';
+      // el próximo vencimiento pasa a la ventana siguiente
+      var nd=sumarMesesISO(String(g.venc_desde).substring(0,10),g.cada_meses,g.dia_desde),nh=sumarMesesISO(String(g.venc_hasta||g.venc_desde).substring(0,10),g.cada_meses,g.dia_hasta);
+      if(!await sbUpsert('gastos_fijos',{id:g.id,venc_desde:nd,venc_hasta:nh}))return 'El pago se guardó pero no se pudo avanzar el próximo vencimiento. Editá la fecha a mano.';
+      g.venc_desde=nd;g.venc_hasta=nh;actualizarBadgeCaja();pintarCaja();return null;
+    },cerrar);
+  });
+}
+function abrirDialogoGastoFijo(g){
+  abrirDialogoDash(g?'Editar gasto fijo':'Nuevo gasto fijo',function(body,cerrar){
+    var fN=campoDash(body,'Nombre','text',g?g.nombre:'');
+    var fM=campoDash(body,'Moneda','select',g?g.moneda:'ARS',[['ARS','Pesos'],['USD','Dólares']]);
+    var fI=campoDash(body,'Importe','importe',g?Number(g.importe).toLocaleString('es-AR'):'');
+    var fCm=campoDash(body,'Cada cuántos meses','number',g?g.cada_meses:1);
+    var fD=campoDash(body,'Se paga desde el día del mes','number',g?g.dia_desde:1);
+    var fH=campoDash(body,'…hasta el día del mes','number',g?g.dia_hasta:1);
+    var fC=campoDash(body,'Sale de','select',g?g.cuenta:'banco',CAJA_CUENTAS);
+    var fV=campoDash(body,'Próximo vencimiento: desde','date',g&&g.venc_desde?String(g.venc_desde).substring(0,10):'');
+    var fW=campoDash(body,'Próximo vencimiento: hasta','date',g&&g.venc_hasta?String(g.venc_hasta).substring(0,10):'');
+    var fA=g?campoDash(body,'Estado','select',g.activo?'1':'0',[['1','Activo'],['0','Pausado']]):null;
+    pieDialogo(body,'Guardar',async function(){
+      var nom=fN.value.trim(),imp=parseImporte(fI.value),cm=parseInt(fCm.value),d1=parseInt(fD.value),d2=parseInt(fH.value);
+      if(!nom)return 'Poné un nombre.';if(isNaN(imp)||imp<0)return 'Revisá el importe.';
+      if(!(cm>=1)||!(d1>=1&&d1<=31)||!(d2>=1&&d2<=31)||d2<d1)return 'Revisá los meses y los días (el "hasta" no puede ser menor al "desde").';
+      if(!fV.value||!fW.value||fW.value<fV.value)return 'Revisá las fechas del próximo vencimiento.';
+      var row={id:g?g.id:idCaja('gf_'),nombre:nom,importe:imp,moneda:fM.value,cada_meses:cm,dia_desde:d1,dia_hasta:d2,cuenta:fC.value,venc_desde:fV.value,venc_hasta:fW.value,activo:fA?fA.value==='1':true};
+      if(!await sbUpsert('gastos_fijos',row))return 'No se pudo guardar. Reintentá.';
+      if(g)Object.assign(g,row);else CAJA.fijos.push(row);
+      actualizarBadgeCaja();pintarCaja();return null;
+    },cerrar);
+  });
+}
+
 // ── SALIDAS SIN VENTA: obsequios, consumo propio y desecho ──
 // Una salida es producto terminado que no se vendió. Se valoriza con el costo del producto congelado ese día y,
 // si el producto está en el stock de producto terminado (freezer), lo descuenta. Un obsequio cargado desde un pedido
@@ -4658,10 +4978,10 @@ window.addEventListener('focus',revisarCambioDeDia);
 setInterval(revisarCambioDeDia,60000);
 
 // ── NAVEGACION ────────────────────────────────────────────────
-function showMob(id){document.querySelectorAll('.mscreen').forEach(function(s){s.classList.remove('active');});document.querySelectorAll('.mnav').forEach(function(b){b.classList.remove('active');});document.getElementById('ms-'+id).classList.add('active');document.getElementById('mn-'+id).classList.add('active');if(id==='inicio')renderInicio();if(id==='insumos')renderInsumos();if(id==='costos')renderCostos();if(id==='pedidos')renderPedidos();if(id==='semana')renderSemana();if(id==='clientes')renderClientesMob();if(id==='cadete-mob'){refrescarEstadosEntrega().then(renderCadeteMob);renderCadeteMob();}if(id==='historial-mob')renderHistorialMob();if(id==='cobros')renderCobros();if(id==='stock'){renderSalidas();renderStock();renderCongelados();pintarTabsSeg('stock');aplicarTabSeg('stock');if(SEG_TAB.stock==='insumos')renderStockInsumos();}if(id==='compras'){renderCompras();pintarTabsSeg('compras');aplicarTabSeg('compras');if(SEG_TAB.compras==='nuevo')renderComprasNuevo();}if(id==='hoja-ruta-mob')renderHojaRuta();toggleDrawerMob(false);}
+function showMob(id){document.querySelectorAll('.mscreen').forEach(function(s){s.classList.remove('active');});document.querySelectorAll('.mnav').forEach(function(b){b.classList.remove('active');});document.getElementById('ms-'+id).classList.add('active');document.getElementById('mn-'+id).classList.add('active');if(id==='inicio')renderInicio();if(id==='insumos')renderInsumos();if(id==='costos')renderCostos();if(id==='pedidos')renderPedidos();if(id==='semana')renderSemana();if(id==='clientes')renderClientesMob();if(id==='cadete-mob'){refrescarEstadosEntrega().then(renderCadeteMob);renderCadeteMob();}if(id==='historial-mob')renderHistorialMob();if(id==='cobros')renderCobros();if(id==='stock'){renderSalidas();renderStock();renderCongelados();pintarTabsSeg('stock');aplicarTabSeg('stock');if(SEG_TAB.stock==='insumos')renderStockInsumos();}if(id==='compras'){renderCompras();pintarTabsSeg('compras');aplicarTabSeg('compras');if(SEG_TAB.compras==='nuevo')renderComprasNuevo();}if(id==='hoja-ruta-mob')renderHojaRuta();if(id==='caja')renderCaja();toggleDrawerMob(false);}
 // FASE 9.2: abre/cierra el drawer lateral móvil. Elegir una sección (showMob) lo cierra solo.
 function toggleDrawerMob(abrir){document.body.classList.toggle('drawer-open',!!abrir);}
-function showDesk(id){document.querySelectorAll('.dscreen').forEach(function(s){s.classList.remove('active');});document.querySelectorAll('.dtab').forEach(function(t){t.classList.remove('active');});document.getElementById(id).classList.add('active');document.getElementById('dt-'+id).classList.add('active');if(id==='d-inicio')renderInicio();if(id==='d-insumos')renderInsumos();if(id==='d-costos')renderCostos();if(id==='d-pedidos')renderDeskPedidos();if(id==='d-cadete'){loadApiKey();poblarFechasReparto();renderRepClientes();refrescarEstadosEntrega().then(renderCadete);renderCadete();}if(id==='d-stock'){renderSalidas();renderDeskStock();renderCongeladosDesk();pintarTabsSeg('stock');aplicarTabSeg('stock');if(SEG_TAB.stock==='insumos')renderStockInsumos();}if(id==='d-clientes')renderClientesDesk();if(id==='d-cobros')renderCobrosDesk();if(id==='d-precios')renderPrecios();if(id==='d-historial')renderHistorial();if(id==='d-compras'){renderComprasDesk();renderComprasRealizadasDesk();pintarTabsSeg('compras');aplicarTabSeg('compras');if(SEG_TAB.compras==='nuevo')renderComprasNuevo();}if(id==='d-hoja-ruta'){renderHojaRuta();}}
+function showDesk(id){document.querySelectorAll('.dscreen').forEach(function(s){s.classList.remove('active');});document.querySelectorAll('.dtab').forEach(function(t){t.classList.remove('active');});document.getElementById(id).classList.add('active');document.getElementById('dt-'+id).classList.add('active');if(id==='d-inicio')renderInicio();if(id==='d-insumos')renderInsumos();if(id==='d-costos')renderCostos();if(id==='d-pedidos')renderDeskPedidos();if(id==='d-cadete'){loadApiKey();poblarFechasReparto();renderRepClientes();refrescarEstadosEntrega().then(renderCadete);renderCadete();}if(id==='d-stock'){renderSalidas();renderDeskStock();renderCongeladosDesk();pintarTabsSeg('stock');aplicarTabSeg('stock');if(SEG_TAB.stock==='insumos')renderStockInsumos();}if(id==='d-clientes')renderClientesDesk();if(id==='d-caja')renderCaja();if(id==='d-cobros')renderCobrosDesk();if(id==='d-precios')renderPrecios();if(id==='d-historial')renderHistorial();if(id==='d-compras'){renderComprasDesk();renderComprasRealizadasDesk();pintarTabsSeg('compras');aplicarTabSeg('compras');if(SEG_TAB.compras==='nuevo')renderComprasNuevo();}if(id==='d-hoja-ruta'){renderHojaRuta();}}
 function abrirFab(){var s=document.querySelector('.mscreen.active').id.replace('ms-','');if(['inicio','pedidos','semana','clientes'].includes(s))abrirModalPedido(null);if(s==='compras')abrirModal('modal-compra');}
 
 // ── LOGIN ─────────────────────────────────────────────────────
