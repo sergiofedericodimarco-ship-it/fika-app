@@ -903,8 +903,8 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
     </div>
     <!-- PAQUETE AJUSTES: precio especial por pan defectuoso u otro motivo; vale solo para este pedido. -->
     <div class="card" style="margin-bottom:10px">
-      <div class="f-lbl" style="margin-bottom:8px">Total ajustado de este pedido (opcional)</div>
-      <input class="f-in" type="text" inputmode="decimal" autocomplete="off" id="p-total-ajustado" oninput="actualizarAjusteHint()" placeholder="Dejalo vacío para cobrar el precio de lista">
+      <div class="f-lbl" style="margin-bottom:8px">Total ajustado de este pedido en $ (opcional)</div>
+      <input class="f-in" type="text" inputmode="decimal" autocomplete="off" id="p-total-ajustado" oninput="actualizarAjusteHint()" placeholder="$ — vacío = precio de lista">
       <input class="f-in" type="text" id="p-ajuste-motivo" maxlength="200" placeholder="Observación (ej: pan con defecto)" style="margin-top:6px">
       <div id="p-ajuste-hint" style="font-size:12px;color:var(--muted);margin-top:6px"></div>
     </div>
@@ -2689,6 +2689,7 @@ function armarTarjetasInicio(d){
   var bAd=elDash('button','btn-ol','+ Adicional del día');bAd.style.margin='8px 0 0';bAd.setAttribute('data-accion','nuevo-adicional');
   bAd.onclick=function(){abrirDialogoAdicionalCadete(d.sem.ini,cur.entregasViernes,function(){renderInicio();});};
   c8.appendChild(bAd);
+  armarLiquidacionCadete(c8,d.sem.ini,(cur.entregasViernes>0?costoCadeteViernes(cur.entregasViernes):0)+adicSem,function(){renderInicio();pintarCaja();});
   c8.appendChild(elDash('div','inicio-sub','Los martes reparte Fede: no se cuentan.'));
   cards.push(c8);
   // 9. Clientas inactivas (foto de hoy, no depende de la semana elegida)
@@ -2771,6 +2772,7 @@ function pintarInicio(){
     bar.appendChild(bAct);
     root.appendChild(bar);
     root.appendChild(armarBloqueRespaldo());
+    var avCaja=armarAvisosPagos();if(avCaja)root.appendChild(avCaja);
     if(INICIO_CARGANDO&&!INICIO_DATA){root.appendChild(elDash('div','inicio-nd','Cargando…'));return;}
     if(!INICIO_DATA){root.appendChild(elDash('div','inicio-nd','Sin datos: no se pudo calcular la semana. Probá "Actualizar".'));return;}
     var estado=elDash('div','inicio-estado',(INICIO_CARGANDO?'Actualizando… ':'')+'Actualizado '+INICIO_DATA.hora.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})+(INICIO_DATA.offline?' · Sin conexión con el servidor: se muestran los datos guardados en este dispositivo':''));
@@ -4302,7 +4304,7 @@ var RESPALDO_TABLAS=[['pedidos','pedidos','id'],['clientes','clientes','id'],['m
   ['producto_costeo','producto_costeo','producto_id'],['producto_packaging','producto_packaging','id'],['proveedores','proveedores','id'],
   ['compras','compras_registro','id'],['compra_items','compra_items','id'],['stock_movimientos','stock_movimientos','id'],['horneadas','horneadas','id'],
   ['horneada_items','horneada_items','id'],['conteos','conteos','id'],['conteo_items','conteo_items','id'],['config','config','key'],
-  ['salidas_producto','salidas_producto','id'],['cadete_adicionales','cadete_adicionales','id'],['caja_conciliaciones','caja_conciliaciones','id'],['caja_movimientos','caja_movimientos','id'],['gastos_fijos','gastos_fijos','id'],['lista_compras','compras','id'],['compras_realizadas','compras_realizadas','id'],['stock','stock','id'],['combos_precios','combos_precios','id']];
+  ['salidas_producto','salidas_producto','id'],['cadete_adicionales','cadete_adicionales','id'],['caja_conciliaciones','caja_conciliaciones','id'],['caja_movimientos','caja_movimientos','id'],['gastos_fijos','gastos_fijos','id'],['cadete_descuentos','cadete_descuentos','id'],['lista_compras','compras','id'],['compras_realizadas','compras_realizadas','id'],['stock','stock','id'],['combos_precios','combos_precios','id']];
 
 function serialFecha(y,m,d,hh,mm){return (Date.UTC(y,m-1,d)-Date.UTC(1899,11,30))/86400000+((hh||0)*60+(mm||0))/1440;}
 function secretosExport(){
@@ -4507,14 +4509,15 @@ function exportarInicio(){
 // Tres cuentas: banco y efectivo (pesos) y dólares. El saldo "esperado" sale del último conteo real (conciliación) más lo que
 // pasó después: cobros por medio de pago, compras, aportes, retiros, compra de dólares y gastos fijos. Los domingos Fede cuenta
 // lo que realmente hay y la app muestra la diferencia. Nada se borra: se anula. La primera conciliación es la apertura.
-var CAJA={concs:[],movs:[],fijos:[],compras:[],cargado:false,error:false};
+var CAJA={concs:[],movs:[],fijos:[],compras:[],descuentos:[],cargado:false,error:false};
 var CAJA_CUENTAS=[['banco','Cuenta bancaria'],['efectivo','Efectivo'],['usd','Dólares']];
 function nombreCuenta(c){var x=CAJA_CUENTAS.find(function(a){return a[0]===c;});return x?x[1]:c;}
 function fmtCuenta(cuenta,v){return cuenta==='usd'?('US$ '+(Math.round(v*100)/100).toLocaleString('es-AR')):fmtPesoMsg(v);}
 async function cargarCaja(){
-  var r=await Promise.all([sbGetSel('caja_conciliaciones','*','&order=fecha.asc'),sbGetSel('caja_movimientos','*','&order=fecha.asc,creado.asc'),sbGetSel('gastos_fijos','*','&order=nombre.asc')]);
+  var r=await Promise.all([sbGetSel('caja_conciliaciones','*','&order=fecha.asc'),sbGetSel('caja_movimientos','*','&order=fecha.asc,creado.asc'),sbGetSel('gastos_fijos','*','&order=nombre.asc'),sbGetSel('cadete_descuentos','*','&order=creado.asc')]);
+  if(r[3]===null)r[3]=[];
   if(r.some(function(x){return x===null;})){CAJA.error=true;CAJA.cargado=false;return false;}
-  CAJA.concs=r[0].filter(function(c){return !c.anulado;});CAJA.movs=r[1];CAJA.fijos=r[2];
+  CAJA.concs=r[0].filter(function(c){return !c.anulado;});CAJA.movs=r[1];CAJA.fijos=r[2];CAJA.descuentos=(r[3]||[]).filter(function(x){return !x.anulado;});
   var ult=CAJA.concs[0];
   if(ult){
     var cs=await sbGetSel('compras_registro','id,fecha,medio_pago,total,estado,anulado,creado','&fecha=gte.'+fechaISO(new Date(ult.fecha)));
@@ -4553,7 +4556,7 @@ function calcularCaja(hastaTs){
   });
   CAJA.movs.forEach(function(m){
     if(m.anulado||!enPeriodoCaja(m.fecha,m.creado,u.fecha,hastaTs))return;
-    var lbl={aporte:'Aportes',retiro:'Retiros',compra_usd:'Compra de dólares',gasto_fijo:'Gastos fijos',pago_tarjeta:'Pago de tarjeta',otro:'Otros'}[m.tipo]||m.tipo;
+    var lbl={adelanto_cadete:'Adelantos al cadete',pago_cadete:'Pago al cadete',aporte:'Aportes',retiro:'Retiros',compra_usd:'Compra de dólares',gasto_fijo:'Gastos fijos',pago_tarjeta:'Pago de tarjeta',otro:'Otros'}[m.tipo]||m.tipo;
     add(m.cuenta,lbl,(m.sentido==='entra'?1:-1)*Number(m.importe),m.id);
   });
   CAJA_CUENTAS.forEach(function(c){var o=out[c[0]];o.esperado=o.base+o.items.reduce(function(a,x){return a+x.imp;},0);});
@@ -4568,14 +4571,131 @@ function estadoGastoFijo(g){
   if(hoy>hasta)return {estado:'vencido',txt:'VENCIDO hace '+dias(hasta,hoy)+' d'};
   if(hoy>=desde)return {estado:'ahora',txt:'Toca pagarlo ahora (hasta el '+fechaCortaISO(hasta)+')'};
   var f=dias(hoy,desde);
-  if(f<=5)return {estado:'pronto',txt:'Empieza en '+f+(f===1?' día':' días')};
+  if(f<=7)return {estado:'pronto',txt:'Faltan '+f+(f===1?' día':' días')+' para que empiece a pagarse ('+fechaCortaISO(desde)+')'};
   return {estado:'lejos',txt:'Desde el '+fechaCortaISO(desde)};
+}
+// Franja de avisos de pagos (gastos fijos) para Inicio: vencidos, en ventana de pago y los que empiezan en 7 días o menos.
+function armarAvisosPagos(){
+  if(!CAJA.cargado)return null;
+  var orden={vencido:0,ahora:1,pronto:2};
+  var l=CAJA.fijos.map(function(g){return {g:g,e:estadoGastoFijo(g)};}).filter(function(x){return orden[x.e.estado]!==undefined;}).sort(function(a,b){return orden[a.e.estado]-orden[b.e.estado];});
+  if(l.length===0)return null;
+  var card=elDash('div','card');card.setAttribute('data-avisos-pagos','1');card.style.borderColor=l.some(function(x){return x.e.estado==='vencido';})?'var(--danger)':'var(--accent)';
+  card.appendChild(elDash('div','inicio-sub-tit','Pagos para tener presentes'));
+  l.forEach(function(x){
+    var f=elDash('div','inicio-fila');f.appendChild(elDash('span','inicio-fila-n',x.g.nombre+' · '+(x.g.moneda==='USD'?'US$ '+Number(x.g.importe):fmtPesoMsg(Number(x.g.importe)))));
+    f.appendChild(elDash('span','inicio-fila-v',x.e.txt));card.appendChild(f);
+  });
+  var b=elDash('button','btn-ol','Ir a Caja');b.style.margin='6px 0 0';b.onclick=function(){if(ES_MOVIL)showMob('caja');else showDesk('d-caja');};card.appendChild(b);
+  return card;
 }
 function cantidadAlertasCaja(){return CAJA.fijos.filter(function(g){var e=estadoGastoFijo(g).estado;return e==='vencido'||e==='ahora'||e==='pronto';}).length;}
 function actualizarBadgeCaja(){
   var n=cantidadAlertasCaja(),el=document.querySelector('#dt-d-caja .dtab-label'),em=document.getElementById('mn-caja');
   if(el)el.textContent='Caja'+(n?' ('+n+')':'');if(em)em.textContent='Caja'+(n?' ('+n+')':'');
 }
+// ── ADELANTOS AL CADETE Y LIQUIDACIÓN ──
+// Un adelanto es plata que sale de la caja el día que se da, pero no es costo todavía: se descuenta del pago del viernes.
+// El costo del cadete sigue siendo el pago completo (base + adicional). Si el adelanto es mayor a lo que le toca, el resto queda pendiente.
+function adelantosCadete(){return CAJA.movs.filter(function(m){return m.tipo==='adelanto_cadete'&&!m.anulado;});}
+function descontadoDe(adelantoId){return CAJA.descuentos.filter(function(x){return x.adelanto_id===adelantoId;}).reduce(function(a,x){return a+(Number(x.importe)||0);},0);}
+function pendienteAdelanto(m){return Math.max(0,Number(m.importe)-descontadoDe(m.id));}
+function adelantosPendientesCadete(){return adelantosCadete().filter(function(m){return pendienteAdelanto(m)>0.004;}).sort(function(a,b){return String(a.fecha+a.creado).localeCompare(String(b.fecha+b.creado));});}
+function totalAdelantosPendientes(){return adelantosPendientesCadete().reduce(function(a,m){return a+pendienteAdelanto(m);},0);}
+function liquidacionDelViernes(f){return CAJA.descuentos.filter(function(x){return String(x.viernes).substring(0,10)===f;});}
+function pagoCadeteDelViernes(f){return CAJA.movs.find(function(m){return m.tipo==='pago_cadete'&&!m.anulado&&String(m.viernes||'').substring(0,10)===f;})||null;}
+function yaLiquidadoViernes(f){return !!pagoCadeteDelViernes(f)||liquidacionDelViernes(f).length>0||(CAJA.liqCero||[]).indexOf(f)>=0;}
+async function deshacerDescuentosDe(filtro){
+  var l=CAJA.descuentos.filter(filtro);
+  for(var i=0;i<l.length;i++){if(await sbUpsert('cadete_descuentos',{id:l[i].id,anulado:true}))l[i].anulado=true;}
+  CAJA.descuentos=CAJA.descuentos.filter(function(x){return !x.anulado;});
+}
+function abrirDialogoAdelantoCadete(){
+  abrirDialogoDash('Adelanto al cadete',function(body,cerrar){
+    body.appendChild(elDash('div','inicio-sub','Plata que le das antes de su día de pago. Sale de la caja hoy y se descuenta cuando lo liquides.'));
+    var fF=campoDash(body,'Fecha','date',fechaISO(new Date()));
+    var fC=campoDash(body,'Sale de','select','efectivo',[['efectivo','Efectivo'],['banco','Cuenta bancaria']]);
+    var fI=campoDash(body,'Importe ($)','importe','');
+    var fN=campoDash(body,'Nota (opcional)','text','');
+    pieDialogo(body,'Guardar adelanto',async function(){
+      var imp=parseImporte(fI.value);if(isNaN(imp)||!(imp>0))return 'Ingresá un importe mayor a 0.';
+      if(!fF.value)return 'Ingresá la fecha.';
+      var m=await guardarMovCaja({fecha:fF.value,tipo:'adelanto_cadete',cuenta:fC.value,sentido:'sale',importe:imp,concepto:'Adelanto al cadete',nota:fN.value.trim()});
+      if(!await insertarMovsCaja([m]))return 'No se pudo guardar. ¿Corriste MIGRACION_ETAPA5_CADETE.sql?';
+      pintarCaja();if(typeof renderInicio==='function'&&INICIO_DATA)renderInicio();return null;
+    },cerrar);
+  });
+}
+function abrirDialogoLiquidarCadete(viernesDef,devengadoDef,alGuardar){
+  abrirDialogoDash('Liquidar al cadete',function(body,cerrar){
+    var pend=adelantosPendientesCadete(),P=totalAdelantosPendientes();
+    var fV=campoDash(body,'Viernes que se liquida','date',viernesDef);
+    var fD=campoDash(body,'Pago que le corresponde (base + adicional) $','importe',Number(devengadoDef).toLocaleString('es-AR'));
+    body.appendChild(elDash('div','inicio-sub','Adelantos pendientes: '+fmtPesoMsg(P)+(pend.length?' ('+pend.length+(pend.length===1?' adelanto':' adelantos')+')':'')));
+    var fDe=campoDash(body,'Descontar de adelantos $','importe','');
+    var fC=campoDash(body,'Le pagás desde','select','efectivo',[['efectivo','Efectivo'],['banco','Cuenta bancaria']]);
+    var fF=campoDash(body,'Fecha del pago','date',fechaISO(new Date()));
+    var res=elDash('div','inicio-sub-tit');res.setAttribute('data-a-pagar','1');body.appendChild(res);
+    var tocado=false;fDe.addEventListener('input',function(){tocado=true;rec();});
+    function rec(){
+      var dev=parseImporte(fD.value);if(isNaN(dev))dev=0;
+      if(!tocado)fDe.value=Math.min(P,Math.max(0,dev)).toLocaleString('es-AR');
+      var de=parseImporte(fDe.value);if(isNaN(de))de=0;
+      res.textContent='Le pagás ahora: '+fmtPesoMsg(Math.max(0,dev-de))+(P-de>0.004?' · quedan pendientes '+fmtPesoMsg(Math.max(0,P-de)):'');
+    }
+    fD.addEventListener('input',rec);rec();
+    pieDialogo(body,'Registrar liquidación',async function(){
+      var v=fV.value;if(!v)return 'Elegí el viernes.';
+      if(new Date(v+'T12:00:00').getDay()!==5)return 'La fecha tiene que ser un viernes.';
+      if(yaLiquidadoViernes(v))return 'Ese viernes ya está liquidado. Si hay que corregirlo, deshacé la liquidación primero.';
+      var dev=parseImporte(fD.value),de=parseImporte(fDe.value);
+      if(isNaN(dev)||dev<0)return 'Revisá el pago que le corresponde.';
+      if(isNaN(de)||de<0)return 'Revisá el descuento.';
+      if(de>P+0.004)return 'El descuento no puede superar los adelantos pendientes ('+fmtPesoMsg(P)+').';
+      if(de>dev+0.004)return 'El descuento no puede superar lo que le corresponde cobrar.';
+      var apagar=Math.round((dev-de)*100)/100,movId=null;
+      if(apagar>0){
+        var m=await guardarMovCaja({fecha:fF.value||fechaISO(new Date()),tipo:'pago_cadete',cuenta:fC.value,sentido:'sale',importe:apagar,concepto:'Pago al cadete',viernes:v});
+        if(!await insertarMovsCaja([m]))return 'No se pudo guardar el pago. ¿Corriste MIGRACION_ETAPA5_CADETE.sql?';
+        movId=m.id;
+      }
+      var resto=de,filas=[];
+      for(var i=0;i<pend.length&&resto>0.004;i++){
+        var usar=Math.min(resto,pendienteAdelanto(pend[i]));if(!(usar>0))continue;
+        filas.push({id:idCaja('cd_'),adelanto_id:pend[i].id,viernes:v,importe:Math.round(usar*100)/100,movimiento_id:movId,anulado:false});resto-=usar;
+      }
+      if(filas.length){
+        var ok=filas.length===1?await sbUpsert('cadete_descuentos',filas[0]):await sbUpsert('cadete_descuentos',filas);
+        if(!ok)return 'Se guardó el pago pero no los descuentos: no cierres esto y avisame.';
+        filas.forEach(function(f){CAJA.descuentos.push(f);});
+      }else if(!movId)return 'No hay nada para registrar (pago 0 y sin descuento).';
+      if(alGuardar)alGuardar();
+      return null;
+    },cerrar);
+  });
+}
+// Bloque para la tarjeta del cadete en Inicio.
+function armarLiquidacionCadete(card,viernes,devengado,alCambiar){
+  if(!CAJA.cargado)return;
+  var P=totalAdelantosPendientes(),pago=pagoCadeteDelViernes(viernes),desc=liquidacionDelViernes(viernes);
+  if(yaLiquidadoViernes(viernes)){
+    var dsum=desc.reduce(function(a,x){return a+Number(x.importe);},0);
+    var f=elDash('div','inicio-sub','Liquidado: se pagó '+fmtPesoMsg(pago?Number(pago.importe):0)+(dsum>0?' y se descontaron '+fmtPesoMsg(dsum)+' de adelantos':''));f.setAttribute('data-liquidado',viernes);card.appendChild(f);
+    var bd=elDash('button','btn-ol','Deshacer liquidación');bd.style.margin='4px 0 0';bd.setAttribute('data-accion','deshacer-liquidacion');
+    bd.onclick=async function(){
+      if(!confirm('¿Deshacer la liquidación de este viernes? Se anula el pago y los adelantos vuelven a quedar pendientes.'))return;
+      bd.disabled=true;var ok=true;
+      if(pago){if(await sbUpsert('caja_movimientos',{id:pago.id,anulado:true}))pago.anulado=true;else ok=false;}
+      await deshacerDescuentosDe(function(x){return String(x.viernes).substring(0,10)===viernes;});
+      if(!ok)alert('No se pudo anular el pago. Reintentá.');alCambiar();
+    };
+    card.appendChild(bd);return;
+  }
+  if(P>0.004)card.appendChild(elDash('div','inicio-sub','Adelantos pendientes al cadete: '+fmtPesoMsg(P)));
+  var b=elDash('button','btn-ol','Liquidar al cadete');b.style.margin='8px 0 0 8px';b.setAttribute('data-accion','liquidar-cadete');
+  b.onclick=function(){abrirDialogoLiquidarCadete(viernes,devengado,alCambiar);};card.appendChild(b);
+}
+
 function sumarMesesISO(iso,n,dia){
   var p=iso.split('-'),y=Number(p[0]),m=Number(p[1])-1+n;y+=Math.floor(m/12);m=((m%12)+12)%12;
   var ult=new Date(y,m+1,0).getDate(),d=Math.min(dia,ult);
@@ -4584,7 +4704,7 @@ function sumarMesesISO(iso,n,dia){
 function idCaja(pref){return nuevoIdDash(pref);}
 async function guardarMovCaja(m){
   var row={id:idCaja('cm_'),fecha:m.fecha,tipo:m.tipo,cuenta:m.cuenta,sentido:m.sentido,importe:m.importe,anulado:false};
-  ['cotizacion','grupo','gasto_fijo_id','concepto','nota'].forEach(function(k){if(m[k]!==undefined&&m[k]!==null&&m[k]!=='')row[k]=m[k];});
+  ['cotizacion','grupo','gasto_fijo_id','concepto','nota','viernes'].forEach(function(k){if(m[k]!==undefined&&m[k]!==null&&m[k]!=='')row[k]=m[k];});
   return row;
 }
 async function insertarMovsCaja(filas){
@@ -4622,6 +4742,7 @@ function pintarCaja(){
     boton('+ Aporte','aporte',function(){abrirDialogoAporteRetiro('aporte');});
     boton('+ Retiro','retiro',function(){abrirDialogoAporteRetiro('retiro');});
     boton('Comprar dólares','comprar-usd',abrirDialogoCompraUsd);
+    boton('Adelanto al cadete','adelanto-cadete',abrirDialogoAdelantoCadete);
     root.appendChild(bar);
     // última conciliación con diferencia
     var conc=CAJA.concs.filter(function(c){return !c.es_apertura;});
@@ -4641,12 +4762,14 @@ function pintarCaja(){
       var cm=elDash('div','card');
       mv.slice().reverse().forEach(function(m){
         var f=elDash('div','inicio-fila');f.setAttribute('data-mov-caja',m.id);
-        f.appendChild(document.createTextNode(fechaCortaISO(m.fecha)+' · '+({aporte:'Aporte',retiro:'Retiro',compra_usd:'Compra de dólares',gasto_fijo:'Gasto fijo',pago_tarjeta:'Pago de tarjeta',otro:'Otro'}[m.tipo])+' · '+nombreCuenta(m.cuenta)+' · '+(m.sentido==='entra'?'+':'−')+fmtCuenta(m.cuenta,Number(m.importe))+(m.concepto?' · '+m.concepto:'')+(m.cotizacion?' · cotización '+fmtPesoMsg(Number(m.cotizacion)):'')));
+        f.appendChild(document.createTextNode(fechaCortaISO(m.fecha)+' · '+({adelanto_cadete:'Adelanto al cadete',pago_cadete:'Pago al cadete',aporte:'Aporte',retiro:'Retiro',compra_usd:'Compra de dólares',gasto_fijo:'Gasto fijo',pago_tarjeta:'Pago de tarjeta',otro:'Otro'}[m.tipo])+' · '+nombreCuenta(m.cuenta)+' · '+(m.sentido==='entra'?'+':'−')+fmtCuenta(m.cuenta,Number(m.importe))+(m.concepto?' · '+m.concepto:'')+(m.cotizacion?' · cotización '+fmtPesoMsg(Number(m.cotizacion)):'')));
         var ba=elDash('button','btn-ol','Anular');ba.style.cssText='margin:0 0 0 8px;padding:2px 8px;font-size:11px';ba.setAttribute('data-accion','anular-mov-caja');
         (function(mov,b){b.onclick=async function(){
           if(!confirm('¿Anular este movimiento?'+(mov.grupo?' (la compra de dólares se anula completa)':'')))return;
+          if(mov.tipo==='adelanto_cadete'&&CAJA.descuentos.some(function(x){return x.adelanto_id===mov.id;})){alert('Este adelanto ya se descontó en una liquidación: primero deshacé esa liquidación desde Inicio (tarjeta del cadete).');return;}
           b.disabled=true;var ids=CAJA.movs.filter(function(z){return mov.grupo?z.grupo===mov.grupo:z.id===mov.id;});
           var ok=true;for(var i=0;i<ids.length;i++){if(!await sbUpsert('caja_movimientos',{id:ids[i].id,anulado:true}))ok=false;else ids[i].anulado=true;}
+          if(ok&&mov.tipo==='pago_cadete')await deshacerDescuentosDe(function(x){return x.movimiento_id===mov.id;});
           if(!ok)alert('No se pudo anular todo. Reintentá.');pintarCaja();};})(m,ba);
         f.appendChild(ba);cm.appendChild(f);
       });
@@ -5282,7 +5405,9 @@ function actualizarDatalist(){}
 
 // ── TOTAL PREVIEW EN FORMULARIO ───────────────────────────────
 var _ajusteListaPreview=0;
+var _ajusteImporteListo=false;
 function actualizarAjusteHint(){
+  if(!_ajusteImporteListo){var fa=document.getElementById('p-total-ajustado');if(fa){inputImporte(fa);_ajusteImporteListo=true;}}
   var h=document.getElementById('p-ajuste-hint'),f=document.getElementById('p-total-ajustado');if(!h||!f)return;
   var v=parseImporte(f.value);
   if(f.value.trim()===''||isNaN(v)){h.textContent=_ajusteListaPreview>0?'Precio de lista: '+fmtPeso(_ajusteListaPreview):'';return;}
@@ -5336,7 +5461,9 @@ function productoActivo(k){var prod=productos.find(function(p){return p.id===k;}
 
 function pQty(k,d){pQtys[k]=Math.max(0,(pQtys[k]||0)+d);document.getElementById('pq-'+k).textContent=pQtys[k];actualizarTotalPreview();}
 
+function _prepararAjusteImporte(){if(!_ajusteImporteListo){var fa=document.getElementById('p-total-ajustado');if(fa){inputImporte(fa);_ajusteImporteListo=true;}}}
 function abrirModalPedido(id){
+  _prepararAjusteImporte();
   pedidoEditId=id;
   PRODUCTOS.forEach(function(k){pQtys[k]=0;document.getElementById('pq-'+k).textContent=0;});
   ['p-nombre','p-sobrenombre','p-tel','p-dom','p-piso','p-notas'].forEach(function(x){document.getElementById(x).value='';});
