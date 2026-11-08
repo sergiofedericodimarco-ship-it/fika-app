@@ -1097,6 +1097,7 @@ initLayout();
     cargarConfigInicio(),
     cargarSalidas(),
     cargarCaja(),
+    cargarArchivoImpagos(),
     cargarCostos()
   ]);
   // ITERACIÓN 3 / Fase 5: recién acá "productos" (con su columna activo/inactivo) ya
@@ -1766,13 +1767,22 @@ function fromMin(m){return pad(Math.floor(m/60)%24)+':'+pad(m%60);}
 function toMin(t){var p=t.split(':').map(Number);return p[0]*60+p[1];}
 function ceil(n,d){return d===0?0:Math.ceil(n/d);}
 function getPanesStr(panes,sep){var it=[];if(panes){PRODUCTOS.forEach(function(k){if(panes[k])it.push(panes[k]+' '+PROD_NOMBRES[k].toLowerCase());});} return it.join(sep||' · ');}
-function calcTotalCobro(c){var p=pedidos.find(function(x){return x.id===c.pedidoId;});if(p)return calcTotalPedido(p);return calcTotal(c.panes);}
+function calcTotalCobro(c){var p=buscarPedidoCobro(c.pedidoId);if(p)return calcTotalPedido(p);return calcTotal(c.panes);}
 // Estado real de un cobro para las pantallas de COBROS: usa el pedido vinculado y el
 // ledger de movimientos (Fase 5) cuando existe, para distinguir pagado/parcial/pendiente
 // en vez de solo el booleano. Si no hay pedido vinculado (cobro suelto histórico), cae
 // al booleano legado sin inventar un saldo que no se puede calcular.
+// Pedidos de semanas ya cerradas (pedidos_archivo) con pago pendiente: se pueden cobrar igual que los de la semana.
+var ARCH_PED={};
+async function cargarArchivoImpagos(){
+  var r=await sbGetSel('pedidos_archivo','*','&pago=eq.false');
+  if(r===null)return false;
+  r.forEach(function(row){ARCH_PED[row.id]=rowToPedido(row);});return true;
+}
+function buscarPedidoCobro(id){return pedidos.find(function(x){return x.id===id;})||ARCH_PED[id]||null;}
+function esPedidoArchivado(id){return !pedidos.some(function(x){return x.id===id;})&&!!ARCH_PED[id];}
 function infoCobroCard(c){
-  var p=pedidos.find(function(x){return x.id===c.pedidoId;});
+  var p=buscarPedidoCobro(c.pedidoId);
   if(p)return{estado:estadoPagoPedido(p),total:calcTotalPedido(p),saldo:saldoPedido(p)};
   var total=calcTotalCobro(c);
   return{estado:c.pagado?'pagado':'pendiente',total:total,saldo:c.pagado?0:total};
@@ -1819,6 +1829,8 @@ async function registrarMovimientoCobro(pedidoId,clienteNombre,importe,medioPago
     if(pedidoId){
       var p=pedidos.find(function(x){return x.id===pedidoId;});
       if(p&&saldoPedido(p)<=0&&!p.pago){p.pago=true;guardar();await guardarPedidoSupa(p);sincronizarCobro(p);guardarCobros();}
+      var pa=(!p)?ARCH_PED[pedidoId]:null;
+      if(pa&&saldoPedido(pa)<=0&&!pa.pago){pa.pago=true;await sbUpsert('pedidos_archivo',{id:pa.id,pago:true});marcarCobroPagado(pa.id);}
     }
     return m;
   } finally { _registrandoMovimiento=false; }
@@ -1833,16 +1845,23 @@ async function anularMovimientoCobro(id){
   if(m.pedidoId){
     var p=pedidos.find(function(x){return x.id===m.pedidoId;});
     if(p&&saldoPedido(p)>0&&p.pago){p.pago=false;guardar();await guardarPedidoSupa(p);sincronizarCobro(p);guardarCobros();}
+    var pa=(!p)?ARCH_PED[m.pedidoId]:null;
+    if(pa&&saldoPedido(pa)>0&&pa.pago){pa.pago=false;await sbUpsert('pedidos_archivo',{id:pa.id,pago:false});var cb=cobros.find(function(c){return c.pedidoId===pa.id;});if(cb){cb.pagado=false;cb.fechaPago=null;guardarCobros();sbUpsert('cobros',cb);}}
   }
 }
-function abrirCobroPedido(pedidoId){
-  var p=pedidos.find(function(x){return x.id===pedidoId;});if(!p){alert('No se encontró el pedido.');return;}
+async function abrirCobroPedido(pedidoId){
+  var p=buscarPedidoCobro(pedidoId);
+  if(!p){
+    var r=await sbGetSel('pedidos_archivo','*','&id=eq.'+encodeURIComponent(pedidoId));
+    if(r&&r.length){ARCH_PED[pedidoId]=rowToPedido(r[0]);p=ARCH_PED[pedidoId];}
+  }
+  if(!p){alert('No se encontró el pedido.');return;}
   cobroPedidoModalId=pedidoId;
   renderCobroPedidoModal();
   abrirModal('modal-cobro-pedido');
 }
 function renderCobroPedidoModal(){
-  var p=pedidos.find(function(x){return x.id===cobroPedidoModalId;});if(!p)return;
+  var p=buscarPedidoCobro(cobroPedidoModalId);if(!p)return;
   var total=calcTotalPedido(p);var cobrado=totalCobradoPedido(p.id);var saldo=saldoPedido(p);var estado=estadoPagoPedido(p);
   var resumen=document.getElementById('cobro-pedido-resumen');resumen.innerHTML='';
   function drow(lbl,val,color){var r=document.createElement('div');r.className='det-row';var l=document.createElement('span');l.className='det-lbl';l.textContent=lbl;var v=document.createElement('span');v.className='det-val';v.textContent=val;if(color)v.style.color=color;r.appendChild(l);r.appendChild(v);resumen.appendChild(r);}
@@ -1865,7 +1884,7 @@ function renderCobroPedidoModal(){
 }
 async function uiRegistrarPago(){
   var btn=document.getElementById('btn-registrar-pago');
-  var p=pedidos.find(function(x){return x.id===cobroPedidoModalId;});if(!p)return;
+  var p=buscarPedidoCobro(cobroPedidoModalId);if(!p)return;
   var importe=parseFloat(document.getElementById('mov-importe').value);
   var medio=document.getElementById('mov-medio').value;
   var obs=document.getElementById('mov-obs').value.trim();
@@ -4097,6 +4116,9 @@ async function anularCompra(id,btn){
   var antes=snapshotCostos();
   var r=await rpcDash('anular_compra',{p_id:id});
   if(!r.ok){alert('No se pudo anular la compra: '+r.error);if(btn)btn.disabled=false;return;}
+  var tcs=CAJA.tcompras.filter(function(t){return t.compra_id===id;});
+  for(var q=0;q<tcs.length;q++){var eT=await anularCompraTarjeta(tcs[q].id);if(eT)alert('La compra se anuló, pero sus cuotas de tarjeta no: '+eT);}
+  actualizarBadgeCaja();
   await Promise.all([cargarStockInsumos(),cargarCostos(),cargarComprasVista()]);
   var cambios=diffCostos(antes,snapshotCostos());
   COSTOS_AVISO=cambios.map(function(c){return c.nombre+': '+fmtPesoMsg(c.antes)+' → '+fmtPesoMsg(c.despues);});
@@ -4171,7 +4193,18 @@ function abrirDialogoCompra(opc){
     var fPN=campoDash(wNuevo,'Nombre del proveedor (opcional)','text','');
     var fPD=campoDash(wNuevo,'Dirección (opcional)','text','');
     fProv.onchange=function(){wNuevo.style.display=fProv.value==='__nuevo'?'block':'none';};
-    var fMedio=campoDash(body,'Medio de pago','select',edit?(edit.medio_pago||'efectivo'):'efectivo',[['efectivo','Efectivo'],['transferencia','Transferencia']]);
+    var fMedio=campoDash(body,'Medio de pago','select',edit?(edit.medio_pago||'efectivo'):'efectivo',[['efectivo','Efectivo'],['transferencia','Transferencia'],['tarjeta','Tarjeta de crédito (en cuotas)']]);
+    var tcEdit=edit?CAJA.tcompras.find(function(t){return t.compra_id===edit.id;}):null;
+    var wTar=elDash('div','card');wTar.setAttribute('data-bloque-tarjeta','1');wTar.style.display='none';
+    wTar.appendChild(elDash('div','inicio-sub','La plata no sale de la caja hoy: sale cuando pagues cada cuota (desde Caja).'));
+    var fTn=campoDash(wTar,'Tarjeta (opcional, para reconocerla)','text',tcEdit&&tcEdit.tarjeta?tcEdit.tarjeta:'');
+    var fTc=campoDash(wTar,'Cantidad de cuotas','number',tcEdit?tcEdit.cuotas:'1');
+    var fTv=campoDash(wTar,'Vencimiento de la primera cuota','date',tcEdit?String(tcEdit.primera_vence).substring(0,10):'');
+    var fTt=campoDash(wTar,'Total a pagar con interés $ (vacío = lo mismo que la compra)','importe',tcEdit?Number(tcEdit.total).toLocaleString('es-AR'):'');
+    var hTar=elDash('div','inicio-sub-tit');wTar.appendChild(hTar);
+    body.appendChild(wTar);
+    function mostrarTar(){wTar.style.display=fMedio.value==='tarjeta'?'block':'none';}
+    fMedio.addEventListener('change',mostrarTar);mostrarTar();
     var fNotas=campoDash(body,'Notas (opcional)','text',edit?(edit.notas||''):'');
     body.appendChild(elDash('div','inicio-sub-tit','Líneas de la compra'));
     var cont=elDash('div');body.appendChild(cont);
@@ -4247,9 +4280,16 @@ function abrirDialogoCompra(opc){
         g.total_linea=t;ls.push(g);
       }
       if(ls.length===0)return{error:'Agregá al menos una línea.'};
+      var tarj=null;
+      if(fMedio.value==='tarjeta'){
+        var nq=parseInt(fTc.value);if(!(nq>=1))return{error:'Poné la cantidad de cuotas (1 o más).'};
+        if(!fTv.value)return{error:'Poné el vencimiento de la primera cuota.'};
+        var tt=fTt.value.trim()===''?null:parseImporte(fTt.value);if(tt!==null&&(isNaN(tt)||!(tt>0)))return{error:'Revisá el total con interés.'};
+        tarj={tarjeta:fTn.value.trim(),cuotas:nq,primera:fTv.value,total:tt};
+      }
       var h={fecha:fFecha.value,medio_pago:fMedio.value,notas:fNotas.value.trim(),proveedor_id:fProv.value&&fProv.value!=='__nuevo'?fProv.value:null};
       if(fProv.value==='__nuevo'){var pid=nuevoIdDash('pv_');h.proveedor_id=pid;h.proveedor_nuevo={id:pid,nombre:fPN.value.trim(),direccion:fPD.value.trim()};}
-      return{h:h,ls:ls};
+      return{h:h,ls:ls,tarj:tarj};
     }
     // Guarda (como borrador, o ya confirmada). Si se edita un borrador, se reemplazan sus líneas.
     async function guardar(estado){
@@ -4270,7 +4310,16 @@ function abrirDialogoCompra(opc){
         r=await rpcDash('registrar_compra',{p:payload});
         if(!r.ok)return 'No se pudo guardar la compra: '+r.error;
       }
+      // Tarjeta: se (re)crean la compra con tarjeta y sus cuotas ligadas a esta compra.
+      var compraId=edit?edit.id:payload.compra.id,tcPrev=CAJA.tcompras.filter(function(t){return t.compra_id===compraId;}),msgT=null;
+      if(tcPrev.length&&(x.tarj||fMedio.value!=='tarjeta')){for(var q=0;q<tcPrev.length;q++){var eT=await anularCompraTarjeta(tcPrev[q].id);if(eT){msgT='La compra se guardó, pero las cuotas anteriores no se pudieron reemplazar: '+eT;break;}}}
+      if(x.tarj&&!msgT){
+        var tc=await crearCompraTarjeta({fecha:x.h.fecha,descripcion:'Compra de insumos'+(x.h.notas?' · '+x.h.notas:''),tarjeta:x.tarj.tarjeta,sinInteres:payload.compra.total,total:x.tarj.total||payload.compra.total,cuotas:x.tarj.cuotas,primera:x.tarj.primera,compraId:compraId});
+        if(!tc)msgT='La compra se guardó, pero no se pudieron crear las cuotas de la tarjeta. ¿Corriste MIGRACION_ETAPA5_TARJETA.sql? No la cargues de nuevo.';
+        else actualizarBadgeCaja();
+      }
       await Promise.all([cargarStockInsumos(),cargarCostos(),cargarComprasVista()]);
+      if(msgT){alert(msgT);}
       if(estado==='confirmada')avisoCambioCostos(antes,payload.precios);
       pintarComprasNuevo();
       return null;
@@ -4304,7 +4353,7 @@ var RESPALDO_TABLAS=[['pedidos','pedidos','id'],['clientes','clientes','id'],['m
   ['producto_costeo','producto_costeo','producto_id'],['producto_packaging','producto_packaging','id'],['proveedores','proveedores','id'],
   ['compras','compras_registro','id'],['compra_items','compra_items','id'],['stock_movimientos','stock_movimientos','id'],['horneadas','horneadas','id'],
   ['horneada_items','horneada_items','id'],['conteos','conteos','id'],['conteo_items','conteo_items','id'],['config','config','key'],
-  ['salidas_producto','salidas_producto','id'],['cadete_adicionales','cadete_adicionales','id'],['caja_conciliaciones','caja_conciliaciones','id'],['caja_movimientos','caja_movimientos','id'],['gastos_fijos','gastos_fijos','id'],['cadete_descuentos','cadete_descuentos','id'],['lista_compras','compras','id'],['compras_realizadas','compras_realizadas','id'],['stock','stock','id'],['combos_precios','combos_precios','id']];
+  ['salidas_producto','salidas_producto','id'],['cadete_adicionales','cadete_adicionales','id'],['caja_conciliaciones','caja_conciliaciones','id'],['caja_movimientos','caja_movimientos','id'],['gastos_fijos','gastos_fijos','id'],['cadete_descuentos','cadete_descuentos','id'],['tarjeta_compras','tarjeta_compras','id'],['tarjeta_cuotas','tarjeta_cuotas','id'],['lista_compras','compras','id'],['compras_realizadas','compras_realizadas','id'],['stock','stock','id'],['combos_precios','combos_precios','id']];
 
 function serialFecha(y,m,d,hh,mm){return (Date.UTC(y,m-1,d)-Date.UTC(1899,11,30))/86400000+((hh||0)*60+(mm||0))/1440;}
 function secretosExport(){
@@ -4509,15 +4558,15 @@ function exportarInicio(){
 // Tres cuentas: banco y efectivo (pesos) y dólares. El saldo "esperado" sale del último conteo real (conciliación) más lo que
 // pasó después: cobros por medio de pago, compras, aportes, retiros, compra de dólares y gastos fijos. Los domingos Fede cuenta
 // lo que realmente hay y la app muestra la diferencia. Nada se borra: se anula. La primera conciliación es la apertura.
-var CAJA={concs:[],movs:[],fijos:[],compras:[],descuentos:[],cargado:false,error:false};
+var CAJA={concs:[],movs:[],fijos:[],compras:[],descuentos:[],tcompras:[],cuotas:[],cargado:false,error:false};
 var CAJA_CUENTAS=[['banco','Cuenta bancaria'],['efectivo','Efectivo'],['usd','Dólares']];
 function nombreCuenta(c){var x=CAJA_CUENTAS.find(function(a){return a[0]===c;});return x?x[1]:c;}
 function fmtCuenta(cuenta,v){return cuenta==='usd'?('US$ '+(Math.round(v*100)/100).toLocaleString('es-AR')):fmtPesoMsg(v);}
 async function cargarCaja(){
-  var r=await Promise.all([sbGetSel('caja_conciliaciones','*','&order=fecha.asc'),sbGetSel('caja_movimientos','*','&order=fecha.asc,creado.asc'),sbGetSel('gastos_fijos','*','&order=nombre.asc'),sbGetSel('cadete_descuentos','*','&order=creado.asc')]);
-  if(r[3]===null)r[3]=[];
+  var r=await Promise.all([sbGetSel('caja_conciliaciones','*','&order=fecha.asc'),sbGetSel('caja_movimientos','*','&order=fecha.asc,creado.asc'),sbGetSel('gastos_fijos','*','&order=nombre.asc'),sbGetSel('cadete_descuentos','*','&order=creado.asc'),sbGetSel('tarjeta_compras','*','&order=fecha.desc'),sbGetSel('tarjeta_cuotas','*','&order=vence.asc')]);
+  if(r[3]===null)r[3]=[];if(r[4]===null)r[4]=[];if(r[5]===null)r[5]=[];
   if(r.some(function(x){return x===null;})){CAJA.error=true;CAJA.cargado=false;return false;}
-  CAJA.concs=r[0].filter(function(c){return !c.anulado;});CAJA.movs=r[1];CAJA.fijos=r[2];CAJA.descuentos=(r[3]||[]).filter(function(x){return !x.anulado;});
+  CAJA.concs=r[0].filter(function(c){return !c.anulado;});CAJA.movs=r[1];CAJA.fijos=r[2];CAJA.descuentos=(r[3]||[]).filter(function(x){return !x.anulado;});CAJA.tcompras=r[4].filter(function(x){return !x.anulado;});CAJA.cuotas=r[5].filter(function(x){return !x.anulado;});
   var ult=CAJA.concs[0];
   if(ult){
     var cs=await sbGetSel('compras_registro','id,fecha,medio_pago,total,estado,anulado,creado','&fecha=gte.'+fechaISO(new Date(ult.fecha)));
@@ -4579,21 +4628,136 @@ function armarAvisosPagos(){
   if(!CAJA.cargado)return null;
   var orden={vencido:0,ahora:1,pronto:2};
   var l=CAJA.fijos.map(function(g){return {g:g,e:estadoGastoFijo(g)};}).filter(function(x){return orden[x.e.estado]!==undefined;}).sort(function(a,b){return orden[a.e.estado]-orden[b.e.estado];});
-  if(l.length===0)return null;
-  var card=elDash('div','card');card.setAttribute('data-avisos-pagos','1');card.style.borderColor=l.some(function(x){return x.e.estado==='vencido';})?'var(--danger)':'var(--accent)';
+  var qs=cuotasPorAtender();
+  if(l.length===0&&qs.length===0)return null;
+  var card=elDash('div','card');card.setAttribute('data-avisos-pagos','1');card.style.borderColor=(l.some(function(x){return x.e.estado==='vencido';})||qs.some(function(c){return estadoCuota(c).estado==='vencida';}))?'var(--danger)':'var(--accent)';
   card.appendChild(elDash('div','inicio-sub-tit','Pagos para tener presentes'));
   l.forEach(function(x){
     var f=elDash('div','inicio-fila');f.appendChild(elDash('span','inicio-fila-n',x.g.nombre+' · '+(x.g.moneda==='USD'?'US$ '+Number(x.g.importe):fmtPesoMsg(Number(x.g.importe)))));
     f.appendChild(elDash('span','inicio-fila-v',x.e.txt));card.appendChild(f);
   });
+  qs.forEach(function(c){var f=elDash('div','inicio-fila');f.setAttribute('data-aviso-cuota',c.id);f.appendChild(elDash('span','inicio-fila-n','Tarjeta · cuota '+c.nro+' · '+descTarjetaCompra(c.tarjeta_compra_id)+' · '+fmtPesoMsg(Number(c.importe))));f.appendChild(elDash('span','inicio-fila-v',estadoCuota(c).txt));card.appendChild(f);});
   var b=elDash('button','btn-ol','Ir a Caja');b.style.margin='6px 0 0';b.onclick=function(){if(ES_MOVIL)showMob('caja');else showDesk('d-caja');};card.appendChild(b);
   return card;
 }
-function cantidadAlertasCaja(){return CAJA.fijos.filter(function(g){var e=estadoGastoFijo(g).estado;return e==='vencido'||e==='ahora'||e==='pronto';}).length;}
+function cantidadAlertasCaja(){return CAJA.fijos.filter(function(g){var e=estadoGastoFijo(g).estado;return e==='vencido'||e==='ahora'||e==='pronto';}).length+cuotasPorAtender().length;}
 function actualizarBadgeCaja(){
   var n=cantidadAlertasCaja(),el=document.querySelector('#dt-d-caja .dtab-label'),em=document.getElementById('mn-caja');
   if(el)el.textContent='Caja'+(n?' ('+n+')':'');if(em)em.textContent='Caja'+(n?' ('+n+')':'');
 }
+// ── TARJETA DE CRÉDITO: compras en cuotas ──
+// Una compra con tarjeta NO sale de la caja el día de la compra: sale cuando se paga cada cuota. El total puede incluir interés
+// (el "valor sin interés" es opcional y sirve para saber cuánto se pagó de más). Las cuotas se pagan desde banco o efectivo.
+function generarCuotas(tcId,total,n,primera,pagadas){
+  var base=Math.floor(total/n*100)/100,out=[],dia=Number(primera.split('-')[2]);
+  for(var i=0;i<n;i++){
+    var imp=(i===n-1)?Math.round((total-base*(n-1))*100)/100:base;
+    out.push({id:idCaja('tq_'),tarjeta_compra_id:tcId,nro:i+1,vence:sumarMesesISO(primera,i,dia),importe:imp,pagada:i<(pagadas||0),pagada_fecha:null,anulado:false});
+  }
+  return out;
+}
+async function crearCompraTarjeta(d){
+  var tc={id:idCaja('tc_'),fecha:d.fecha,descripcion:d.descripcion,total:d.total,cuotas:d.cuotas,primera_vence:d.primera,anulado:false};
+  if(d.tarjeta)tc.tarjeta=d.tarjeta;if(d.sinInteres>0)tc.valor_sin_interes=d.sinInteres;if(d.compraId)tc.compra_id=d.compraId;
+  if(!await sbUpsert('tarjeta_compras',tc))return null;
+  var cs=generarCuotas(tc.id,d.total,d.cuotas,d.primera,d.pagadas||0);
+  var ok=cs.length===1?await sbUpsert('tarjeta_cuotas',cs[0]):await sbUpsert('tarjeta_cuotas',cs);
+  if(!ok){await sbUpsert('tarjeta_compras',{id:tc.id,anulado:true});return null;}
+  tc.creado=new Date().toISOString();CAJA.tcompras.unshift(tc);cs.forEach(function(c){CAJA.cuotas.push(c);});
+  return tc;
+}
+// Anula la compra con tarjeta y sus cuotas. Si alguna cuota ya se pagó desde la caja, no se anula (primero hay que anular ese pago).
+async function anularCompraTarjeta(tcId){
+  var cs=CAJA.cuotas.filter(function(c){return c.tarjeta_compra_id===tcId;});
+  if(cs.some(function(c){return c.pagada&&CAJA.movs.some(function(m){return !m.anulado&&m.cuota_id===c.id;});}))return 'Alguna cuota ya se pagó desde la caja: primero anulá ese pago en "Movimientos de caja".';
+  for(var i=0;i<cs.length;i++){if(!await sbUpsert('tarjeta_cuotas',{id:cs[i].id,anulado:true}))return 'No se pudo anular todo. Reintentá.';cs[i].anulado=true;}
+  if(!await sbUpsert('tarjeta_compras',{id:tcId,anulado:true}))return 'No se pudo anular. Reintentá.';
+  CAJA.cuotas=CAJA.cuotas.filter(function(c){return !c.anulado;});CAJA.tcompras=CAJA.tcompras.filter(function(t){return t.id!==tcId;});
+  return null;
+}
+function estadoCuota(c){
+  if(c.pagada)return {estado:'pagada',txt:'Pagada'};
+  var hoy=fechaISO(new Date()),v=String(c.vence).substring(0,10);
+  var dias=Math.round((new Date(v+'T12:00:00')-new Date(hoy+'T12:00:00'))/86400000);
+  if(dias<0)return {estado:'vencida',txt:'VENCIDA hace '+(-dias)+(dias===-1?' día':' días')};
+  if(dias===0)return {estado:'ahora',txt:'Vence hoy'};
+  if(dias<=7)return {estado:'pronto',txt:'Faltan '+dias+(dias===1?' día':' días')+' ('+fechaCortaISO(v)+')'};
+  return {estado:'lejos',txt:'Vence el '+fechaCortaISO(v)};
+}
+function cuotasPorAtender(){return CAJA.cuotas.filter(function(c){var e=estadoCuota(c).estado;return e==='vencida'||e==='ahora'||e==='pronto';});}
+function descTarjetaCompra(id){var t=CAJA.tcompras.find(function(x){return x.id===id;});return t?(t.descripcion+(t.tarjeta?' · '+t.tarjeta:'')):'Tarjeta';}
+function abrirDialogoCompraTarjeta(){
+  abrirDialogoDash('Compra con tarjeta de crédito',function(body,cerrar){
+    body.appendChild(elDash('div','inicio-sub','Para compras en cuotas que no cargaste en Compras (por ejemplo maquinaria). Si ya venís pagando cuotas, indicá cuántas están pagadas.'));
+    var fD=campoDash(body,'Qué se compró','text','');
+    var fT=campoDash(body,'Tarjeta (opcional, para reconocerla)','text','');
+    var fF=campoDash(body,'Fecha de la compra','date',fechaISO(new Date()));
+    var fS=campoDash(body,'Valor sin interés $ (opcional)','importe','');
+    var fTo=campoDash(body,'Total a pagar con interés $','importe','');
+    var fN=campoDash(body,'Cantidad de cuotas','number','1');
+    var fV=campoDash(body,'Vencimiento de la primera cuota','date','');
+    var fP=campoDash(body,'Cuotas que ya están pagadas (0 si es nueva)','number','0');
+    var hint=elDash('div','inicio-sub-tit');hint.setAttribute('data-cuota-hint','1');body.appendChild(hint);
+    function rec(){var t=parseImporte(fTo.value),n=parseInt(fN.value);hint.textContent=(t>0&&n>=1)?('Cada cuota: '+fmtPesoMsg(t/n)+(parseImporte(fS.value)>0?' · interés total: '+fmtPesoMsg(t-parseImporte(fS.value)):'')):'';}
+    [fTo,fN,fS].forEach(function(e){e.addEventListener('input',rec);});
+    pieDialogo(body,'Guardar compra con tarjeta',async function(){
+      var desc=fD.value.trim(),t=parseImporte(fTo.value),n=parseInt(fN.value),pg=parseInt(fP.value)||0,si=parseImporte(fS.value);
+      if(!desc)return 'Poné qué compraste.';if(isNaN(t)||!(t>0))return 'Ingresá el total a pagar.';
+      if(!(n>=1))return 'Las cuotas tienen que ser 1 o más.';if(!fF.value||!fV.value)return 'Completá la fecha y el vencimiento de la primera cuota.';
+      if(pg<0||pg>n)return 'Las cuotas pagadas no pueden superar el total de cuotas.';
+      var tc=await crearCompraTarjeta({fecha:fF.value,descripcion:desc,tarjeta:fT.value.trim(),sinInteres:isNaN(si)?0:si,total:t,cuotas:n,primera:fV.value,pagadas:pg});
+      if(!tc)return 'No se pudo guardar. ¿Corriste MIGRACION_ETAPA5_TARJETA.sql?';
+      actualizarBadgeCaja();pintarCaja();return null;
+    },cerrar);
+  });
+}
+function abrirDialogoPagarCuota(c){
+  abrirDialogoDash('Pagar cuota '+c.nro+': '+descTarjetaCompra(c.tarjeta_compra_id),function(body,cerrar){
+    body.appendChild(elDash('div','inicio-sub','Vence el '+fechaCortaISO(c.vence)+'.'));
+    var fF=campoDash(body,'Fecha de pago','date',fechaISO(new Date()));
+    var fI=campoDash(body,'Importe $','importe',Number(c.importe).toLocaleString('es-AR'));
+    var fC=campoDash(body,'Sale de','select','banco',[['banco','Cuenta bancaria'],['efectivo','Efectivo']]);
+    pieDialogo(body,'Registrar pago',async function(){
+      var imp=parseImporte(fI.value);if(isNaN(imp)||!(imp>0))return 'Ingresá un importe mayor a 0.';if(!fF.value)return 'Ingresá la fecha.';
+      var m=await guardarMovCaja({fecha:fF.value,tipo:'pago_tarjeta',cuenta:fC.value,sentido:'sale',importe:imp,cuota_id:c.id,concepto:'Cuota '+c.nro+' · '+descTarjetaCompra(c.tarjeta_compra_id)});
+      if(!await insertarMovsCaja([m]))return 'No se pudo guardar el pago. Reintentá.';
+      if(!await sbUpsert('tarjeta_cuotas',{id:c.id,pagada:true,pagada_fecha:fF.value}))return 'El pago se guardó pero la cuota no se marcó como pagada: no la pagues de nuevo, avisame.';
+      c.pagada=true;c.pagada_fecha=fF.value;actualizarBadgeCaja();pintarCaja();return null;
+    },cerrar);
+  });
+}
+function pintarTarjeta(root){
+  root.appendChild(elDash('div','sec-lbl','Tarjeta de crédito'));
+  var bn=elDash('button','btn-ol','+ Compra con tarjeta (en cuotas)');bn.style.cssText='margin:0 0 8px';bn.setAttribute('data-accion','compra-tarjeta');bn.onclick=abrirDialogoCompraTarjeta;root.appendChild(bn);
+  var pend=CAJA.cuotas.filter(function(c){return !c.pagada;});
+  if(CAJA.tcompras.length===0){root.appendChild(elDash('div','inicio-nd','Sin compras con tarjeta.'));return;}
+  var deuda=pend.reduce(function(a,c){return a+Number(c.importe);},0);
+  var res=elDash('div','card');res.setAttribute('data-tarjeta-resumen','1');
+  res.appendChild(elDash('div','ins-nombre','Deuda de tarjeta pendiente: '+fmtPesoMsg(deuda)));
+  res.appendChild(elDash('div','inicio-sub',pend.length+(pend.length===1?' cuota pendiente':' cuotas pendientes')+(pend.length?' · la última vence el '+fechaCortaISO(String(pend[pend.length-1].vence).substring(0,10)):'')));
+  root.appendChild(res);
+  pend.slice(0,6).forEach(function(c){
+    var e=estadoCuota(c),card=elDash('div','card');card.setAttribute('data-cuota',c.id);
+    if(e.estado==='vencida')card.style.borderColor='var(--danger)';else if(e.estado!=='lejos')card.style.borderColor='var(--accent)';
+    var cab=elDash('div');cab.style.cssText='display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap';
+    var izq=elDash('div');izq.appendChild(elDash('div','ins-nombre','Cuota '+c.nro+' · '+descTarjetaCompra(c.tarjeta_compra_id)+' · '+fmtPesoMsg(Number(c.importe))));izq.appendChild(elDash('div','inicio-sub',e.txt));cab.appendChild(izq);
+    var bp=elDash('button','btn-p','Pagar cuota');bp.style.cssText='margin:0;width:auto;padding:6px 12px';bp.setAttribute('data-accion','pagar-cuota');bp.onclick=function(){abrirDialogoPagarCuota(c);};cab.appendChild(bp);
+    card.appendChild(cab);root.appendChild(card);
+  });
+  if(pend.length>6)root.appendChild(elDash('div','inicio-sub','…y '+(pend.length-6)+' cuotas más, en los próximos meses.'));
+  root.appendChild(elDash('div','sec-lbl','Compras con tarjeta'));
+  CAJA.tcompras.forEach(function(t){
+    var cs=CAJA.cuotas.filter(function(c){return c.tarjeta_compra_id===t.id;}),pag=cs.filter(function(c){return c.pagada;}).length;
+    var card=elDash('div','card');card.setAttribute('data-tcompra',t.id);
+    var cab=elDash('div');cab.style.cssText='display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap';
+    var izq=elDash('div');izq.appendChild(elDash('div','ins-nombre',t.descripcion+(t.tarjeta?' · '+t.tarjeta:'')+' · '+fmtPesoMsg(Number(t.total))));
+    izq.appendChild(elDash('div','inicio-sub',pag+' de '+cs.length+' cuotas pagadas'+(t.valor_sin_interes?' · sin interés '+fmtPesoMsg(Number(t.valor_sin_interes))+' (interés '+fmtPesoMsg(Number(t.total)-Number(t.valor_sin_interes))+')':'')+(t.compra_id?' · viene de una compra cargada':'')));cab.appendChild(izq);
+    var ba=elDash('button','btn-ol','Anular');ba.style.margin='0';ba.setAttribute('data-accion','anular-tcompra');
+    (function(id,b){b.onclick=async function(){if(!confirm('¿Anular esta compra con tarjeta y sus cuotas?'))return;b.disabled=true;var e=await anularCompraTarjeta(id);if(e){alert(e);b.disabled=false;return;}actualizarBadgeCaja();pintarCaja();};})(t.id,ba);
+    cab.appendChild(ba);card.appendChild(cab);root.appendChild(card);
+  });
+}
+
 // ── ADELANTOS AL CADETE Y LIQUIDACIÓN ──
 // Un adelanto es plata que sale de la caja el día que se da, pero no es costo todavía: se descuenta del pago del viernes.
 // El costo del cadete sigue siendo el pago completo (base + adicional). Si el adelanto es mayor a lo que le toca, el resto queda pendiente.
@@ -4704,7 +4868,7 @@ function sumarMesesISO(iso,n,dia){
 function idCaja(pref){return nuevoIdDash(pref);}
 async function guardarMovCaja(m){
   var row={id:idCaja('cm_'),fecha:m.fecha,tipo:m.tipo,cuenta:m.cuenta,sentido:m.sentido,importe:m.importe,anulado:false};
-  ['cotizacion','grupo','gasto_fijo_id','concepto','nota','viernes'].forEach(function(k){if(m[k]!==undefined&&m[k]!==null&&m[k]!=='')row[k]=m[k];});
+  ['cotizacion','grupo','gasto_fijo_id','concepto','nota','viernes','cuota_id'].forEach(function(k){if(m[k]!==undefined&&m[k]!==null&&m[k]!=='')row[k]=m[k];});
   return row;
 }
 async function insertarMovsCaja(filas){
@@ -4769,6 +4933,7 @@ function pintarCaja(){
           if(mov.tipo==='adelanto_cadete'&&CAJA.descuentos.some(function(x){return x.adelanto_id===mov.id;})){alert('Este adelanto ya se descontó en una liquidación: primero deshacé esa liquidación desde Inicio (tarjeta del cadete).');return;}
           b.disabled=true;var ids=CAJA.movs.filter(function(z){return mov.grupo?z.grupo===mov.grupo:z.id===mov.id;});
           var ok=true;for(var i=0;i<ids.length;i++){if(!await sbUpsert('caja_movimientos',{id:ids[i].id,anulado:true}))ok=false;else ids[i].anulado=true;}
+          if(ok&&mov.tipo==='pago_tarjeta'&&mov.cuota_id){var cu=CAJA.cuotas.find(function(z){return z.id===mov.cuota_id;});if(cu&&await sbUpsert('tarjeta_cuotas',{id:cu.id,pagada:false,pagada_fecha:null})){cu.pagada=false;cu.pagada_fecha=null;}}
           if(ok&&mov.tipo==='pago_cadete')await deshacerDescuentosDe(function(x){return x.movimiento_id===mov.id;});
           if(!ok)alert('No se pudo anular todo. Reintentá.');pintarCaja();};})(m,ba);
         f.appendChild(ba);cm.appendChild(f);
@@ -4776,6 +4941,7 @@ function pintarCaja(){
       root.appendChild(cm);
     }
     pintarGastosFijos(root);
+    pintarTarjeta(root);
     var hist=CAJA.concs.slice().reverse();
     if(hist.length>1){
       root.appendChild(elDash('div','sec-lbl','Historial de conteos'));
