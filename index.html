@@ -963,6 +963,7 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
         <div><div class="f-lbl">Importe</div><input class="f-in" id="mov-importe" type="number" min="0" step="1"></div>
         <div><div class="f-lbl">Medio de pago</div><select class="f-in" id="mov-medio"><option value="Efectivo">Efectivo</option><option value="Transferencia">Transferencia</option><option value="Otro">Otro</option></select></div>
       </div>
+      <div style="margin-bottom:8px"><div class="f-lbl">Fecha en que te pagó (opcional)</div><input class="f-in" id="mov-fecha" type="date"></div>
       <div style="margin-bottom:8px"><div class="f-lbl">Observaciones</div><input class="f-in" id="mov-obs" placeholder="Opcional"></div>
       <button class="btn-p" style="margin:0" id="btn-registrar-pago" onclick="uiRegistrarPago()">Registrar pago</button>
     </div>
@@ -1774,6 +1775,25 @@ function calcTotalCobro(c){var p=buscarPedidoCobro(c.pedidoId);if(p)return calcT
 // al booleano legado sin inventar un saldo que no se puede calcular.
 // Pedidos de semanas ya cerradas (pedidos_archivo) con pago pendiente: se pueden cobrar igual que los de la semana.
 var ARCH_PED={};
+// Semanas cerradas (Corrección 1): "Cerrar semana" solo las marca; los pedidos quedan en la base y la semana se consulta siempre.
+var SEMCERR={lista:[],set:{},cargado:false,error:false};
+var PED_CERR=[];
+async function cargarSemanasCerradas(){
+  var r=await sbGetSel('semanas_cerradas','*','&order=ini.desc');
+  if(r===null){SEMCERR.error=true;return false;}
+  SEMCERR.lista=r;SEMCERR.set={};
+  r.forEach(function(x){if(x.activa!==false)SEMCERR.set[String(x.ini).substring(0,10)]=x;});
+  SEMCERR.cargado=true;SEMCERR.error=false;return true;
+}
+function semanaCerrada(ini){return !!SEMCERR.set[ini];}
+function pedidoEnSemanaCerrada(p){return !!p.fecha&&semanaCerrada(semanaIniDeEntrega(p.fecha));}
+// "pedidos" (memoria) queda con las semanas abiertas, como siempre; las cerradas van a PED_CERR. Las impagas se pueden seguir cobrando.
+function repartirPedidosCerrados(todos){
+  var ab=[],ce=[];
+  todos.forEach(function(p){if(pedidoEnSemanaCerrada(p))ce.push(p);else ab.push(p);});
+  pedidos=ab;PED_CERR=ce;
+  ce.forEach(function(p){if(!p.pago){p._tabla='pedidos';ARCH_PED[p.id]=p;}});
+}
 async function cargarArchivoImpagos(){
   var r=await sbGetSel('pedidos_archivo','*','&pago=eq.false');
   if(r===null)return false;
@@ -1817,12 +1837,12 @@ function estadoPagoPedido(p){
 }
 // Registra un movimiento de cobro. pedidoId puede ser null (anticipo sin aplicar).
 // Protegido contra doble clic/doble registro con _registrandoMovimiento.
-async function registrarMovimientoCobro(pedidoId,clienteNombre,importe,medioPago,obs){
+async function registrarMovimientoCobro(pedidoId,clienteNombre,importe,medioPago,obs,fechaPago){
   if(_registrandoMovimiento)return null;
   if(!importe||importe<=0){alert('Ingresá un importe válido.');return null;}
   _registrandoMovimiento=true;
   try{
-    var m={id:'mov_'+Date.now()+'_'+Math.floor(Math.random()*10000),pedidoId:pedidoId||null,clienteNombre:clienteNombre,fecha:new Date().toISOString(),importe:importe,medioPago:medioPago||null,observaciones:obs||null,anulado:false,creadoEn:new Date().toISOString()};
+    var m={id:'mov_'+Date.now()+'_'+Math.floor(Math.random()*10000),pedidoId:pedidoId||null,clienteNombre:clienteNombre,fecha:(fechaPago&&fechaPago!==fechaISO(new Date()))?new Date(fechaPago+'T12:00:00').toISOString():new Date().toISOString(),importe:importe,medioPago:medioPago||null,observaciones:obs||null,anulado:false,creadoEn:new Date().toISOString()};
     movimientosCobro.push(m);
     localStorage.setItem('fika-movimientos-cobro',JSON.stringify(movimientosCobro));
     await sbUpsert('movimientos_cobro',movimientoToRow(m));
@@ -1830,7 +1850,7 @@ async function registrarMovimientoCobro(pedidoId,clienteNombre,importe,medioPago
       var p=pedidos.find(function(x){return x.id===pedidoId;});
       if(p&&saldoPedido(p)<=0&&!p.pago){p.pago=true;guardar();await guardarPedidoSupa(p);sincronizarCobro(p);guardarCobros();}
       var pa=(!p)?ARCH_PED[pedidoId]:null;
-      if(pa&&saldoPedido(pa)<=0&&!pa.pago){pa.pago=true;await sbUpsert('pedidos_archivo',{id:pa.id,pago:true});marcarCobroPagado(pa.id);}
+      if(pa&&saldoPedido(pa)<=0&&!pa.pago){pa.pago=true;await sbUpsert(pa._tabla||'pedidos_archivo',{id:pa.id,pago:true});marcarCobroPagado(pa.id);}
     }
     return m;
   } finally { _registrandoMovimiento=false; }
@@ -1846,7 +1866,7 @@ async function anularMovimientoCobro(id){
     var p=pedidos.find(function(x){return x.id===m.pedidoId;});
     if(p&&saldoPedido(p)>0&&p.pago){p.pago=false;guardar();await guardarPedidoSupa(p);sincronizarCobro(p);guardarCobros();}
     var pa=(!p)?ARCH_PED[m.pedidoId]:null;
-    if(pa&&saldoPedido(pa)>0&&pa.pago){pa.pago=false;await sbUpsert('pedidos_archivo',{id:pa.id,pago:false});var cb=cobros.find(function(c){return c.pedidoId===pa.id;});if(cb){cb.pagado=false;cb.fechaPago=null;guardarCobros();sbUpsert('cobros',cb);}}
+    if(pa&&saldoPedido(pa)>0&&pa.pago){pa.pago=false;await sbUpsert(pa._tabla||'pedidos_archivo',{id:pa.id,pago:false});var cb=cobros.find(function(c){return c.pedidoId===pa.id;});if(cb){cb.pagado=false;cb.fechaPago=null;guardarCobros();sbUpsert('cobros',cb);}}
   }
 }
 async function abrirCobroPedido(pedidoId){
@@ -1876,7 +1896,7 @@ function renderCobroPedidoModal(){
     var row=document.createElement('div');row.style.cssText='display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:0.5px solid var(--border);font-size:12px'+(m.anulado?';opacity:0.5':'');
     var izq=document.createElement('div');
     var l1=document.createElement('div');l1.style.color='var(--text)';l1.textContent=fmtPeso(m.importe)+(m.medioPago?' · '+m.medioPago:'')+(m.anulado?' · ANULADO':'');
-    var l2=document.createElement('div');l2.style.cssText='font-size:10px;color:var(--text3)';l2.textContent=new Date(m.creadoEn).toLocaleString('es-AR')+(m.observaciones?' · '+m.observaciones:'');
+    var l2=document.createElement('div');l2.style.cssText='font-size:10px;color:var(--text3)';l2.textContent=(m.fecha&&String(m.fecha).substring(0,10)!==String(m.creadoEn||'').substring(0,10)?'Pagó el '+new Date(m.fecha).toLocaleDateString('es-AR')+' · cargado ':'')+new Date(m.creadoEn).toLocaleString('es-AR')+(m.observaciones?' · '+m.observaciones:'');
     izq.appendChild(l1);izq.appendChild(l2);row.appendChild(izq);
     if(!m.anulado){var bA=document.createElement('button');bA.className='btn-s';bA.style.cssText='margin:0;padding:3px 8px;font-size:10px;color:var(--danger);border-color:rgba(224,85,85,0.3)';bA.textContent='Anular';bA.onclick=function(){anularMovimientoCobro(m.id).then(renderCobroPedidoModal);};row.appendChild(bA);}
     hist.appendChild(row);
@@ -1889,10 +1909,12 @@ async function uiRegistrarPago(){
   var medio=document.getElementById('mov-medio').value;
   var obs=document.getElementById('mov-obs').value.trim();
   if(!importe||importe<=0){alert('Ingresá un importe válido.');return;}
+  var fpEl=document.getElementById('mov-fecha'),fp=fpEl&&fpEl.value?fpEl.value:'';
+  if(fp&&fp>fechaISO(new Date())){alert('La fecha del pago no puede ser futura.');return;}
   btn.disabled=true;btn.textContent='Registrando...';
-  var m=await registrarMovimientoCobro(p.id,p.nombre,importe,medio,obs);
+  var m=await registrarMovimientoCobro(p.id,p.nombre,importe,medio,obs,fp);
   btn.disabled=false;btn.textContent='Registrar pago';
-  if(m){document.getElementById('mov-importe').value='';document.getElementById('mov-obs').value='';renderCobroPedidoModal();renderPedidos();if(!ES_MOVIL)renderDeskPedidos();}
+  if(m){document.getElementById('mov-importe').value='';document.getElementById('mov-obs').value='';if(fpEl)fpEl.value='';renderCobroPedidoModal();renderPedidos();if(!ES_MOVIL)renderDeskPedidos();}
 }
 function aplicarAnticipoAPedido(movId,pedidoId){
   var m=movimientosCobro.find(function(x){return x.id===movId;});if(!m||m.pedidoId){alert('Ese movimiento ya no está disponible como anticipo.');return;}
@@ -2379,6 +2401,16 @@ function sumarDias(s,n){var d=parseFechaISO(s);d.setDate(d.getDate()+n);return f
 function inicioSemanaFika(s){var d=parseFechaISO(s);d.setDate(d.getDate()-((d.getDay()-5+7)%7));return fechaISO(d);}
 function semanaFikaDe(offset){var ini=sumarDias(inicioSemanaFika(fechaISO(new Date())),offset*7);return{ini:ini,fin:sumarDias(ini,6)};}
 function fechaCorta(s){var d=parseFechaISO(s);return DIAS[d.getDay()].substring(0,3)+' '+d.getDate()+'/'+(d.getMonth()+1);}
+// ── SEMANA POR HORNEADA (Corrección 1) ──
+// Cada pedido cuenta en la semana de su horneada: lunes, martes y miércoles salen de la horneada del lunes;
+// jueves, viernes, sábado y domingo, de la del jueves. La semana va de viernes a jueves según la fecha de horneada.
+// Ejemplo: la entrega del sábado 7/11 sale de la horneada del jueves 5/11 y pertenece a la semana del viernes 30/10 al jueves 5/11.
+function horneadaDeEntrega(f){var dow=parseFechaISO(f).getDay();return bakeDayDe((dow>=1&&dow<=3)?'lunes':'jueves',f);}
+function semanaIniDeEntrega(f){return inicioSemanaFika(horneadaDeEntrega(f));}
+// Entregas que salen de las dos horneadas de la semana (la del lunes y la del jueves que la cierra): lunes a domingo siguiente.
+function entregasDeSemana(ini){return{desde:sumarDias(ini,3),hasta:sumarDias(ini,9)};}
+// El cadete cobra el viernes que sigue al jueves de cierre de la semana.
+function viernesCadete(ini){return sumarDias(ini,7);}
 // Qué entregas cubre cada horneada: la del lunes, martes y miércoles; la del jueves, viernes a domingo;
 // una horneada "otro" cubre desde el día siguiente hasta la próxima horneada (lunes o jueves, inclusive).
 // Día de horneada (lunes/jueves) más reciente en o antes de la fecha f: se confirma una horneada que ya pasó.
@@ -2457,6 +2489,27 @@ function abrirDialogoAdicionalCadete(fechaDef,entregasDef,alGuardar){
     },cerrar);
   });
 }
+// Pedidos "reconstruidos" desde la tabla cobros (que no se borra al cerrar la semana): nombre, fecha de entrega, panes y si se pagó.
+// No traen el precio real ni el envío: se valúan a precios actuales y se marcan como estimados.
+function pedidosDesdeCobros(conocidos,desde,hasta){
+  var vistos={};
+  conocidos.forEach(function(p){vistos[p.id]=1;});
+  pedidos.concat(PED_CERR).forEach(function(p){vistos[p.id]=1;});
+  var out=[];
+  cobros.forEach(function(c){
+    if(!c.pedidoId||vistos[c.pedidoId]||!c.fecha||c.fecha<desde||c.fecha>hasta)return;
+    if(!c.panes||!Object.keys(c.panes).length)return;
+    vistos[c.pedidoId]=1;
+    out.push({id:c.pedidoId,nombre:c.nombre,fecha:c.fecha,panes:c.panes,pago:!!c.pagado,_estimado:true,encargado:'Cadete'});
+  });
+  return out;
+}
+// Habitual = clienta que ya existía antes del 06/11/2026 (marcada en clientes). Nueva = primer pedido desde ahí.
+function esClientaHabitual(nombre){
+  var k=normNombreDash(nombre);
+  var c=clientes.find(function(x){return normNombreDash(x.nombre)===k;});
+  return !!(c&&c.habitual===true);
+}
 function calcSemanaInicio(peds,movs,ini,nombresAntes){
   var r={n:peds.length,unidades:0,ventas:0,ventasB2C:0,ventasB2B:0,cobrado:0,pendiente:0,nuevas:[],entregasViernes:0};
   var vistos={};
@@ -2467,7 +2520,7 @@ function calcSemanaInicio(peds,movs,ini,nombresAntes){
     r.cobrado+=saldoDash(p,movs).cobrado;
     if(p.fecha===ini&&esEntregaCadete(p))r.entregasViernes++;
     var k=normNombreDash(p.nombre);
-    if(k&&!nombresAntes[k]&&!vistos[k]){vistos[k]=1;r.nuevas.push(p.nombre);}
+    if(k&&!nombresAntes[k]&&!vistos[k]&&!esClientaHabitual(p.nombre)){vistos[k]=1;r.nuevas.push(p.nombre);}
   });
   r.pendiente=Math.max(0,r.ventas-r.cobrado);
   return r;
@@ -2489,13 +2542,14 @@ async function cargarDatosInicio(sem){
   var prevIni=sumarDias(sem.ini,-7),prevFin=sumarDias(sem.ini,-1);
   var nb=proximaHorneada();
   var res={sem:sem,prevIni:prevIni,offline:false,nb:nb,hora:new Date()};
-  var rPed=await sbGetSel('pedidos','*','&fecha=gte.'+prevIni+'&fecha=lte.'+sem.fin+'&order=fecha.asc,id.asc');
-  var rAntes=await sbGetSel('pedidos','nombre,fecha','&fecha=lt.'+prevIni);
+  var entC=entregasDeSemana(sem.ini),entP=entregasDeSemana(prevIni);
+  var rPed=await sbGetSel('pedidos','*','&fecha=gte.'+entP.desde+'&fecha=lte.'+entC.hasta+'&order=fecha.asc,id.asc');
+  var rAntes=await sbGetSel('pedidos','nombre,fecha','&fecha=lt.'+entP.desde);
   var rMay=await sbGetSel('pedidos','*','&tipo_precio=eq.Mayorista&order=fecha.asc,id.asc');
   var rNext=nb?await sbGetSel('pedidos','*','&fecha=gte.'+nb.desde+'&fecha=lte.'+nb.hasta):[];
   // Pedidos archivados al cerrar la semana (tabla pedidos_archivo; null si todavía no se corrió la migración)
-  var rArch=await sbGetSel('pedidos_archivo','*','&fecha=gte.'+prevIni+'&fecha=lte.'+sem.fin+'&order=fecha.asc,id.asc');
-  var rArchAntes=await sbGetSel('pedidos_archivo','nombre,fecha','&fecha=lt.'+prevIni);
+  var rArch=await sbGetSel('pedidos_archivo','*','&fecha=gte.'+entP.desde+'&fecha=lte.'+entC.hasta+'&order=fecha.asc,id.asc');
+  var rArchAntes=await sbGetSel('pedidos_archivo','nombre,fecha','&fecha=lt.'+entP.desde);
   var rArchMay=await sbGetSel('pedidos_archivo','*','&tipo_precio=eq.Mayorista&order=fecha.asc,id.asc');
   res.archivoOk=(rArch!==null&&rArchAntes!==null&&rArchMay!==null);
   await cargarSalidas();
@@ -2504,17 +2558,20 @@ async function cargarDatosInicio(sem){
   if(rPed===null||rAntes===null||rMay===null||rNext===null){
     // Sin conexión o falla de lectura: se usa lo que ya está en memoria y se avisa.
     res.offline=true;
-    peds=pedidos.filter(function(p){return enRango(p,prevIni,sem.fin);});
-    antes=pedidos.filter(function(p){return p.fecha&&p.fecha<prevIni;});
+    peds=pedidos.concat(PED_CERR).filter(function(p){return enRango(p,entP.desde,entC.hasta);});
+    antes=pedidos.concat(PED_CERR).filter(function(p){return p.fecha&&p.fecha<entP.desde;});
     may=pedidos.filter(esPedidoB2B);
     next=nb?pedidos.filter(function(p){return p.fecha&&p.fecha>=nb.desde&&p.fecha<=nb.hasta;}):[];
   }else{
     function unirPorId(a,b){var v={},o=[];a.concat(b).forEach(function(p){if(!v[p.id]){v[p.id]=1;o.push(p);}});return o;}
-    peds=unirPorId(rPed.map(rowToPedido),(rArch||[]).map(rowToPedido)).filter(function(p){return enRango(p,prevIni,sem.fin);});
+    peds=unirPorId(rPed.map(rowToPedido),(rArch||[]).map(rowToPedido)).filter(function(p){return enRango(p,entP.desde,entC.hasta);});
     antes=rAntes.concat(rArchAntes||[]);
     may=unirPorId(rMay.map(rowToPedido),(rArchMay||[]).map(rowToPedido));
     next=rNext.map(rowToPedido).filter(function(p){return nb&&p.fecha>=nb.desde&&p.fecha<=nb.hasta;});
   }
+  // Semanas que ya no tienen sus pedidos (los borraba el viejo "Cerrar semana"): se reconstruyen desde Cobros, a precios actuales.
+  var recon=pedidosDesdeCobros(peds,entP.desde,entC.hasta);
+  peds=peds.concat(recon);
   var ids={};peds.concat(may).forEach(function(p){ids[p.id]=1;});
   var idList=Object.keys(ids),movs=[];
   if(res.offline){movs=movimientosCobro.slice();}
@@ -2527,12 +2584,15 @@ async function cargarDatosInicio(sem){
     }
   }
   var setAntes={};antes.forEach(function(p){var k=normNombreDash(p.nombre);if(k)setAntes[k]=1;});
-  var pActual=peds.filter(function(p){return enRango(p,sem.ini,sem.fin);});
-  var pPrev=peds.filter(function(p){return enRango(p,prevIni,prevFin);});
+  cobros.forEach(function(c){if((c.fecha||'')<entP.desde){var k=normNombreDash(c.nombre);if(k)setAntes[k]=1;}});
+  var pActual=peds.filter(function(p){return enRango(p,entC.desde,entC.hasta);});
+  var pPrev=peds.filter(function(p){return enRango(p,entP.desde,entP.hasta);});
+  res.recon={cur:pActual.filter(function(p){return p._estimado;}).length,prev:pPrev.filter(function(p){return p._estimado;}).length};
+  res.entregas=entC;
   var setAntesActual=Object.assign({},setAntes);
   pPrev.forEach(function(p){var k=normNombreDash(p.nombre);if(k)setAntesActual[k]=1;});
-  res.cur=calcSemanaInicio(pActual,movs,sem.ini,setAntesActual);
-  res.prev=calcSemanaInicio(pPrev,movs,prevIni,setAntes);
+  res.cur=calcSemanaInicio(pActual,movs,viernesCadete(sem.ini),setAntesActual);
+  res.prev=calcSemanaInicio(pPrev,movs,viernesCadete(prevIni),setAntes);
   res.pedsCur=pActual;res.pedsPrev=pPrev;
   // B2B pendiente: todos los pedidos mayoristas con saldo, de cualquier semana, con vencimiento a 7 días.
   var hoy=fechaISO(new Date());
@@ -2686,17 +2746,18 @@ function armarTarjetasInicio(d){
   cards.push(c7);
   // 8. Costo del cadete (estimado) = entregas del viernes
   var c8=tarjetaInicio(8,'Costo del cadete (estimado)');
-  var adicSem=adicionalCadete(d.sem.ini);
+  var vCad=viernesCadete(d.sem.ini);
+  var adicSem=adicionalCadete(vCad);
   if(cur.entregasViernes>0){
     c8.appendChild(elDash('div','inicio-big',fmtPesoMsg(costoCadeteViernes(cur.entregasViernes)+adicSem)));
-    c8.appendChild(elDash('div','inicio-sub',cur.entregasViernes+' entregas el viernes '+fechaCorta(d.sem.ini)+' · base '+fmtPesoMsg(CFG_INICIO.cadete_base)+' hasta '+CFG_INICIO.cadete_base_entregas+' entregas + '+fmtPesoMsg(CFG_INICIO.cadete_extra)+' por cada extra'));
+    c8.appendChild(elDash('div','inicio-sub',cur.entregasViernes+' entregas el viernes '+fechaCorta(vCad)+' · base '+fmtPesoMsg(CFG_INICIO.cadete_base)+' hasta '+CFG_INICIO.cadete_base_entregas+' entregas + '+fmtPesoMsg(CFG_INICIO.cadete_extra)+' por cada extra'));
     c8.appendChild(lineaCmpDash(costoCadeteViernes(cur.entregasViernes),prev.entregasViernes>0?costoCadeteViernes(prev.entregasViernes):0,prev.entregasViernes>0,true,true));
   }else sinDatosDash(c8,adicSem>0?'Sin entregas de cadete el viernes (solo hay adicional cargado)':'Sin entregas de cadete el viernes');
   if(adicSem>0||ADIC.error){
     if(ADIC.error)c8.appendChild(elDash('div','inicio-nd','No se pudo leer el adicional. ¿Corriste la migración nueva en Supabase?'));
     else{
       c8.appendChild(elDash('div','inicio-sub','Incluye adicional de '+fmtPesoMsg(adicSem)+' (aparte del pago base; la comparación con la semana anterior es solo del pago base).'));
-      adicionalesDelViernes(d.sem.ini).forEach(function(x){
+      adicionalesDelViernes(vCad).forEach(function(x){
         var fl=elDash('div','inicio-fila');fl.setAttribute('data-adicional',x.id);
         fl.appendChild(document.createTextNode('Adicional '+fmtPesoMsg(Number(x.importe))+(x.nota?' · '+x.nota:'')));
         var ba=elDash('button','btn-ol','Anular');ba.style.cssText='margin:0 0 0 8px;padding:2px 8px;font-size:11px';ba.setAttribute('data-accion','anular-adicional');
@@ -2706,9 +2767,9 @@ function armarTarjetasInicio(d){
     }
   }
   var bAd=elDash('button','btn-ol','+ Adicional del día');bAd.style.margin='8px 0 0';bAd.setAttribute('data-accion','nuevo-adicional');
-  bAd.onclick=function(){abrirDialogoAdicionalCadete(d.sem.ini,cur.entregasViernes,function(){renderInicio();});};
+  bAd.onclick=function(){abrirDialogoAdicionalCadete(vCad,cur.entregasViernes,function(){renderInicio();});};
   c8.appendChild(bAd);
-  armarLiquidacionCadete(c8,d.sem.ini,(cur.entregasViernes>0?costoCadeteViernes(cur.entregasViernes):0)+adicSem,function(){renderInicio();pintarCaja();});
+  armarLiquidacionCadete(c8,vCad,(cur.entregasViernes>0?costoCadeteViernes(cur.entregasViernes):0)+adicSem,function(){renderInicio();pintarCaja();});
   c8.appendChild(elDash('div','inicio-sub','Los martes reparte Fede: no se cuentan.'));
   cards.push(c8);
   // 9. Clientas inactivas (foto de hoy, no depende de la semana elegida)
@@ -2775,6 +2836,23 @@ function armarTarjetasInicio(d){
   return cards;
 }
 
+function armarEstadoSemana(sem){
+  var w=elDash('div','inicio-estado');w.setAttribute('data-estado-semana',sem.ini);
+  var e=entregasDeSemana(sem.ini);
+  w.appendChild(elDash('div','inicio-sub','Horneadas del lunes '+fechaCorta(sumarDias(sem.ini,3))+' y jueves '+fechaCorta(sem.fin)+' · entregas del '+fechaCorta(e.desde)+' al '+fechaCorta(e.hasta)));
+  var cer=SEMCERR.set[sem.ini];
+  var fila=elDash('div');fila.style.cssText='display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:4px';
+  if(cer){fila.appendChild(elDash('span','inicio-badge-venc','Semana cerrada'));}
+  else if(sem.fin<=fechaISO(new Date())&&!SEMCERR.error){
+    var bc=elDash('button','btn-ol','Cerrar esta semana');bc.style.margin='0';bc.setAttribute('data-accion','cerrar-semana');bc.onclick=function(){cerrarSemana(sem.ini);};fila.appendChild(bc);
+  }
+  var bs=elDash('button','btn-ol','Semanas cerradas');bs.style.margin='0';bs.setAttribute('data-accion','ver-semanas-cerradas');bs.onclick=abrirSemanasCerradas;fila.appendChild(bs);
+  w.appendChild(fila);
+  if(INICIO_DATA&&INICIO_DATA.sem&&INICIO_DATA.sem.ini===sem.ini&&INICIO_DATA.recon&&INICIO_DATA.recon.cur>0){
+    w.appendChild(elDash('div','inicio-nd','Semana reconstruida: '+INICIO_DATA.recon.cur+' pedidos salen de Cobros (ya no están en la base). Los importes son estimados a precios actuales y sin envíos ni ajustes.'));
+  }
+  return w;
+}
 function pintarInicio(){
   var roots=document.querySelectorAll('.inicio-root');
   var sem=semanaFikaDe(INICIO_OFFSET);
@@ -2790,6 +2868,7 @@ function pintarInicio(){
     var bExp=elDash('button','btn-ol','Exportar a Excel');bExp.style.margin='0';bExp.setAttribute('data-accion','exportar-inicio');bExp.onclick=exportarInicio;bar.appendChild(bExp);
     bar.appendChild(bAct);
     root.appendChild(bar);
+    root.appendChild(armarEstadoSemana(sem));
     root.appendChild(armarBloqueRespaldo());
     var avCaja=armarAvisosPagos();if(avCaja)root.appendChild(avCaja);
     if(INICIO_CARGANDO&&!INICIO_DATA){root.appendChild(elDash('div','inicio-nd','Cargando…'));return;}
@@ -4539,7 +4618,7 @@ function exportarInicio(){
     ['Ventas',cur.ventas,prev.ventas,'','$'],['Ventas minoristas (B2C)',cur.ventasB2C,prev.ventasB2C,'','$'],['Ventas mayoristas (B2B)',cur.ventasB2B,prev.ventasB2B,'','$'],
     ['Ticket promedio',cur.n>0?cur.ventas/cur.n:'',prev.n>0?prev.ventas/prev.n:'','','$'],['Cobrado',cur.cobrado,prev.cobrado,'','$'],['Pendiente de cobro',cur.pendiente,prev.pendiente,'','$'],
     ['Clientas nuevas',cur.nuevas.length,prev.nuevas.length,'','n'],
-    ['Costo del cadete (estimado, con adicional)',cur.entregasViernes>0?costoCadeteViernes(cur.entregasViernes)+adicionalCadete(d.sem.ini):'',prev.entregasViernes>0?costoCadeteViernes(prev.entregasViernes):'','','$']];
+    ['Costo del cadete (estimado, con adicional)',cur.entregasViernes>0?costoCadeteViernes(cur.entregasViernes)+adicionalCadete(viernesCadete(d.sem.ini)):'',prev.entregasViernes>0?costoCadeteViernes(prev.entregasViernes):'','','$']];
   var mg=COSTOS.cargado&&cur.n>0?margenBrutoSemana(d.pedsCur):null,mp=COSTOS.cargado&&prev.n>0?margenBrutoSemana(d.pedsPrev):null;
   f.push(['Margen bruto (costos de hoy)',mg&&!mg.faltan?mg.margen:'',mp&&!mp.faltan?mp.margen:'','','$']);
   var filas=f.map(function(x){return [x[0],x[1],x[2],x[3]];});
@@ -4574,12 +4653,21 @@ async function cargarCaja(){
   }else CAJA.compras=[];
   CAJA.error=false;CAJA.cargado=true;actualizarBadgeCaja();return true;
 }
+function textoDifConc(c){
+  if(c.es_apertura)return '';
+  if(c.dif_banco===null||c.dif_banco===undefined)return ' · diferencia: sin dato';
+  var partes=[];
+  CAJA_CUENTAS.forEach(function(k){var d=Number(c['dif_'+k[0]])||0;if(Math.abs(d)>=0.005)partes.push(k[1]+' '+(d>0?'sobran ':'faltan ')+fmtCuenta(k[0],Math.abs(d)));});
+  return partes.length?' · diferencia: '+partes.join(', '):' · coincidió';
+}
 function ultimaConciliacion(){return CAJA.concs.length?CAJA.concs[CAJA.concs.length-1]:null;}
 // ¿Algo de fecha "d" (AAAA-MM-DD) creado en "cre" cae dentro del período (desde, hasta]?
-function enPeriodoCaja(d,cre,desdeTs,hastaTs){
+// Regla del día del punto de partida: como Fede carga atrasado, todo lo que tiene fecha del día de la apertura se considera ya incluido
+// en los saldos de partida (aunque se haya cargado después). En los conteos normales se usa la hora de carga para los del mismo día.
+function enPeriodoCaja(d,cre,desdeTs,hastaTs,desdeEsApertura){
   d=String(d).substring(0,10);var dd=fechaISO(new Date(desdeTs)),hh=fechaISO(new Date(hastaTs));
   var creMs=cre?new Date(cre).getTime():null;
-  var despues=d>dd||(d===dd&&(creMs===null||creMs>new Date(desdeTs).getTime()));
+  var despues=d>dd||(!desdeEsApertura&&d===dd&&(creMs===null||creMs>new Date(desdeTs).getTime()));
   var antes=d<hh||(d===hh&&(creMs===null||creMs<=new Date(hastaTs).getTime()));
   return despues&&antes;
 }
@@ -4598,13 +4686,13 @@ function calcularCaja(hastaTs){
     else if(medio==='transferencia')add('banco','Cobros por transferencia',m.importe);
   });
   CAJA.compras.forEach(function(c){
-    if(c.anulado||c.estado==='borrador'||!enPeriodoCaja(c.fecha,c.creado,u.fecha,hastaTs))return;
+    if(c.anulado||c.estado==='borrador'||!enPeriodoCaja(c.fecha,c.creado,u.fecha,hastaTs,u.es_apertura))return;
     var medio=String(c.medio_pago||'').toLowerCase();
     if(medio==='efectivo')add('efectivo','Compras en efectivo',-Number(c.total),c.id);
     else if(medio==='transferencia')add('banco','Compras por transferencia',-Number(c.total),c.id);
   });
   CAJA.movs.forEach(function(m){
-    if(m.anulado||!enPeriodoCaja(m.fecha,m.creado,u.fecha,hastaTs))return;
+    if(m.anulado||!enPeriodoCaja(m.fecha,m.creado,u.fecha,hastaTs,u.es_apertura))return;
     var lbl={adelanto_cadete:'Adelantos al cadete',pago_cadete:'Pago al cadete',aporte:'Aportes',retiro:'Retiros',compra_usd:'Compra de dólares',gasto_fijo:'Gastos fijos',pago_tarjeta:'Pago de tarjeta',otro:'Otros'}[m.tipo]||m.tipo;
     add(m.cuenta,lbl,(m.sentido==='entra'?1:-1)*Number(m.importe),m.id);
   });
@@ -4920,7 +5008,7 @@ function pintarCaja(){
     }
     // movimientos del período
     root.appendChild(elDash('div','sec-lbl','Movimientos de caja desde el último conteo'));
-    var mv=CAJA.movs.filter(function(m){return !m.anulado&&enPeriodoCaja(m.fecha,m.creado,u.fecha,new Date().toISOString());});
+    var mv=CAJA.movs.filter(function(m){return !m.anulado&&enPeriodoCaja(m.fecha,m.creado,u.fecha,new Date().toISOString(),u.es_apertura);});
     if(mv.length===0)root.appendChild(elDash('div','inicio-nd','Todavía no cargaste aportes, retiros ni otros movimientos.'));
     else{
       var cm=elDash('div','card');
@@ -4946,7 +5034,7 @@ function pintarCaja(){
     if(hist.length>1){
       root.appendChild(elDash('div','sec-lbl','Historial de conteos'));
       var ch=elDash('div','card');
-      hist.slice(0,12).forEach(function(c){ch.appendChild(elDash('div','inicio-fila',new Date(c.fecha).toLocaleDateString('es-AR')+(c.es_apertura?' (apertura)':'')+' · banco '+fmtPesoMsg(Number(c.saldo_banco))+' · efectivo '+fmtPesoMsg(Number(c.saldo_efectivo))+' · US$ '+(Number(c.saldo_usd)||0)));});
+      hist.slice(0,12).forEach(function(c){ch.appendChild(elDash('div','inicio-fila',new Date(c.fecha).toLocaleDateString('es-AR',{day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit'})+(c.es_apertura?' (apertura)':'')+' · banco '+fmtPesoMsg(Number(c.saldo_banco))+' · efectivo '+fmtPesoMsg(Number(c.saldo_efectivo))+' · US$ '+(Number(c.saldo_usd)||0)+textoDifConc(c)));});
       root.appendChild(ch);
     }
   });
@@ -5002,7 +5090,11 @@ function abrirDialogoConciliar(){
       var v={};for(var i=0;i<CAJA_CUENTAS.length;i++){var k=CAJA_CUENTAS[i][0];v[k]=parseImporte(campos[k].value);if(isNaN(v[k]))return 'Completá los tres saldos (si no tenés dólares, poné 0).';}
       var row={id:idCaja('cc_'),fecha:new Date(fF.value).toISOString(),saldo_banco:v.banco,saldo_efectivo:v.efectivo,saldo_usd:v.usd,es_apertura:false,anulado:false};
       var n=fN.value.trim();if(n)row.nota=n;
-      if(!await sbUpsert('caja_conciliaciones',row))return 'No se pudo guardar. Reintentá.';
+      var calcG=calcularCaja(row.fecha);
+      if(calcG){row.dif_banco=Math.round((v.banco-calcG.banco.esperado)*100)/100;row.dif_efectivo=Math.round((v.efectivo-calcG.efectivo.esperado)*100)/100;row.dif_usd=Math.round((v.usd-calcG.usd.esperado)*100)/100;}
+      var okG=await sbUpsert('caja_conciliaciones',row);
+      if(!okG&&calcG){delete row.dif_banco;delete row.dif_efectivo;delete row.dif_usd;okG=await sbUpsert('caja_conciliaciones',row);}   // sin la migración nueva: se guarda igual, sin la diferencia
+      if(!okG)return 'No se pudo guardar. Reintentá.';
       await cargarCaja();pintarCaja();return null;
     },cerrar);
   });
@@ -5058,7 +5150,8 @@ function pintarGastosFijos(root){
     if(e.estado==='vencido')card.style.borderColor='var(--danger)';else if(e.estado==='ahora'||e.estado==='pronto')card.style.borderColor='var(--accent)';
     var cab=elDash('div');cab.style.cssText='display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap';
     var izq=elDash('div');izq.appendChild(elDash('div','ins-nombre',g.nombre+' · '+(g.moneda==='USD'?'US$ '+Number(g.importe):fmtPesoMsg(Number(g.importe)))+(g.cada_meses>1?' cada '+g.cada_meses+' meses':' por mes')));
-    izq.appendChild(elDash('div','inicio-sub',e.txt+' · sale de: '+nombreCuenta(g.cuenta)));cab.appendChild(izq);
+    izq.appendChild(elDash('div','inicio-sub',e.txt+' · sale de: '+nombreCuenta(g.cuenta)));
+    if(g.nota)izq.appendChild(elDash('div','inicio-sub','Nota: '+g.nota));cab.appendChild(izq);
     var der=elDash('div');der.style.cssText='display:flex;gap:6px';
     if(g.activo&&g.venc_desde){var bp=elDash('button','btn-p','Registrar pago');bp.style.cssText='margin:0;width:auto;padding:6px 12px';bp.setAttribute('data-accion','pagar-gasto-fijo');(function(x){bp.onclick=function(){abrirDialogoPagoFijo(x);};})(g);der.appendChild(bp);}
     var be=elDash('button','btn-ol','Editar');be.style.margin='0';be.setAttribute('data-accion','editar-gasto-fijo');(function(x){be.onclick=function(){abrirDialogoGastoFijo(x);};})(g);der.appendChild(be);
@@ -5094,12 +5187,14 @@ function abrirDialogoGastoFijo(g){
     var fV=campoDash(body,'Próximo vencimiento: desde','date',g&&g.venc_desde?String(g.venc_desde).substring(0,10):'');
     var fW=campoDash(body,'Próximo vencimiento: hasta','date',g&&g.venc_hasta?String(g.venc_hasta).substring(0,10):'');
     var fA=g?campoDash(body,'Estado','select',g.activo?'1':'0',[['1','Activo'],['0','Pausado']]):null;
+    var fNt=campoDash(body,'Nota (opcional)','text',g&&g.nota?g.nota:'');
     pieDialogo(body,'Guardar',async function(){
       var nom=fN.value.trim(),imp=parseImporte(fI.value),cm=parseInt(fCm.value),d1=parseInt(fD.value),d2=parseInt(fH.value);
       if(!nom)return 'Poné un nombre.';if(isNaN(imp)||imp<0)return 'Revisá el importe.';
       if(!(cm>=1)||!(d1>=1&&d1<=31)||!(d2>=1&&d2<=31)||d2<d1)return 'Revisá los meses y los días (el "hasta" no puede ser menor al "desde").';
       if(!fV.value||!fW.value||fW.value<fV.value)return 'Revisá las fechas del próximo vencimiento.';
       var row={id:g?g.id:idCaja('gf_'),nombre:nom,importe:imp,moneda:fM.value,cada_meses:cm,dia_desde:d1,dia_hasta:d2,cuenta:fC.value,venc_desde:fV.value,venc_hasta:fW.value,activo:fA?fA.value==='1':true};
+      var ntG=fNt.value.trim();if(ntG||(g&&g.nota))row.nota=ntG||null;   // solo se envía si hay nota (así anda aunque falte la migración)
       if(!await sbUpsert('gastos_fijos',row))return 'No se pudo guardar. Reintentá.';
       if(g)Object.assign(g,row);else CAJA.fijos.push(row);
       actualizarBadgeCaja();pintarCaja();return null;
@@ -5349,8 +5444,9 @@ async function nextFikaId(){
 
 
 async function cargarDesdeSupabase(){
-  var ped=await sbGet('pedidos','&order=creado_en.desc');
-  if(ped!==null){pedidos=ped.map(rowToPedido);localStorage.setItem('fika-pedidos',JSON.stringify(pedidos));}
+  await cargarSemanasCerradas();
+  var ped=await sbGetSel('pedidos','*','&order=creado_en.desc');
+  if(ped!==null){repartirPedidosCerrados(ped.map(rowToPedido));localStorage.setItem('fika-pedidos',JSON.stringify(pedidos));}
   else{try{pedidos=JSON.parse(localStorage.getItem('fika-pedidos')||'[]');}catch(e){pedidos=[];}}
   var stk=await sbGet('stock');
   if(stk!==null&&stk.length>0){stock=stk;localStorage.setItem('fika-stock',JSON.stringify(stock));}
@@ -6126,80 +6222,93 @@ function importarHorarios(){
   catch(e){alert('Error al leer el texto.');}
 }
 
-async function cerrarSemana(){
-  // Calcular el sabado pasado (ultimo sabado inclusive)
-  var hoy=new Date();hoy.setHours(0,0,0,0);
-  var diaSem=hoy.getDay();
-  // Semana sab-vie: el sabado pasado (cierre) es el ultimo sabado
-  var diasAtras=diaSem===6?7:diaSem+1;
-  var sabPasado=new Date(hoy);sabPasado.setDate(hoy.getDate()-diasAtras);
-  sabPasado.setHours(23,59,59,999);
-
-  var pasados=pedidos.filter(function(p){
-    if(!p.fecha)return true;
-    return new Date(p.fecha+'T12:00')<=sabPasado;
+// ── CERRAR SEMANA (Corrección 1) ──
+// No borra nada: solo marca la semana (viernes a jueves, por horneada) como cerrada en semanas_cerradas.
+// Los pedidos quedan en la base y la semana se puede consultar siempre; reabrirla también se puede.
+function semanaCerrable(){
+  // la última semana ya terminada (su jueves es hoy o pasó) que todavía no está cerrada
+  var hoy=fechaISO(new Date()),ini=inicioSemanaFika(hoy);
+  var finActual=sumarDias(ini,6);
+  var cand=(finActual<=hoy)?ini:sumarDias(ini,-7);
+  return cand;
+}
+function resumenSemana(ini){
+  var e=entregasDeSemana(ini),r={ini:ini,fin:sumarDias(ini,6),pedidos:0,unidades:0,ventas:0};
+  pedidos.concat(PED_CERR).forEach(function(p){
+    if(!p.fecha||p.fecha<e.desde||p.fecha>e.hasta)return;
+    r.pedidos++;r.unidades+=unidadesPedido(p);r.ventas+=calcTotalPedido(p);
   });
-  var futuros=pedidos.filter(function(p){
-    if(!p.fecha)return false;
-    return new Date(p.fecha+'T12:00')>sabPasado;
-  });
-
-  if(pasados.length===0){alert('No hay pedidos hasta el sábado pasado ('+sabPasado.getDate()+'/'+(sabPasado.getMonth()+1)+').');return;}
-  if(!confirm('Se archivarán '+pasados.length+' pedidos hasta el '+sabPasado.getDate()+'/'+(sabPasado.getMonth()+1)+'.\nQuedan '+futuros.length+' pedidos futuros.\n\nLos cobros pendientes se mantienen en COBROS.\n\n¿Continuar?'))return;
-
+  return r;
+}
+async function cerrarSemana(iniParam){
+  if(SEMCERR.error){alert('Falta correr MIGRACION_CORRECCION_SEMANAS.sql en Supabase para poder cerrar semanas.');return;}
+  var ini=(typeof iniParam==='string')?iniParam:semanaCerrable();
+  var fin=sumarDias(ini,6),hoy=fechaISO(new Date());
+  if(fin>hoy){alert('Esa semana termina el '+fechaCorta(fin)+'. Se puede cerrar desde ese día.');return;}
+  if(semanaCerrada(ini)){alert('La semana del '+fechaCorta(ini)+' al '+fechaCorta(fin)+' ya está cerrada.');return;}
+  var r=resumenSemana(ini);
+  if(!confirm('Cerrar la semana del '+fechaCorta(ini)+' al '+fechaCorta(fin)+'?\n\n'+r.pedidos+' pedidos · '+r.unidades+' unidades · '+fmtPeso(r.ventas)+'.\n\nNo se borra nada: los pedidos quedan guardados y la semana se puede consultar siempre. Los cobros pendientes se siguen viendo en COBROS.'))return;
   showLoad('Cerrando semana...');
-
-  // 1. Calcular estadisticas para el historial
-  var totProd={};PRODUCTOS.forEach(function(k){totProd[k]=0;});
-  pasados.forEach(function(p){PRODUCTOS.forEach(function(k){totProd[k]+=(p.panes&&p.panes[k])||0;});});
-  var totalUn=Object.values(totProd).reduce(function(a,b){return a+b;},0);
-
-  // Fecha de referencia: el sabado pasado
-  var fechaRef=sabPasado.getFullYear()+'-'+pad(sabPasado.getMonth()+1)+'-'+pad(sabPasado.getDate());
-  var regHist={
-    id:fechaRef,
-    fecha:fechaRef+'T12:00:00.000Z',
-    lactal:totProd.lactal||0,
-    integral:totProd.integral||0,
-    campo:totProd.campo||0,
-    focaccia_cherry:totProd.focaccia_cherry||0,
-    focaccia_cebolla:totProd.focaccia_cebolla||0,
-    focaccia_morron:totProd.focaccia_morron||0,
-    prepizza:totProd.prepizza||0,
-    total:totalUn,
-    inicio:'',
-    fin:''
-  };
-
-  // 2. Guardar en historial local y Supabase
-  var yaExiste=historial.find(function(h){return h.id===fechaRef;});
-  if(!yaExiste)historial.unshift(regHist);
-  localStorage.setItem('fika-historial',JSON.stringify(historial));
-  await sbUpsert('historial_produccion',regHist);
-
-  // 2b. Copia de los pedidos en pedidos_archivo (así Inicio puede calcular semanas viejas). Si no se puede, se pregunta antes de eliminar.
-  var copiaOk=await sbUpsert('pedidos_archivo',pasados.map(pedidoToRow));
-  if(!copiaOk){
-    hideLoad();
-    if(!confirm('No se pudo guardar la copia de los pedidos en el archivo (¿falta correr MIGRACION_CORRECCIONES.sql?).\n\nSi seguís, los pedidos se eliminan igual y no se podrá ver el detalle de esa semana en Inicio.\n\n¿Archivar de todas formas?'))return;
-    showLoad('Cerrando semana...');
-  }
-  // 3. Eliminar pedidos pasados de Supabase
-  for(var i=0;i<pasados.length;i++){
-    await sbDelete('pedidos','id',pasados[i].id);
-  }
-
-  // 4. Asegurar cobros pendientes (ya estan en cobros, solo verificar)
-  reconstruirCobros();
-
-  // 5. Actualizar lista de pedidos
-  pedidos=futuros;
-  guardar();
+  var row={id:ini,ini:ini,fin:fin,pedidos:r.pedidos,unidades:r.unidades,ventas:Math.round(r.ventas),activa:true,cerrada_en:new Date().toISOString()};
+  var ok=await sbUpsert('semanas_cerradas',row);
   hideLoad();
-  renderPedidos();
-  if(!ES_MOVIL)renderDeskPedidos();
-  checkAlertaPago();
-  alert('Semana cerrada. '+pasados.length+' pedidos archivados en el Historial.');
+  if(!ok){alert('No se pudo cerrar la semana. ¿Corriste MIGRACION_CORRECCION_SEMANAS.sql en Supabase?');return;}
+  SEMCERR.lista=SEMCERR.lista.filter(function(x){return String(x.ini).substring(0,10)!==ini;});SEMCERR.lista.unshift(row);SEMCERR.set[ini]=row;
+  await refrescarTrasCambioSemanas();
+  alert('Semana cerrada: '+r.pedidos+' pedidos. No se borró nada.');
+}
+async function reabrirSemana(ini){
+  if(!confirm('¿Reabrir la semana del '+fechaCorta(ini)+'? Sus pedidos vuelven a verse entre los pedidos de la semana.'))return false;
+  var ok=await sbUpsert('semanas_cerradas',{id:ini,activa:false});
+  if(!ok){alert('No se pudo reabrir. Reintentá.');return false;}
+  var x=SEMCERR.lista.find(function(z){return String(z.ini).substring(0,10)===ini;});if(x)x.activa=false;
+  delete SEMCERR.set[ini];
+  await refrescarTrasCambioSemanas();
+  return true;
+}
+// Reparte de nuevo los pedidos en memoria entre abiertos y cerrados y repinta.
+async function refrescarTrasCambioSemanas(){
+  var todos=pedidos.concat(PED_CERR);
+  Object.keys(ARCH_PED).forEach(function(id){if(ARCH_PED[id]&&ARCH_PED[id]._tabla==='pedidos')delete ARCH_PED[id];});
+  repartirPedidosCerrados(todos);
+  guardar();
+  try{renderPedidos();if(!ES_MOVIL)renderDeskPedidos();}catch(e){}
+  try{checkAlertaPago();}catch(e){}
+  try{renderCobros();if(typeof renderCobrosDesk==='function')renderCobrosDesk();}catch(e){}
+  renderInicio(true);
+}
+function abrirSemanasCerradas(){
+  abrirDialogoDash('Semanas cerradas',function(body,cerrar){
+    body.appendChild(elDash('div','inicio-sub','Cada semana va de viernes a jueves según la fecha de horneada. Cerrar una semana no borra nada: podés verla y reabrirla cuando quieras.'));
+    var act=SEMCERR.lista.filter(function(x){return x.activa!==false;});
+    if(SEMCERR.error){body.appendChild(elDash('div','inicio-nd','Falta correr MIGRACION_CORRECCION_SEMANAS.sql en Supabase.'));return;}
+    var cand=semanaCerrable();
+    if(!semanaCerrada(cand)){
+      var bc=elDash('button','btn-p','Cerrar la semana del '+fechaCorta(cand)+' al '+fechaCorta(sumarDias(cand,6)));bc.style.margin='8px 0';bc.setAttribute('data-accion','cerrar-semana-dlg');
+      bc.onclick=async function(){cerrar();await cerrarSemana(cand);};body.appendChild(bc);
+    }
+    if(act.length===0){body.appendChild(elDash('div','inicio-nd','Todavía no hay semanas cerradas.'));return;}
+    act.slice().sort(function(a,b){return String(b.ini).localeCompare(String(a.ini));}).forEach(function(x){
+      var ini=String(x.ini).substring(0,10),r=resumenSemana(ini);
+      var card=elDash('div','card');card.setAttribute('data-semana-cerrada',ini);
+      card.appendChild(elDash('div','ins-nombre',fechaCorta(ini)+' – '+fechaCorta(sumarDias(ini,6))));
+      card.appendChild(elDash('div','inicio-sub',r.pedidos+' pedidos · '+r.unidades+' unidades · '+fmtPeso(r.ventas)));
+      var fila=elDash('div');fila.style.cssText='display:flex;gap:6px;flex-wrap:wrap';
+      var bv=elDash('button','btn-ol','Ver en Inicio');bv.style.margin='4px 0 0';bv.onclick=function(){var cur=inicioSemanaFika(fechaISO(new Date()));INICIO_OFFSET=Math.round((parseFechaISO(ini)-parseFechaISO(cur))/(7*86400000));cerrar();renderInicio();if(typeof showDesk==='function'&&!ES_MOVIL)showDesk('d-inicio');else if(typeof showMob==='function')showMob('inicio');};
+      var bl=elDash('button','btn-ol','Ver pedidos');bl.style.margin='4px 0 0';
+      var cont=elDash('div');cont.style.display='none';
+      bl.onclick=function(){
+        if(cont.style.display==='block'){cont.style.display='none';bl.textContent='Ver pedidos';return;}
+        cont.innerHTML='';var e=entregasDeSemana(ini);
+        var lista=PED_CERR.filter(function(p){return p.fecha&&p.fecha>=e.desde&&p.fecha<=e.hasta;}).sort(function(a,b){return (a.fecha||'').localeCompare(b.fecha||'');});
+        if(lista.length===0)cont.appendChild(elDash('div','inicio-nd','Los pedidos de esta semana ya no están en la base; el detalle sale de Cobros en Inicio e Historial.'));
+        lista.forEach(function(p){cont.appendChild(elDash('div','inicio-fila',fechaCorta(p.fecha)+' · '+p.nombre+' · '+unidadesPedido(p)+' u · '+fmtPeso(calcTotalPedido(p))+(p.pago?' · pagado':' · pendiente')));});
+        cont.style.display='block';bl.textContent='Ocultar pedidos';
+      };
+      var br=elDash('button','btn-ol','Reabrir');br.style.margin='4px 0 0';br.setAttribute('data-accion','reabrir-semana');br.onclick=async function(){if(await reabrirSemana(ini))cerrar();};
+      fila.appendChild(bv);fila.appendChild(bl);fila.appendChild(br);card.appendChild(fila);card.appendChild(cont);body.appendChild(card);
+    });
+  });
 }
 
 // ── DESK PEDIDOS ──────────────────────────────────────────────
@@ -7116,17 +7225,46 @@ var chartLineasInst=null,chartBarrasInst=null,chartTortaInst=null,chartMobInst=n
 var PROD_COLORES_H={lactal:'#6a9fd8',integral:'#5ab88a',campo:'#c9a34f',focaccia_cherry:'#d4607a',focaccia_cebolla:'#c0507a',focaccia_morron:'#e07040',prepizza:'#8b6fbe',merm_frutilla:'#e8507a',merm_arandanos:'#7b4fa6',merm_frutos_rojos:'#c0392b'};
 var PROD_LABELS_H={lactal:'Lactal',integral:'Integral',campo:'Campo',focaccia_cherry:'Cherry',focaccia_cebolla:'Cebolla',focaccia_morron:'Morrón',prepizza:'Prepizza',merm_frutilla:'Merm. Frutilla',merm_arandanos:'Merm. Arándanos',merm_frutos_rojos:'Merm. Frutos rojos'};
 
+// Semanas del Historial: se calculan desde los pedidos (abiertos y cerrados) y, para lo que ya no está en la base, desde Cobros.
+// Cada pedido cuenta en la semana de su horneada. Lo anterior a Cobros queda como histórico (historial_produccion).
+var HIST_CONTROL=null;
+function calcularSemanasHistorial(){
+  var semanas={},vistos={};
+  function sumar(f,panes,est){
+    var ini=semanaIniDeEntrega(f),w=semanas[ini];
+    if(!w){w=semanas[ini]={id:sumarDias(ini,6),fecha:sumarDias(ini,6)+'T12:00:00.000Z',ini:ini,total:0,pedidos:0,estimado:false,cerrada:semanaCerrada(ini)};PRODUCTOS.forEach(function(k){w[k]=0;});}
+    PRODUCTOS.forEach(function(k){var n=Number(panes&&panes[k])||0;if(n>0){w[k]=(w[k]||0)+n;w.total+=n;}});
+    w.pedidos++;if(est)w.estimado=true;
+  }
+  pedidos.concat(PED_CERR).forEach(function(p){vistos[p.id]=1;if(p.fecha&&p.panes)sumar(p.fecha,p.panes,false);});
+  cobros.forEach(function(c){if(!c.pedidoId||vistos[c.pedidoId]||!c.fecha||!c.panes)return;vistos[c.pedidoId]=1;sumar(c.fecha,c.panes,true);});
+  var lista=Object.keys(semanas).sort().map(function(k){return semanas[k];});
+  var hoy=fechaISO(new Date());
+  lista.forEach(function(w){if(w.id>=hoy&&!w.cerrada)w.enCurso=true;});
+  return lista;
+}
 function getHistorialCompleto(){
+  var calc=calcularSemanasHistorial();
+  var primera=calc.length?calc[0].ini:null;
   var ids=new Set(historial.map(function(h){return h.id;}));
-  var base=HIST_PRELOAD.filter(function(h){return !ids.has(h.id);});
-  var lista=base.concat(historial).sort(function(a,b){return (a.fecha||a.id).localeCompare(b.fecha||b.id);});
-  var enCurso=getSemanaEnCurso();
-  if(enCurso&&enCurso.total>=0){
-    lista=lista.filter(function(h){return (h.id||'').slice(0,10)!==enCurso.id.slice(0,10);});
-    lista.push(enCurso);
+  var base=HIST_PRELOAD.filter(function(h){return !ids.has(h.id);}).concat(historial);
+  var viejo=base.filter(function(h){return !primera||(h.fecha||h.id).slice(0,10)<primera;});
+  var lista=viejo.concat(calc).sort(function(a,b){return (a.fecha||a.id).localeCompare(b.fecha||b.id);});
+  // Control: en el tramo que cubren las dos fuentes, unidades del histórico viejo vs. las reconstruidas
+  HIST_CONTROL=null;
+  if(primera&&calc.length){
+    var ultima=calc[calc.length-1].ini;
+    var solape=base.filter(function(h){var d=(h.fecha||h.id).slice(0,10);return d>=primera&&d<=sumarDias(ultima,6);});
+    if(solape.length){
+      var a=solape.reduce(function(t,h){return t+(h.total||0);},0);
+      var rango=calc.filter(function(w){return w.id<=solape[solape.length-1].id.slice(0,10)||true;});
+      var b=calc.filter(function(w){return w.id>=primera&&w.id<=(solape[solape.length-1].fecha||solape[solape.length-1].id).slice(0,10);}).reduce(function(t,w){return t+w.total;},0);
+      HIST_CONTROL={viejo:a,nuevo:b,semanas:solape.length};
+    }
   }
   return lista;
 }
+function marcasSem(h){return (h.enCurso?' · en curso':'')+(h.estimado?' *':'')+(h.cerrada?' ✓':'');}
 
 function getHistorialFiltrado(){
   var todos=getHistorialCompleto();
@@ -7317,10 +7455,12 @@ function renderHistTablaPC(lista){
   html+='</tr></thead><tbody>';
   lista.forEach(function(h){var best=h.total===maxT;
   html+='<tr style="border-bottom:0.5px solid var(--border)'+(best?';background:rgba(201,163,79,0.06)':'')+'">';
-  html+='<td style="padding:6px;color:var(--text)">'+(best?'★ ':'')+fmtSem(h)+'</td>';
+  html+='<td style="padding:6px;color:var(--text)">'+(best?'★ ':'')+fmtSem(h)+marcasSem(h)+'</td>';
   [h.lactal,h.integral,h.campo,h.focaccia_cherry,h.focaccia_cebolla,h.focaccia_morron,h.total].forEach(function(v,i){html+='<td style="padding:6px;text-align:right;color:'+(v===0&&i<6?'var(--text3)':i===6?'var(--accent)':'var(--text)')+';font-weight:'+(i===6?500:400)+'">'+(v===0&&i<6?'—':v)+'</td>';});
   html+='</tr>';});
-  html+='</tbody></table>';el.innerHTML=html;
+  html+='</tbody></table>';
+  html+='<div style="font-size:10px;color:var(--text3);margin-top:6px">Cada fila es una semana por horneada (viernes a jueves) y se rotula con su jueves. ✓ cerrada · * reconstruida desde Cobros (unidades reales, importes estimados)'+(HIST_CONTROL?' · Control: histórico anterior '+HIST_CONTROL.viejo+' u, reconstruido '+HIST_CONTROL.nuevo+' u en el mismo período (difiere por el corte de semanas)':'')+'</div>';
+  el.innerHTML=html;
 }
 
 function renderHistFiltrosMob(lista){
