@@ -857,7 +857,7 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
     </div>
     <div class="f-row2">
       <div><div class="f-lbl">Sobrenombre</div><input class="f-in" id="p-sobrenombre" placeholder="Ej: Ariel (opcional)"></div>
-      <div><div class="f-lbl">Teléfono</div><input class="f-in" type="tel" id="p-tel" placeholder="381 123 4567"></div>
+      <div><div class="f-lbl">Teléfono</div><input class="f-in" type="tel" id="p-tel" placeholder="381 123 4567"><div id="p-tel-hint" style="font-size:11px;color:var(--text3);margin-top:3px;display:none"></div></div>
     </div>
     <div class="f-row2" id="p-como-wrap">
       <div><div class="f-lbl">¿Cómo nos conoció?</div><select class="f-in" id="p-como"><option value="No sé / no le pregunté">No sé / no le pregunté</option><option value="Publicidad Instagram">Publicidad Instagram</option><option value="Instagram (orgánico)">Instagram (orgánico)</option><option value="TikTok">TikTok</option><option value="Estado de WhatsApp">Estado de WhatsApp</option><option value="Difusión de WhatsApp">Difusión de WhatsApp</option><option value="Recomendación">Recomendación</option><option value="Clienta habitual">Clienta habitual</option><option value="Otro">Otro</option></select></div>
@@ -2147,6 +2147,32 @@ function fmtPeso(n){return n>0?'$'+n.toLocaleString('es-AR'):'';}
 // distinto al guardado, y esa ficha nueva nacía sin teléfono. Esta función normaliza antes
 // de comparar, en todos los lugares que buscan "es el mismo cliente".
 function normNombre(s){return (s||'').toString().trim().replace(/\s+/g,' ').toLowerCase();}
+// ── Búsqueda de datos de la clienta tolerante (teléfono que no se autocompletaba) ──
+// Ignora tildes, signos y el orden de las palabras ("Navarro, Carlos" = "Carlos Navarro").
+function claveNombre(s){return normNombre(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();}
+function palabrasNombre(s){return claveNombre(s).split(' ').filter(Boolean);}
+function mismoNombre(a,b){
+  var x=claveNombre(a),y=claveNombre(b);if(!x||!y)return false;if(x===y)return true;
+  return palabrasNombre(a).sort().join(' ')===palabrasNombre(b).sort().join(' ');
+}
+// "Carlos Navarro" parecido a "Carlos Navarro Díaz": una contiene todas las palabras de la otra (mínimo dos). Se usa solo si no hay coincidencia exacta.
+function nombreParecido(a,b){
+  var A=palabrasNombre(a),B=palabrasNombre(b);if(A.length<2||B.length<2)return false;
+  var ch=A.length<=B.length?A:B,gr=A.length<=B.length?B:A;
+  return ch.every(function(w){return gr.indexOf(w)>=0;});
+}
+function hintTelefono(txt){var h=document.getElementById('p-tel-hint');if(!h)return;h.textContent=txt||'';h.style.display=txt?'block':'none';}
+// Último teléfono/domicilio guardado en la base (pedidos y archivo, incluso de semanas que el viejo "Cerrar semana" archivó)
+async function buscarDatosEnBase(nombre){
+  var pal=palabrasNombre(nombre);if(!pal.length)return null;
+  var clave=pal.slice().sort(function(a,b){return b.length-a.length;})[0];   // la palabra más larga
+  var q='&nombre=ilike.*'+encodeURIComponent(clave)+'*&telefono=not.is.null&order=fecha.desc';
+  var a=await sbGetSel('pedidos','telefono,domicilio,piso,ciudad,nombre,fecha',q)||[];
+  var b=await sbGetSel('pedidos_archivo','telefono,domicilio,piso,ciudad,nombre,fecha',q)||[];
+  var todos=a.concat(b).filter(function(r){return r.telefono&&String(r.telefono).trim()!=='';}).sort(function(x,y){return String(y.fecha||'').localeCompare(String(x.fecha||''));});
+  return todos.find(function(r){return mismoNombre(r.nombre,nombre);})||todos.find(function(r){return nombreParecido(r.nombre,nombre);})||null;
+}
+
 function fmtPesoMsg(n){n=Math.round(n||0);return '$'+n.toLocaleString('es-AR');}
 
 // ITERACIÓN 3 / Fase 6: helper de precio unitario para el detalle de productos de un
@@ -5756,7 +5782,7 @@ function abrirModalPedido(id){
   pedidoEditId=id;
   PRODUCTOS.forEach(function(k){pQtys[k]=0;document.getElementById('pq-'+k).textContent=0;});
   ['p-nombre','p-sobrenombre','p-tel','p-dom','p-piso','p-notas'].forEach(function(x){document.getElementById(x).value='';});
-  setComoForm(null);
+  setComoForm(null);hintTelefono('');
   pObsequios=[];renderObsequiosForm();
   document.getElementById('p-fecha').value='';document.getElementById('p-ciudad').value='';document.getElementById('p-enc').value='Cadete';document.getElementById('p-pago').checked=false;document.getElementById('p-coord').checked=false;if(document.getElementById('p-tipo-precio'))document.getElementById('p-tipo-precio').value='Minorista';
   document.getElementById('p-dom').disabled=false;document.getElementById('p-dom').style.opacity='1';document.getElementById('p-piso').disabled=false;document.getElementById('p-piso').style.opacity='1';
@@ -5858,6 +5884,11 @@ async function _guardarPedidoInterno(){
   var comoForm=document.getElementById('p-como').value||COMO_DEF,comoNotaForm=document.getElementById('p-como-nota').value.trim();
   var comoWrap=document.getElementById('p-como-wrap');
   if(comoWrap&&comoWrap.style.display==='none'){comoForm=cli?comoDeCliente(cli):COMO_DEF;comoNotaForm=cli?(cli.como_nos_conocio_nota||''):'';}   // clienta que ya existía: no se pregunta
+  if(cli){
+    var cambioFicha=false;
+    ['telefono','domicilio','piso','ciudad'].forEach(function(f){var v=p[f];if(v&&String(v).trim()!==''&&v!=='Coordinar'&&!cli[f]){cli[f]=v;cambioFicha=true;}});
+    if(cambioFicha){sbUpsert('clientes',cli);localStorage.setItem('fika-clientes',JSON.stringify(clientes));}   // la ficha se completa sola con lo que cargás en el pedido
+  }
   if(!cli&&nombre){var nCli={id:'cli_'+Date.now(),nombre:nombre,sobrenombre:sobrenombreForm||null,telefono:p.telefono,domicilio:p.domicilio,piso:p.piso,ciudad:p.ciudad,etiqueta:'nuevo',creado_en:new Date().toISOString()};
     if(comoForm!==COMO_DEF||comoNotaForm){nCli.como_nos_conocio=comoForm;if(comoNotaForm)nCli.como_nos_conocio_nota=comoNotaForm;}
     clientes.push(nCli);sbUpsert('clientes',nCli);localStorage.setItem('fika-clientes',JSON.stringify(clientes));actualizarDatalist();}
@@ -7624,8 +7655,9 @@ function elegirCliente(item){
   // usa el primer valor no vacío entre todos ellos (y, si ninguno lo tiene, el pedido más
   // reciente de esa persona que sí lo tenga).
   var clisCoincidentes=clientes.filter(function(c){return normNombre(c.nombre)===nombreNorm;});
-  // Pedidos anteriores de este cliente, del mas reciente al mas viejo
-  var pAnt=pedidos.filter(function(p){return normNombre(p.nombre)===nombreNorm;})
+  if(!clisCoincidentes.length)clisCoincidentes=clientes.filter(function(c){return mismoNombre(c.nombre,item.nombre);});
+  // Pedidos anteriores de este cliente, del mas reciente al mas viejo (abiertos y de semanas cerradas)
+  var pAnt=pedidos.concat(PED_CERR).filter(function(p){return mismoNombre(p.nombre,item.nombre);})
     .sort(function(a,b){return (b.fecha||'').localeCompare(a.fecha||'');});
   function esValido(v){return v&&String(v).trim()!==''&&v!=='Coordinar';}
   function primerValido(valores){for(var i=0;i<valores.length;i++){if(esValido(valores[i]))return valores[i];}return '';}
@@ -7639,6 +7671,19 @@ function elegirCliente(item){
   setResuelto('p-sobrenombre',primerValido(clisCoincidentes.map(function(c){return c.sobrenombre;})));
   setComoForm(clisCoincidentes.find(function(c){return c.como_nos_conocio&&c.como_nos_conocio!==COMO_DEF;})||clisCoincidentes[0]||null);
   setResuelto('p-tel',primerValido(clisCoincidentes.map(function(c){return c.telefono;}).concat([ultimoValorPedido('telefono')])));
+  hintTelefono('');
+  if(!document.getElementById('p-tel').value.trim()){
+    // Sin teléfono en la ficha ni en los pedidos abiertos: se busca en el resto de la base. Si tampoco está, lo dice.
+    hintTelefono('Buscando teléfono guardado…');
+    var nomBuscado=item.nombre;
+    buscarDatosEnBase(nomBuscado).then(function(r){
+      var tel=document.getElementById('p-tel'),n=document.getElementById('p-nombre');
+      if(!tel||!n||n.value!==nomBuscado||tel.value.trim()){return;}
+      if(r){tel.value=r.telefono;hintTelefono(mismoNombre(r.nombre,nomBuscado)?'Teléfono tomado de su último pedido':'Teléfono tomado de un pedido de "'+r.nombre+'". Verificá que sea la misma persona.');
+        var dom=document.getElementById('p-dom');if(dom&&!dom.value.trim()&&r.domicilio&&r.domicilio!=='Coordinar')dom.value=r.domicilio;}
+      else hintTelefono('No hay ningún teléfono guardado de esta clienta. Cargalo ahora y queda guardado para la próxima.');
+    });
+  }
   setResuelto('p-dom',primerValido(clisCoincidentes.map(function(c){return c.domicilio;}).concat([ultimoValorPedido('domicilio')])));
   setResuelto('p-piso',primerValido(clisCoincidentes.map(function(c){return c.piso;}).concat([ultimoValorPedido('piso')])));
   setResuelto('p-ciudad',primerValido(clisCoincidentes.map(function(c){return c.ciudad;}).concat([ultimoValorPedido('ciudad')])));
@@ -7654,9 +7699,21 @@ function autocompletarSiCoincide(){
   var sob=document.getElementById('p-sobrenombre');
   if((tel&&tel.value.trim())||(sob&&sob.value.trim())||(dom&&dom.value.trim()&&dom.value.trim()!=='Coordinar'))return;
   var k=normNombre(n.value);if(!k)return;
-  var cli=clientes.find(function(c){return normNombre(c.nombre)===k;});
-  var nom=cli?cli.nombre:((pedidos.find(function(p){return normNombre(p.nombre)===k;})||{}).nombre);
+  var cli=clientes.find(function(c){return normNombre(c.nombre)===k;})||clientes.find(function(c){return mismoNombre(c.nombre,n.value);});
+  var nom=cli?cli.nombre:((pedidos.concat(PED_CERR).find(function(p){return mismoNombre(p.nombre,n.value);})||{}).nombre);
   if(nom)elegirCliente({nombre:nom,cli:cli||null});
+  else completarTelefonoDesdeBase(n.value);   // no está en memoria: se busca en la base
+}
+async function completarTelefonoDesdeBase(nombre){
+  var tel=document.getElementById('p-tel');if(!tel||tel.value.trim()||pedidoEditId)return;
+  var r=await buscarDatosEnBase(nombre);
+  var n=document.getElementById('p-nombre');
+  if(!r||!n||n.value!==nombre||tel.value.trim())return;   // cambió el nombre o ya escribieron algo mientras se buscaba
+  tel.value=r.telefono;
+  var dom=document.getElementById('p-dom');if(dom&&!dom.value.trim()&&r.domicilio&&r.domicilio!=='Coordinar')dom.value=r.domicilio;
+  var piso=document.getElementById('p-piso');if(piso&&!piso.value.trim()&&r.piso)piso.value=r.piso;
+  var ci=document.getElementById('p-ciudad');if(ci&&!ci.value&&r.ciudad)ci.value=r.ciudad;
+  hintTelefono(mismoNombre(r.nombre,nombre)?'Teléfono tomado de su último pedido':'Teléfono tomado de un pedido de "'+r.nombre+'". Verificá que sea la misma persona.');
 }
 function cerrarSugerencias(){var drop=document.getElementById('sugerencias-drop');if(drop)drop.style.display='none';}
 
