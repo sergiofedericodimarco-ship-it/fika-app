@@ -851,7 +851,7 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
     <div class="modal-hdr"><div class="modal-title" id="mp-title">Nuevo pedido</div><button class="modal-close" onclick="cerrarModal('modal-pedido')">&#215;</button></div>
     <div class="f-row"><div class="f-lbl">Nombre y apellido</div>
       <div style="position:relative">
-        <input class="f-in" id="p-nombre" placeholder="Ej: María González" autocomplete="off" oninput="buscarSugerencias(this.value)" onchange="autocompletarSiCoincide()" onblur="setTimeout(function(){cerrarSugerencias();autocompletarSiCoincide();},250)">
+        <input class="f-in" id="p-nombre" placeholder="Ej: María González" autocomplete="off" oninput="buscarSugerencias(this.value);actualizarComoVisible()" onchange="autocompletarSiCoincide()" onblur="setTimeout(function(){cerrarSugerencias();autocompletarSiCoincide();},250)">
         <div id="sugerencias-drop" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--bg3);border:0.5px solid var(--border2);border-radius:0 0 8px 8px;z-index:200;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.4)"></div>
       </div>
     </div>
@@ -859,8 +859,8 @@ input:checked+.slider:before{background:white;transform:translateX(19px)}
       <div><div class="f-lbl">Sobrenombre</div><input class="f-in" id="p-sobrenombre" placeholder="Ej: Ariel (opcional)"></div>
       <div><div class="f-lbl">Teléfono</div><input class="f-in" type="tel" id="p-tel" placeholder="381 123 4567"></div>
     </div>
-    <div class="f-row2">
-      <div><div class="f-lbl">¿Cómo nos conoció?</div><select class="f-in" id="p-como"><option value="No sé / no le pregunté">No sé / no le pregunté</option><option value="Publicidad de Instagram">Publicidad de Instagram</option><option value="Instagram (sin publicidad)">Instagram (sin publicidad)</option><option value="TikTok">TikTok</option><option value="Recomendación">Recomendación</option><option value="Otra">Otra</option></select></div>
+    <div class="f-row2" id="p-como-wrap">
+      <div><div class="f-lbl">¿Cómo nos conoció?</div><select class="f-in" id="p-como"><option value="No sé / no le pregunté">No sé / no le pregunté</option><option value="Publicidad Instagram">Publicidad Instagram</option><option value="Instagram (orgánico)">Instagram (orgánico)</option><option value="TikTok">TikTok</option><option value="Estado de WhatsApp">Estado de WhatsApp</option><option value="Difusión de WhatsApp">Difusión de WhatsApp</option><option value="Recomendación">Recomendación</option><option value="Clienta habitual">Clienta habitual</option><option value="Otro">Otro</option></select></div>
       <div><div class="f-lbl">Detalle (opcional)</div><input class="f-in" id="p-como-nota" placeholder="Ej: la recomendó Ana"></div>
     </div>
     <div class="f-row2">
@@ -2526,11 +2526,38 @@ function calcSemanaInicio(peds,movs,ini,nombresAntes){
   return r;
 }
 // ¿Cómo nos conoció la clienta? Opcional; si no se sabe queda el valor por defecto. Vive solo en clientes.
-var COMO_DEF='No sé / no le pregunté';
-function comoDeCliente(c){return (c&&c.como_nos_conocio)?c.como_nos_conocio:COMO_DEF;}
+var COMO_DEF='No sé / no le pregunté',COMO_HAB='Clienta habitual';
+// Valores viejos que ya están guardados en clientes: se leen con el nombre nuevo.
+var COMO_LEGADO={'Publicidad de Instagram':'Publicidad Instagram','Instagram (sin publicidad)':'Instagram (orgánico)','Otra':'Otro'};
+function normalizarComo(v){return COMO_LEGADO[v]||v;}
+// Las habituales (anteriores al 06/11/2026) quedan con "Clienta habitual" salvo que ya tengan un origen cargado.
+function comoDeCliente(c){
+  var v=(c&&c.como_nos_conocio)?normalizarComo(c.como_nos_conocio):COMO_DEF;
+  if(v===COMO_DEF&&c&&c.habitual===true)return COMO_HAB;
+  return v;
+}
+// ¿Corresponde preguntar cómo nos conoció? Solo cuando la clienta es nueva: no es habitual y no tiene otros pedidos.
+function esClientaNuevaForm(){
+  var el=document.getElementById('p-nombre'),nombre=el?el.value.trim():'';
+  if(!nombre)return false;
+  var k=normNombreDash(nombre);
+  var cli=clientes.filter(function(x){return normNombreDash(x.nombre)===k;});
+  if(cli.some(function(x){return x.habitual===true;}))return false;
+  var otro=pedidos.concat(PED_CERR).some(function(p){return p.id!==pedidoEditId&&normNombreDash(p.nombre)===k;})
+    ||cobros.some(function(c){return c.pedidoId!==pedidoEditId&&normNombreDash(c.nombre)===k;});
+  return !otro;
+}
+function actualizarComoVisible(){
+  var w=document.getElementById('p-como-wrap');if(!w)return;
+  var nueva=esClientaNuevaForm();
+  w.style.display=nueva?'':'none';
+  var s=document.getElementById('p-como');
+  // Si no se pregunta, no queda un valor viejo de otra clienta: se muestra el de su ficha
+  if(!nueva&&s){var k=normNombreDash(document.getElementById('p-nombre').value),c=clientes.find(function(x){return normNombreDash(x.nombre)===k;});if(c)s.value=comoDeCliente(c);}
+}
 function comoDeClienta(nombre){var k=normNombreDash(nombre);return comoDeCliente(clientes.find(function(x){return normNombreDash(x.nombre)===k;}));}
 // Pone el valor en el formulario de pedido (siempre se reasigna, incluso al valor por defecto, para no arrastrar el de otra clienta)
-function setComoForm(c){var s=document.getElementById('p-como'),n=document.getElementById('p-como-nota');if(s)s.value=comoDeCliente(c);if(n)n.value=(c&&c.como_nos_conocio_nota)||'';}
+function setComoForm(c){var s=document.getElementById('p-como'),n=document.getElementById('p-como-nota');if(s)s.value=comoDeCliente(c);if(n)n.value=(c&&c.como_nos_conocio_nota)||'';setTimeout(actualizarComoVisible,0);}
 function nombreVisibleClienta(nombre){
   var k=normNombreDash(nombre);
   var c=clientes.find(function(x){return normNombreDash(x.nombre)===k;});
@@ -2715,7 +2742,7 @@ function armarTarjetasInicio(d){
     if(cur.nuevas.length>0){
       c6.appendChild(elDash('div','inicio-sub',cur.nuevas.map(nombreVisibleClienta).join(', ')));
       var cuentaComo={};cur.nuevas.forEach(function(n){var o=comoDeClienta(n);cuentaComo[o]=(cuentaComo[o]||0)+1;});
-      var lc=elDash('div','inicio-sub',Object.keys(cuentaComo).map(function(o){return (o===COMO_DEF?'Sin dato':o)+': '+cuentaComo[o];}).join(' · '));lc.setAttribute('data-como','1');c6.appendChild(lc);
+      var lc=elDash('div','inicio-sub',Object.keys(cuentaComo).map(function(o){return (o===COMO_DEF?'Sin dato':o)+': '+cuentaComo[o];}).join(' · '));lc.textContent='Por origen: '+lc.textContent;lc.setAttribute('data-como','1');c6.appendChild(lc);
     }
     else c6.appendChild(elDash('div','inicio-sub','Ninguna clienta con su primer pedido esta semana'));
     c6.appendChild(lineaCmpDash(cur.nuevas.length,prev.nuevas.length,hayPrev,false,false));
@@ -5829,6 +5856,8 @@ async function _guardarPedidoInterno(){
   var sobrenombreForm=document.getElementById('p-sobrenombre').value.trim();
   // Si no existe como cliente, crearlo
   var comoForm=document.getElementById('p-como').value||COMO_DEF,comoNotaForm=document.getElementById('p-como-nota').value.trim();
+  var comoWrap=document.getElementById('p-como-wrap');
+  if(comoWrap&&comoWrap.style.display==='none'){comoForm=cli?comoDeCliente(cli):COMO_DEF;comoNotaForm=cli?(cli.como_nos_conocio_nota||''):'';}   // clienta que ya existía: no se pregunta
   if(!cli&&nombre){var nCli={id:'cli_'+Date.now(),nombre:nombre,sobrenombre:sobrenombreForm||null,telefono:p.telefono,domicilio:p.domicilio,piso:p.piso,ciudad:p.ciudad,etiqueta:'nuevo',creado_en:new Date().toISOString()};
     if(comoForm!==COMO_DEF||comoNotaForm){nCli.como_nos_conocio=comoForm;if(comoNotaForm)nCli.como_nos_conocio_nota=comoNotaForm;}
     clientes.push(nCli);sbUpsert('clientes',nCli);localStorage.setItem('fika-clientes',JSON.stringify(clientes));actualizarDatalist();}
@@ -8464,7 +8493,7 @@ async function habilitarEdicionPedido(id){
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
         <div><div class="f-lbl">Nombre</div><input class="f-in" id="ec-nombre"></div>
         <div><div class="f-lbl">Sobrenombre</div><input class="f-in" id="ec-sobrenombre" placeholder="Opcional"></div>
-        <div><div class="f-lbl">¿Cómo nos conoció?</div><select class="f-in" id="ec-como"><option value="No sé / no le pregunté">No sé / no le pregunté</option><option value="Publicidad de Instagram">Publicidad de Instagram</option><option value="Instagram (sin publicidad)">Instagram (sin publicidad)</option><option value="TikTok">TikTok</option><option value="Recomendación">Recomendación</option><option value="Otra">Otra</option></select></div>
+        <div><div class="f-lbl">¿Cómo nos conoció?</div><select class="f-in" id="ec-como"><option value="No sé / no le pregunté">No sé / no le pregunté</option><option value="Publicidad Instagram">Publicidad Instagram</option><option value="Instagram (orgánico)">Instagram (orgánico)</option><option value="TikTok">TikTok</option><option value="Estado de WhatsApp">Estado de WhatsApp</option><option value="Difusión de WhatsApp">Difusión de WhatsApp</option><option value="Recomendación">Recomendación</option><option value="Clienta habitual">Clienta habitual</option><option value="Otro">Otro</option></select></div>
         <div><div class="f-lbl">Detalle (opcional)</div><input class="f-in" id="ec-como-nota" placeholder="Ej: la recomendó Ana"></div>
         <div><div class="f-lbl">Teléfono</div><input class="f-in" id="ec-tel" type="tel" placeholder="381..."></div>
         <div><div class="f-lbl">Domicilio</div><input class="f-in" id="ec-dom"></div>
